@@ -9,3 +9,5 @@ cd DicomViewer
 npm ci  
 ## 4.開発環境でのアプリの起動  
 npm run start  
+## 5.アプリのビルド
+npm run build
