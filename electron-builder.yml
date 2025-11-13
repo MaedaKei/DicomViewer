@@ -1,0 +1,13 @@
+#アプリ情報
+productName: DicomViewer
+appId: com.MaedaKei.DicomViewer
+directories:
+  output: release
+files:
+  - package.json
+  - main.js
+  - MainWindow/**
+  - SubWindows/**
+win:
+  target: zip
+  

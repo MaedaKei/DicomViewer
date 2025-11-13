@@ -17,7 +17,7 @@ function createMainWindow(){
     });
     WindowManager.set("MainWindow",MainWindow);
     MainWindow.removeMenu();
-    MainWindow.webContents.openDevTools({mode: 'detach'});
+    //MainWindow.webContents.openDevTools({mode: 'detach'});
     MainWindow.loadFile(path.join("MainWindow","MainWindow.html"));
     /*
     ipcMain.on("FromMainToMainProcess",(event,data)=>{
@@ -148,7 +148,7 @@ function createSubWindow(SendingData){
     });
     WindowManager.set("SubWindow",SubWindow);
     SubWindow.removeMenu();
-    SubWindow.webContents.openDevTools({mode: 'detach'});
+    //SubWindow.webContents.openDevTools({mode: 'detach'});
     SubWindow.loadFile(path.join(__dirname,"SubWindows",actionName,HTMLfileName));
     SubWindow.setAlwaysOnTop(true);
     //SubWindowの準備が整ったらOperationModeの可否の返答を受け取る
