@@ -1,0 +1,377 @@
+*{
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+html, body {
+  height: 100%;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+}
+
+body{
+    display: flex;
+    flex-direction: row;
+    --InputContainerWidth:30%;
+    --ResultContainerWidth:calc(100% - var(--InputContainerWidth));
+    background-color: rgb(67, 67, 67);
+}
+
+div#InputContainer{
+    width:var(--InputContainerWidth);
+    height:100%;
+    --EvaluationIndexSettingHeight:calc(30px * (2 + 1));
+    --AreaSelectContainerHeight:calc(30px * (6 + 1));
+    --ButtonContainerHeight:calc(30px * 1);
+    --CalculateHistoryHeight:calc(100% - (var(--EvaluationIndexSettingHeight) + var(--AreaSelectContainerHeight) + var(--ButtonContainerHeight) + 3 * 2px));
+    background-color: rgb(173, 173, 173);
+}
+/*EvaluationIndexSettingContainer*/
+div#InputContainer>div#EvaluationIndexSettingContainer{
+    width:100%;
+    height:var(--EvaluationIndexSettingHeight);
+    border:1px solid black;
+    margin-bottom: 2px;
+    background-color: rgb(201, 238, 207);
+}
+div#EvaluationIndexSettingContainer>div#EvaluationFunctionContainer{
+    width:100%;
+    height:calc(30px * 2);
+    display: flex;
+    flex-direction: column;
+}
+div#EvaluationIndexSettingContainer>div#EvaluationFunctionContainer>label{
+    width: 100%;
+    height: 50%;
+    font-weight: bold;
+    text-align: center;
+    padding:2px;
+    color: white;
+    background-color: rgb(144, 172, 148);
+}
+div#EvaluationIndexSettingContainer>div#EvaluationFunctionContainer>div.EvaluationFunctionSelecterBlock{
+    width: 100%;
+    height: 50%;
+    display: flex;
+    flex-direction: row;
+    --SelecterWidth:60%;
+    --InputNumDisplayWidth:calc(100% - var(--SelecterWidth));
+    padding:2px;
+}
+div#EvaluationIndexSettingContainer>div#EvaluationFunctionContainer>div.EvaluationFunctionSelecterBlock>select{
+    width:var(--SelecterWidth);
+    height: 100%;
+}
+div#EvaluationIndexSettingContainer>div#EvaluationFunctionContainer>div.EvaluationFunctionSelecterBlock>div.FunctionInfoDisplay{
+    width:var(--InputNumDisplayWidth);
+    height:100%;
+    padding:1px;
+    display: flex;
+    flex-direction: column;
+}
+div#EvaluationIndexSettingContainer>div#EvaluationFunctionContainer>div.EvaluationFunctionSelecterBlock>div.FunctionInfoDisplay>div{
+    width:100%;
+    height: 50%;
+    font-size:9px;
+    font-weight: bold;
+    vertical-align: top;
+}
+
+div#EvaluationIndexSettingContainer>div#FunctionInputContainer{
+    width:100%;
+    height:calc(30px * 1);
+    display:flex;
+    flex-direction: row;
+}
+div#EvaluationIndexSettingContainer>div#FunctionInputContainer>div.InputBlock{
+    width:50%;
+    height:100%;
+    display: flex;
+    flex-direction: row;
+    padding:2px;
+}
+div#EvaluationIndexSettingContainer>div#FunctionInputContainer>div.InputBlock>label{
+    width:50%;
+    height:100%;
+    padding:2px;
+    font-size: 12px;
+    font-weight: bold;
+    text-align: center;
+    vertical-align: top;
+
+}
+div#EvaluationIndexSettingContainer>div#FunctionInputContainer>div.InputBlock>select{
+    width:50%;
+    height:100%;
+    text-align: left;
+}
+/*AreaSelectContainer*/
+div#InputContainer>div#AreaSelectContainer{
+    width:100%;
+    height:var(--AreaSelectContainerHeight);
+    margin-bottom: 2px;
+    background-color: rgb(146, 237, 237);
+}
+div#AreaSelectContainer>div.Containerlabel{
+    width:100%;
+    height:30px;
+    padding:2px;
+    text-align: center;
+    font-weight: bold;
+    color:white;
+    border:1px solid black;
+    background-color: rgb(98, 158, 158);
+}
+div#AreaSelectContainer>div.SubContainer{
+    width:100%;
+    height:60px;
+    display: flex;
+    flex-direction: column;
+    /*border: 1px solid black;*/
+    border-bottom: 1px;
+    border-style: solid;
+    border-color: black;
+
+}
+div#AreaSelectContainer>div.SubContainer>div.SubContainerLabel{
+    width: 100%;
+    height: 50%;
+    text-align:left;
+}
+div#AreaSelectContainer>div.SubContainer>div.AreaSelectInputBlock{
+    width:100%;
+    height:50%;
+    display: flex;
+    flex-direction: row;
+    padding: 2px;
+}
+div#AreaSelectContainer>div.SubContainer>div.AreaSelectInputBlock>div{
+    width: 50%;
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+}
+div#AreaSelectContainer>div>div.AreaSelectInputBlock>div>label{
+    width:50%;
+    height:100%;
+    font-weight: bold;
+    text-align: center;
+}
+div#AreaSelectContainer>div>div.AreaSelectInputBlock>div>input{
+    width:50%;
+    height:100%;
+    text-align: center;
+}
+/*ButtonContainer*/
+div#InputContainer>div#ButtonContainer{
+    width:100%;
+    height:var(--ButtonContainerHeight);
+    margin-bottom: 2px;
+    display: flex;
+    flex-direction: row-reverse;
+}
+div#ButtonContainer>button{
+    width:120px;
+    height: 100%;
+    text-align: center;
+    background-color: rgb(2, 2, 100);
+    color:white;
+    font-weight: bold;
+}
+div#ButtonContainer>button:hover{
+    background-color: rgb(0, 0, 255);
+}
+div#ButtonContainer>button:active{
+    background-color: red;
+}
+div#InputContainer>div#CalculateHistoryContainer{
+    width:100%;
+    height:var(--CalculateHistoryHeight);
+    background-color: rgb(179, 179, 179);
+    display: flex;
+    flex-direction: column;
+}
+div#InputContainer>div#CalculateHistoryContainer>label{
+    width:100%;
+    height:25px;
+    text-align: center;
+    vertical-align: top;
+    font-weight: bold;
+    border: 1px solid black;
+    color:white;
+    background-color: rgb(20, 14, 150);
+}
+div#InputContainer>div#CalculateHistoryContainer>ul#CalculateHistoryList{
+    --height:calc(100% - 25px);
+    width:100%;
+    height:var(--height);/*ラベル分だけ削る*/
+    background-color: rgb(190, 200, 240);
+    /*あぶれた分はスクロールに任せる*/
+    max-height: var(--height);
+    overflow-y:scroll;/*スクロールバーが出現すると見た目が少し変わるので最初から表示する*/
+}
+ul#CalculateHistoryList>li.CalculateHistoryListItem{
+    width:100%;
+    height:25px;
+    display: flex;
+    flex-direction: row;
+    border-bottom: 1px solid black;
+    background-color: rgb(255, 255, 255);
+}
+ul#CalculateHistoryList>li.CalculateHistoryListItem:hover{
+    background-color: rgb(167, 167, 167);
+}
+ul#CalculateHistoryList>li.CalculateHistoryListItem.Selected{
+    background-color: rgb(209, 104, 104);
+}
+ul#CalculateHistoryList>li.CalculateHistoryListItem>div.CalculateHistoryListItemIDArea{
+    pointer-events: none;
+    width:25px;
+    height:100%;
+    padding: 1px;
+    font-size: 12px;
+    text-align: center;
+    vertical-align: top;
+    font-weight: bold;
+    border-right: 1px solid black;
+}
+ul#CalculateHistoryList>li.CalculateHistoryListItem>div.CalculateHistoryListItemFunctionNameArea{
+    pointer-events: none;
+    width:calc((100% - 25px) * 0.7);
+    height:100%;
+    padding: 1px;
+    font-size:12px;
+    text-align: left;
+    vertical-align: top;
+    font-weight: bold;
+    border-right: 1px solid black;
+}
+ul#CalculateHistoryList>li.CalculateHistoryListItem>div.CalculateHistoryListItemInputCIDArea{
+    pointer-events: none;
+    width:calc((100% - 25px) * 0.3);
+    height:100%;
+    padding: 1px;
+    font-size:12px;
+    text-align: left;
+    vertical-align: top;
+    font-weight: bold;
+}
+/*ResultContainer*/
+div#ResultContainer{
+    width:var(--ResultContainerWidth);
+    height:100%;
+    border:1px solid rgb(0, 0, 0);
+    background-color: rgb(220, 220, 220);
+}
+
+/*VolumetricDSCのResultに関するCSS*/
+div#ResultContainer>div#VolumetricDSCResultContainer{
+    width:100%;
+    height:100%;
+    display:flex;
+    flex-direction: column;
+    --InfoTextContainerHeight:calc(30px * 2);
+    --ResultTableContainerHeight:calc(100% - var(--InfoTextContainerHeight));
+}
+/*InfoTextContainer*/
+div#VolumetricDSCResultContainer>div#VolumetricDSCInfoTextContainer{
+    /*InputNum=2*/
+    width:100%;
+    height:var(--InfoTextContainerHeight);
+    display: flex;
+    flex-direction: column;
+}
+div#VolumetricDSCResultContainer>div#VolumetricDSCInfoTextContainer>div.InfoText{
+    width:100%;
+    height:50%;
+    text-align: left;
+    vertical-align: top;
+    background-color: rgb(195, 195, 195);
+    font-size:10px;
+    font-weight: bold;
+    border:1px solid black;
+    white-space: pre-wrap;
+}
+/*ResultTable*/
+div#VolumetricDSCResultContainer>div#VolumetricDSCResultTableContainer{
+    width:100%;
+    height:var(--ResultTableContainerHeight);
+    max-width: 100%;
+    max-height: var(--ResultTableContainerHeight);
+    overflow-y:auto;
+    overflow-x:auto;
+    /*先頭行と先頭列の固定用*/
+    position:relative;
+}
+div#VolumetricDSCResultContainer>div#VolumetricDSCResultTableContainer>table#VolumetricDSCResultTable{
+    border-collapse: collapse;/*セル同士の境界線を重ねて隙間をなくす*/
+    table-layout: fixed;
+    /*tableのサイズは内部要素によって変化するようにすることで構成が崩れない*/
+}
+/*
+table#VolumetricDSCResultTable tr{
+    background-color: white;
+}
+*/
+table#VolumetricDSCResultTable th,td{
+    --width:75px;
+    --height:30px;
+    width:var(--width);
+    height:var(--height);
+    border: 1px solid rgb(0, 0, 0);
+    /*background-color: rgb(255, 255, 255);*/
+    font-size: 12px;
+    /*以下はギチギチに条件を明示して勝手に画面構成を最適化して崩すことを防ぐためのモノ*/
+    max-width: var(--width);
+    min-width: var(--width);
+    max-height: var(--height);
+    min-height: var(--height);
+    /*はみ出したら*/
+    overflow: hidden;/*はみ出た部分は隠す*/
+    text-overflow: ellipsis;/*はみ出たら...で表示*/
+    white-space: nowrap;/*折り返し禁止*/
+    z-index:-1;
+}
+/*行と列の固定設定*/
+table#VolumetricDSCResultTable th.InitialRow{
+    position:sticky;
+    top:0;
+    background-color: rgb(81, 81, 81);
+    color:white;
+    z-index:1
+}
+table#VolumetricDSCResultTable th.InitialColumn{
+    position:sticky;
+    left:0;
+    /*データ部分の左端セルは色ついてなくてもいいかも*/
+    background-color: rgb(81, 81, 81);
+    color:white;
+    z-index:1
+}
+table#VolumetricDSCResultTable th.InitialRow.InitialColumn{
+    position:sticky;
+    top:0;
+    left:0;
+    background-color: rgb(81, 81, 81);
+    color:white;
+    z-index:2
+}
+
+table#VolumetricDSCResultTable tbody>tr>td{
+    background-color: white;
+}
+table#VolumetricDSCResultTable tbody>tr:hover>th,
+table#VolumetricDSCResultTable tbody>tr:hover>td{
+    background-color: rgb(115, 115, 115);
+}
+/*
+table#VolumetricDSCResultTable tbody>tr.Selected>th,
+table#VolumetricDSCResultTable tbody>tr.Selected>td{
+    border:2px solid red;
+}
+*/
+table#VolumetricDSCResultTable tbody>tr.Selected{
+    border: 2px solid red;
+}

@@ -1,0 +1,587 @@
+/*素手は、padding、margin、border=0*/
+* {
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+    border: 0;
+}
+html, body {
+    height: 100%;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+}
+/*
+ドロップダウンメニュー用
+*/
+#MenuContainer{
+    width:100%;
+    height:20px;
+    margin-bottom:2px;
+    background-color: gray;
+}
+/*ulのおおもとの設定*/
+ul{
+    width:100%;
+    height:100%;
+    margin:0;
+    padding:0;
+}
+li{
+    width:100%;
+    height:100%;
+    list-style-type:none;
+}
+/*MainMenu ulの設定*/
+ul.MainMenu {
+    display: flex;
+}
+ul.MainMenu li{
+    width:120px;
+    height:100%;
+    /*display: inline-block;*/
+    position: relative;
+}
+ul.MainMenu li button{
+    width:100%;
+    height:100%;
+    border-right:1px solid black;
+    border-bottom:1px solid black;
+    background-color: #333;
+    color:white;
+    text-align: center;
+    text-decoration:none;
+    vertical-align: top;
+}
+ul.MainMenu li button#MultipleLoadButton{
+    color:rgb(95,95,245);
+}
+ul.MainMenu li button#ResetButton{
+    color:rgb(245, 95, 95);
+}
+
+ul.MainMenu li button:hover{
+    background-color: #575757;
+}
+
+ul.MainMenu li button:active{
+    background-color: #9c9c9c;
+    color:black;
+}
+ul.MainMenu li button#MultipleLoadButton:active{
+    color:blue;
+}
+ul.MainMenu li button#ResetButton:active{
+    color:red;
+}
+
+/*サブ、…menu ulの設定*/
+ul.MainMenu li ul{
+    display:none;
+    position:absolute;
+    top:100%;
+    left:0;
+}
+ul.MainMenu li:hover ul{
+    display:block;
+    z-index: 1000;
+}
+dialog{
+    border:1px solid black;
+    background-color: #9c9c9c;
+}
+/*
+マスク差分ダイアログ
+*/
+#MaskDiffSelectDialog {
+    font-family: sans-serif;
+    --label-height:20px;
+    --select-height:100px;
+    --button-height:20px;
+    width:200px;
+    height:calc(var(--label-height) + var(--select-height) + var(--button-height) + 10px);
+}
+
+/* タイトル */
+dialog#MaskDiffSelectDialog h3 {
+    font-size: calc(var(--label-height) / 2);
+    width:100%;
+    height:var(--label-height);
+    text-align: center;
+}
+
+/* ドロップダウン横並び */
+dialog#MaskDiffSelectDialog div.MaskDiffSelectContainer{
+    width:100%;
+    height:var(--select-height);
+    display: flex;
+    gap:5px;
+}
+dialog#MaskDiffSelectDialog div.MaskDiffSelectContainer>div{
+    width:100%;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+/* ラベルとセレクトを縦に並べて、横並びに配置 */
+dialog#MaskDiffSelectDialog div.MaskDiffSelectContainer>div>label{
+    width:100%;
+    display: block;
+    font-weight: bold;
+}
+
+/* セレクトのスクロール対応 */
+dialog#MaskDiffSelectDialog div.MaskDiffSelectContainer>div>select{
+    width:100%;
+    height:20px;
+    max-height:var(--select-height); /* 高さ制限 */
+    overflow-y: auto;  /* スクロール可能に */
+    padding: 3px;
+    font-size: 12px;
+    box-sizing: border-box;
+}
+
+/* ボタン横並び */
+dialog#MaskDiffSelectDialog div.MaskDiffButtonContainer{
+    width:100%;
+    height:var(--button-height);
+    display: flex;
+    justify-content: flex-end;
+    gap: 5px;
+}
+
+/* ボタンスタイル */
+dialog#MaskDiffSelectDialog div.MaskDiffButtonContainer>button{
+    width:50%;
+    padding: 2px 3px;
+    font-size: 12px;
+    border: none;
+    border-radius: 4px;
+    background-color: #0078d4;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+dialog#MaskDiffSelectDialog div.MaskDiffButtonContainer>button:hover{
+    background-color: #005a9e;
+}
+
+/*
+GridChangeダイアログ
+*/
+#GridChangeDialog {
+    font-family: sans-serif;
+    --label-height:20px;
+    --select-height:100px;
+    --button-height:20px;
+    width:200px;
+    height:calc(var(--label-height) + var(--select-height) + var(--button-height) + 10px);
+}
+
+/* タイトル */
+dialog#GridChangeDialog h3 {
+    font-size: calc(var(--label-height) / 2);
+    width:100%;
+    height:var(--label-height);
+    text-align: center;
+}
+
+/* ドロップダウン横並び */
+dialog#GridChangeDialog div.GridChangeInputContainer{
+    width:100%;
+    height:var(--select-height);
+    display: flex;
+    gap:5px;
+}
+dialog#GridChangeDialog div.GridChangeInputContainer>div{
+    width:100%;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+/* ラベルとセレクトを縦に並べて、横並びに配置 */
+dialog#GridChangeDialog div.GridChangeInputContainer>div>label{
+    width:100%;
+    display: block;
+    font-weight: bold;
+}
+
+dialog#GridChangeDialog div.GridChangeInputContainer>div>input{
+    width:100%;
+    height:20px;
+    padding: 3px;
+    font-size: 12px;
+    box-sizing: border-box;
+}
+
+/* ボタン横並び */
+dialog#GridChangeDialog div.GridChangeButtonContainer{
+    width:100%;
+    height:var(--button-height);
+    display: flex;
+    justify-content: flex-end;
+    gap: 5px;
+}
+
+/* ボタンスタイル */
+dialog#GridChangeDialog div.GridChangeButtonContainer>button{
+    width:50%;
+    padding: 2px 3px;
+    font-size: 12px;
+    border: none;
+    border-radius: 4px;
+    background-color: #0078d4;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+dialog#GridChangeDialog div.GridChangeButtonContainer>button:hover{
+    background-color: #005a9e;
+}
+
+/*
+CanvasMoveダイアログ
+*/
+dialog#CanvasMoveDialog{
+    font-family: sans-serif;
+    --label-height:20px;
+    --select-height:100px;
+    --button-height:20px;
+    width:200px;
+    height:calc(var(--label-height) + var(--select-height) + var(--button-height) + 10px);
+}
+
+/* タイトル */
+dialog#CanvasMoveDialog h3 {
+    font-size: calc(var(--label-height) / 2);
+    width:100%;
+    height:var(--label-height);
+    text-align: center;
+}
+
+/* チェックボックス格子 */
+dialog#CanvasMoveDialog div#CanvasMoveSelecterContainer{
+    width:100%;
+    max-width:100%;
+    overflow-x:auto;
+    height:var(--select-height);
+    max-height:var(--select-height); /* 高さ制限 */
+    overflow-y: auto;  /* スクロール可能に */
+    display:grid;
+    margin-bottom: 5px;
+}
+
+/* ボタン横並び */
+dialog#CanvasMoveDialog div.CanvasMoveButtonContainer{
+    width:100%;
+    height:var(--button-height);
+    display: flex;
+    justify-content: flex-end;
+    gap: 5px;
+}
+
+/* ボタンスタイル */
+dialog#CanvasMoveDialog div.CanvasMoveButtonContainer>button{
+    width:50%;
+    padding: 2px 3px;
+    font-size: 12px;
+    border: none;
+    border-radius: 4px;
+    background-color: #0078d4;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+dialog#CanvasMoveDialog div.CanvasMoveButtonContainer>button:hover{
+    background-color: #005a9e;
+}
+
+/*キャンバスコンテナ*/
+#CanvasContainer{
+    width:100%;
+    height:calc(100% - 22px);
+    display:grid;
+    grid-template-columns: 1fr;
+    grid-template-rows:1fr;
+    gap:2px;
+}
+/*キャンバスブロックに対するスタイルの設定*/
+div.Block{
+    width:100%;
+    height:100%;
+    font-size: 0;
+    line-height: 0;
+}
+/*inputとCanvasBlockの高さの合計でdivBlockに指定すればよい*/
+/*widthは画像サイズそのままでよい*/
+div.CanvasBlock{
+    position:relative;
+    width:100%;
+    height:calc(100% - 16px);
+}
+div.CanvasBlock>canvas.Canvas{
+    position:absolute;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background-color:transparent;
+    pointer-events: none;/*画像上の座標取得は完全に一致させたdivに任せることにする*/
+}
+
+div.Block input[type="range"] {
+    /*変数*/
+    --slider-height:16px;
+    --track-hilight-start:0%;
+    --track-hilight-end:0%;
+    --track-normal-color:#ccc;
+    --track-hilight-color:#f00;
+    --track-color:linear-gradient(to right,
+        var(--track-normal-color) 0%,
+        var(--track-normal-color) var(--track-hilight-start),
+        var(--track-hilight-color) var(--track-hilight-start),
+        var(--track-hilight-color) var(--track-hilight-end),
+        var(--track-normal-color) var(--track-hilight-end),
+        var(--track-normal-color) 100%);
+    --thumb-color:#3d3d3dcf;
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: var(--slider-height); /* 全体の高さを指定 */
+    border: none;
+    background: transparent;
+}
+
+/* トラック（走行部分） */
+div.Block input[type="range"]::-webkit-slider-runnable-track {
+    height: var(--slider-height);
+    background: var(--track-color);
+    /*border-radius: calc(var(--slider-height)/2);*/
+}
+
+/* サム（つまみ） */
+div.Block input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: var(--slider-height);
+    height: var(--slider-height);
+    background: var(--thumb-color);
+    /* 円形にする */
+    /*border-radius: 50%;*/
+    margin-top: 0px; /* トラックと同じ高さなのでズレなし */
+    cursor: pointer;
+}
+
+/*コンテキストメニューに関する設定*/
+div.CanvasBlock div.ContextMenuContainer{
+    position:absolute;
+    width:130px;
+    z-index:10;
+    display: none;
+}
+div.ContextMenuContainer div.ContextMenuTextContainer{
+    width:100%;
+    background: black;
+    color:white;
+    border:1px solid rgb(65, 4, 64);
+    text-align: center;
+    line-height:20px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+div.ContextMenuContainer div.ContextMenuButtonContainer{
+    width:100%;
+}
+div.ContextMenuContainer div.ContextMenuButtonContainer>Button{
+    width:100%;
+    height:30px;
+    text-align: center;
+    vertical-align: top;
+    border:1px solid rgb(65, 4, 64);
+    background-color: #575757;
+    color: aliceblue;
+    font-weight: bold;
+}
+div.ContextMenuContainer div.ContextMenuButtonContainer>Button:hover{
+    background-color: #7c7b7b;
+}
+div.ContextMenuContainer div.ContextMenuButtonContainer>Button:active{
+    background-color: cadetblue;
+}
+
+/*ファイルオープンダイアログのCSS*/
+dialog#LoadDialog{
+    --DOMTreeContainerHeight:260px;
+    --ButtonContainerHeight:40px;
+    width:400px;
+    height:calc(var(--DOMTreeContainerHeight) + var(--ButtonContainerHeight) + 2px);
+    background-color: black;
+}
+dialog#LoadDialog>div#LoadDialogDOMTreeContainer{
+    width:100%;
+    height:var(--DOMTreeContainerHeight);
+    /*はみ出る部分はスクロールにする*/
+    overflow-y: scroll;
+    max-height: var(--DOMTreeContainerHeight);
+    display: flex;
+    flex-direction: column;
+}
+/*各データタイプが持っているDOMツリーに関するCSS*/
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree{
+    --DataTypeDisplay:20px;
+    --PathSettngContainerHeight:60px;
+    width:100%;
+    height:calc(var(--DataTypeDisplay) + var(--PathSettngContainerHeight));
+    display: flex;
+    flex-direction: column;
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.DataTypeDisplay{
+    width:100%;
+    height: var(--DataTypeDisplay);
+    background-color: #bb95d6;
+    color:black;
+    font-weight: bold;
+    text-align: center;
+    vertical-align: top;
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.PathSettingContainer{
+    width: 100%;
+    height: var(--PathSettngContainerHeight);
+    display:flex;
+    flex-direction: row;
+    --ModeSelectContainerWidth:50px;
+    --PathInputContainerWidth:calc(100% - var(--ModeSelectContainerWidth));
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.PathSettingContainer>div.ModeSelectContainer{
+    width:var(--ModeSelectContainerWidth);
+    height:100%;
+    display: flex;
+    flex-direction: column;
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.PathSettingContainer>div.ModeSelectContainer>button{
+    width:100%;
+    height:50%;
+    text-align: center;
+    vertical-align: top;
+    background-color: white;
+    color:black;
+    font-size:12px;
+    font-weight: bold;
+    border:1px solid black;
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.PathSettingContainer>div.ModeSelectContainer>button:hover{
+    background-color: #878686;
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.PathSettingContainer>div.ModeSelectContainer>button.Selected{
+    background-color: rgb(244, 158, 158);
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.PathSettingContainer>div.PathInputContainer{
+    width:var(--PathInputContainerWidth);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background-color: #002846;
+}
+/*PathInputContainerの種類ごとにCSSを設定する*/
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.PathSettingContainer>div.PathInputContainer>div.FilePathInput{
+    width: 100%;
+    height:50%;
+    display: flex;
+    flex-direction: row;
+    padding:1px;
+    --OpenFileDialogButtonWidth:50px;
+    --PathInputTextContainerWidth:calc(100% - var(--OpenFileDialogButtonWidth));
+}
+/*ファイルパスを入力するInputと参照ボタン*/
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.PathSettingContainer>div.PathInputContainer>div.FilePathInput>input[type="text"]{
+    width: var(--PathInputTextContainerWidth);
+    height:100%;
+    vertical-align: top;
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.PathSettingContainer>div.PathInputContainer>div.FilePathInput>button{
+    width: var(--OpenFileDialogButtonWidth);
+    height: 100%;
+    vertical-align: top;
+    text-align: center;
+    background-color: #373737;
+    color:rgb(255, 255, 255);
+    border:1px solid rgb(0, 0, 0);
+    font-size: 12px;
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.PathSettingContainer>div.PathInputContainer>div.FilePathInput>button:hover{
+    background-color: gray;
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.PathSettingContainer>div.PathInputContainer>div.FilePathInput>button:active{
+    background-color: #005a9e;
+}
+/*既存のCanvasIDを参照するセレクター*/
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.PathSettingContainer>div.PathInputContainer>div.ExistingCanvasIDSelect{
+    width: 100%;
+    height:50%;
+    padding:1px;
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.PathSettingContainer>div.PathInputContainer>div.ExistingCanvasIDSelect>select{
+    width:100%;
+    height:100%;
+    vertical-align: top;
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.PathSettingContainer>div.PathInputContainer>div.ExistingCanvasIDSelect>select>option{
+    background-color: rgb(63, 63, 63);
+    color:white;
+}
+/*既存のCanvasを2つ比較するためのセレクター*/
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.PathSettingContainer>div.PathInputContainer>div.ComparableCanvasIDSelect{
+    width:100%;
+    height:50%;
+    padding:1px;
+    --SeparateWidth:30px;
+    --SelecterWidth:calc((100% - var(--SeparateWidth)) / 2);
+    display:flex;
+    flex-direction: row;
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.PathSettingContainer>div.PathInputContainer>div.ComparableCanvasIDSelect>select{
+    width:var(--SelecterWidth);
+    height: 100%;
+    vertical-align: top;
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.PathSettingContainer>div.PathInputContainer>div.ComparableCanvasIDSelect>select>option{
+    background-color: rgb(63, 63, 63);
+    color:white;
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.PathSettingContainer>div.PathInputContainer>div.ComparableCanvasIDSelect>div{
+    width:var(--SeparateWidth);
+    height: 100%;
+    vertical-align: top;
+    text-align: center;
+    background-color: #242424;
+    color:white;
+    font-weight: bold;
+    font-size:12px;
+}
+
+dialog#LoadDialog>div#LoadDialogButtonContainer{
+    width: 100%;
+    height: var(--ButtonContainerHeight);
+    display: flex;
+    flex-direction: row;
+}
+dialog#LoadDialog>div#LoadDialogButtonContainer>button{
+    width: 50%;
+    height: 100%;
+    padding: 5px;
+    background-color: #504f4f;
+    border: 1px solid black;
+    color:white;
+    text-align: center;
+    vertical-align: top;
+}
+dialog#LoadDialog>div#LoadDialogButtonContainer>button:hover{
+    background-color: #878686;
+}
+dialog#LoadDialog>div#LoadDialogButtonContainer>button:active{
+    background-color: #2f93c9;
+    color:black;
+}

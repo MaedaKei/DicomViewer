@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ja">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self'">
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="stylesheet" href="MaskModifing.css" type="text/css">
+    </head>
+    <body>
+        <div id="TubButtonContainer">
+            <button class="TubButton active" data-targetscreen="MaskModifyScreen">MaskModify</button>
+            <button class="TubButton" data-targetscreen="MaskLabelingScreen">MaskLabeling</button>
+        </div>
+        <div id="ScreenContainer">
+            <div id="MaskModifyScreen" class="Screen">
+                <div id="MaskModifyContainer">
+                    <div class="label">Target Select</div>
+                    <div>
+                        <div id="MaskASelecterContainer" class="MaskSelecterContainer">
+                            <select id="MaskASelecter"></select>
+                            <div id="MaskALabel" class="MaskLabel"></div>
+                        </div>
+                        <div class="SwapContainer">
+                            <div id="AllowText">➔</div>
+                            <button id="SwapButton">Swap</button>
+                        </div>
+                        <div id="MaskBSelecterContainer" class="MaskSelecterContainer">
+                            <select id="MaskBSelecter"></select>
+                            <div id="MaskBLabel" class="MaskLabel"></div>
+                        </div>
+                    </div>
+                </div>
+                <div id="AreaSelectContainer">
+                    <div class="Containerlabel">Area Select</div>
+                    <div id="LeftTopContainer" class="SubContainer">
+                        <div class="SubContainerLabel">Rectangle Left top</div>
+                        <div class="AreaSelectInputBlock">
+                            <div>
+                                <label id="LeftTopXLabel" for="LeftTopXInput">X</label>
+                                <input type="number" id="LeftTopXInput">
+                            </div>
+                            <div>
+                                <label id="LeftTopYLabel" for="LeftTopYInput">Y</label>
+                                <input type="number" id="LeftTopYInput">
+                            </div>
+                        </div>
+                    </div>
+                    <div id="RectangleSizeContainer" class="SubContainer">
+                        <div class="SubContainerLabel">Rectangle Size</div>
+                        <div class="AreaSelectInputBlock">
+                            <div>
+                                <label id="RectangleWidthLabel" for="RectangleWidthInput">Width</label>
+                                <input type="number" id="RectangleWidthInput">
+                            </div>
+                            <div>
+                                <label id="RectangleHeightLabel" for="RectangleHeightInput">Height</label>
+                                <input type="number" id="RectangleHeightInput">
+                            </div>
+                        </div>
+                    </div>
+                    <div id="SelectedSliceContainer" class="SubContainer">
+                        <div class="SubContainerLabel">Slice crop</div>
+                        <div class="AreaSelectInputBlock">
+                            <div>
+                                <label id="StartSliceLabel" for="StartSliceInput">Start</label>
+                                <input type="number" id="StartSliceInput">
+                            </div>
+                            <div>
+                                <label id="EndSliceLabel" for="EndSliceInput">End</label>
+                                <input type="number" id="EndSliceInput">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="MaskModifyButtonContainer">
+                    <button id="MaskModifyConfirmButton">修正</button>
+                </div>
+            </div>
+            <div id="MaskLabelingScreen" class="Screen">
+                <div id="MaskLabelingInputContainer">
+                    <div class="label">Labeling</div>
+                    <textarea id="MaskLabelingTextArea" placeholder="Input Label Names, one per line" wrap="soft"></textarea>
+                </div>
+                <div id="MaskLabelingButtonContainer">
+                    <button id="MaskLabelingUpdateButton">更新</button>
+                </div>
+            </div>
+        </div>
+        
+        <script src="MaskModifingRenderer.js"></script>
+    </body>
+</html>

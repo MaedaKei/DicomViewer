@@ -1,0 +1,80 @@
+/*素手は、padding、margin、border=0*/
+*{
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+html, body {
+  height: 100%;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  --TextHeight:50px;
+  background-color: gray;
+}
+
+body #CanvasContainer{
+  --margin:5px;
+  height:calc(100% - var(--margin) - var(--TextHeight));
+  width:calc(100% - 2 * var(--margin));
+  position:relative;
+  margin-left: var(--margin);
+  margin-right: var(--margin);
+  margin-bottom: var(--margin);
+}
+div#CanvasContainer canvas{
+  width:100%;
+  height:100%;
+  position:absolute;
+  top:0;
+  left:0;
+  z-index: 3;
+}
+div#CanvasContainer canvas#histgramCanvas{
+  background:rgb(44, 44, 44);
+  z-index:1;
+}
+div#CanvasContainer canvas#lineCanvas{
+  background:transparent;
+  z-index:2;
+}
+
+body div#TextContainer{
+  width:100%;
+  height:var(--TextHeight);
+  display: flex;
+}
+
+body div#TextContainer div.InputBlock{
+  width:25%;
+  height:100%;
+  display: flex;
+  flex-direction: column;
+}
+body div#TextContainer div.InputBlock label{
+  width:100%;
+  flex:1;
+  font-size:12px;
+  background-color: black;
+  text-align: center;
+  border-left: 1px solid white;
+  border-right: 1px solid white;
+}
+body div#TextContainer div.InputBlock input{
+  width:100%;
+  flex:1;
+  font-size:12px;
+  background-color:white;
+  color:black;
+  text-align: center;
+  font-weight: bold;
+  border-left: 1px solid black;
+  border-right: 1px solid black;
+}
+/*スピンボタン無効化*/
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}

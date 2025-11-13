@@ -1,0 +1,36 @@
+const {contextBridge, ipcRenderer} = require('electron');
+
+contextBridge.exposeInMainWorld("GetDisplaySize",
+    ()=>ipcRenderer.invoke("GetDisplaySize")
+);
+/*ファイル読み込み用APIの公開*/
+/*フォルダーごと読み込む場合とファイル一つだけ読み込む場合があるため、引数で制御する*/
+contextBridge.exposeInMainWorld("DicomLoadAPI",
+    {
+        selectFiles:(propertieslist)=>ipcRenderer.invoke("selectFiles",propertieslist),//選択したパスのリストを返す
+        loadDicom:(loadingPath)=>ipcRenderer.invoke("loadDicom",loadingPath),//パスを受け取って、読み込む(ディレクトリorファイルのパスを受け取り、中で判定)
+    }
+);
+contextBridge.exposeInMainWorld("MainWindowResizeAPI",
+    (width,height)=>ipcRenderer.send("MainWindowResize",width,height)
+);
+/*SubWindowとのやり取りをまとめたAPI*/
+/*正確には中継地点となるmain.jsとのやり取りをまとめたAPI*/
+/*
+Subwindowのオープンを要請する関数,
+Subwindowが閉じられたことを受け取る関数,
+Subwindowからの変更を受け取る関数,
+SubWindowに変更を送る関数,
+下の２つは高頻度の通信が予想される
+*/
+contextBridge.exposeInMainWorld("MainWindowRendererMainProcessAPI",
+    {
+        OrderSubWindowOpen:(SendingData)=>ipcRenderer.send("OrderSubWindowOpen",SendingData),//SubWindowを開く
+        //subwindowが閉じられたこと、そのサブウィンドウをひらくためにおくったheaderを受け取る。
+        //useCallbackの引数は、(event,header)。usedCallbackは通知が来た時の処理をまとめた関数
+        FromMainToMainProcess:(data)=>ipcRenderer.send("FromMainToMainProcess",data),
+        FromMainProcessToMain:(callback)=>ipcRenderer.on("FromMainProcessToMain",callback),
+        RemoveFMPTM:()=>ipcRenderer.removeAllListeners("FromMainProcessToMain"),
+        CloseSubWindowFromMainProcessToMain:(closingcallback)=>ipcRenderer.on("CloseSubWindowFromMainProcessToMain",closingcallback),//SubWindowが閉じられたことを受け取る
+    }
+);

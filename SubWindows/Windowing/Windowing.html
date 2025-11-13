@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ja">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self'">
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="stylesheet" href="Windowing.css" type="text/css">
+    </head>
+    <body>
+        <div id="CanvasContainer">
+            <canvas id="histgramCanvas"></canvas>
+            <canvas id="lineCanvas"></canvas>
+        </div>
+        
+        <div id="TextContainer">
+            <div class="InputBlock">
+                <label for="MinValueInput" id="MinValueLabel">Min</label>
+                <input type="number" id="MinValueInput">
+            </div>
+            <div class="InputBlock">
+                <label for="MaxValueInput" id="MaxValueLabel">Max</label>
+                <input type="number" id="MaxValueInput">
+            </div>
+            <div class="InputBlock">
+                <label for="CenterValueInput" id="CenterValueLabel">Center</label>
+                <input type="number" id="CenterValueInput">
+            </div>
+            <div class="InputBlock">
+                <label for="RadiusValueInput" id="RadiusValueLabel">Radius</label>
+                <input type="number" id="RadiusValueInput">
+            </div>
+        </div>
+        <script src="WindowingRenderer.js"></script>
+    </body>
+</html>

@@ -1,0 +1,247 @@
+*{
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+html, body {
+  height: 100%;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  background-color: rgb(180, 176, 176);
+  --TubButtonContainerHeight:30px;
+  --ScreenContainerHeight:calc(100% - var(--TubButtonHeight));
+}
+div#TubButtonContainer{
+    width: 100%;
+    --margin-bottom:5px;
+    margin-bottom: var(--margin-bottom);
+    height: calc(var(--TubButtonContainerHeight) - var(--margin-bottom));
+    display: flex;
+    flex-direction: row;
+    --TubButtonNum:2;
+}
+div#TubButtonContainer>button.TubButton{
+    width: calc(100% / var(--TubButtonNum));
+    height: 100%;
+    background-color: rgba(58, 58, 58, 0.733);
+    color: white;
+    text-align: center;
+    border:black solid 1px;
+}
+div#TubButtonContainer>button.TubButton:hover{
+    background-color: #838383;
+    cursor: pointer;
+}
+div#TubButtonContainer>button.TubButton.active{
+    background-color: #8d0202;
+    cursor: pointer;
+    font-weight: bold;
+}
+div#ScreenContainer{
+    width: 100%;
+    height: var(--ScreenContainerHeight);
+    display: relative;
+}
+/*MaskModifyScreen*/
+div#MaskModifyScreen{
+    width: 100%;
+    --MaskModifyContainerHeight:90px;
+    --AreaSelectContainerHeight:210px;
+    --ModifyButtonContainerHeight:30px;
+    height:calc(var(--MaskModifyContainerHeight) + var(--AreaSelectContainerHeight) + var(--ModifyButtonContainerHeight));
+    /*TubButtonContainerの真下に配置したい*/
+};
+div#MaskModifyContainer{
+    width:100%;
+    /*height:90px;*/
+    height:var(--MaskModifyContainerHeight);
+    display: flex;
+    flex-direction: column;
+    background-color: #000000;
+}
+div#MaskModifyContainer>div.label{
+    width: 100%;
+    height:30px;
+    background-color: blueviolet;
+    font-weight: bold;
+}
+div#MaskModifyContainer>div{
+    width: 100%;
+    height:60px;
+    display: flex;
+    flex-direction: row;
+    padding:2px;
+    --selectwidth:40%;
+}
+div#MaskModifyContainer>div>div.MaskSelecterContainer{
+    width:var(--selectwidth);
+    height:100%;
+    display: flex;
+    flex-direction: column;
+}
+div#MaskModifyContainer>div>div.MaskSelecterContainer>select{
+    width:100%;
+    height:50%;
+    text-align: center;
+}
+div#MaskModifyContainer>div>div.MaskSelecterContainer>div.MaskLabel{
+    width:100%;
+    height:50%;
+    border:1px solid #FFFFFF;
+}
+div#MaskModifyContainer>div>div.SwapContainer{
+    width:calc(100% - 2 * var(--selectwidth));
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+div#MaskModifyContainer>div>div.SwapContainer>div#AllowText{
+    width:100%;
+    height: 50%;
+    text-align: center;
+    color:#FF0000;
+}
+div#MaskModifyContainer>div>div.SwapContainer>Button#SwapButton{
+    width:100%;
+    height: 50%;
+    background-color: rgba(0, 128, 53, 0.733);
+    color: white;
+    font-weight: bold;
+    text-align: center;
+}
+div#MaskModifyContainer>div>div.SwapContainer>Button#SwapButton:hover{
+    background-color: #02f768;
+    cursor: pointer;
+}
+div#MaskModifyContainer>div>div.SwapContainer>Button#SwapButton:active{
+    background-color: #c20000;
+    cursor: pointer;
+}
+div#AreaSelectContainer{
+    width:100%;
+    /*height:210px;*/
+    height:var(--AreaSelectContainerHeight);
+}
+div#AreaSelectContainer>div.Containerlabel{
+    width: 100%;
+    height:30px;
+    padding: 2px;
+    background-color: aquamarine;
+    font-weight: bold;
+}
+div#AreaSelectContainer>div.SubContainer{
+    width:100%;
+    height:60px;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid black;
+}
+div#AreaSelectContainer>div.SubContainer>div.SubContainerLabel{
+    width: 100%;
+    height: 50%;
+    text-align: center;
+}
+div#AreaSelectContainer>div.SubContainer>div.AreaSelectInputBlock{
+    width:100%;
+    height:50%;
+    display: flex;
+    flex-direction: row;
+    padding: 2px;
+}
+div#AreaSelectContainer>div.SubContainer>div.AreaSelectInputBlock>div{
+    width: 50%;
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+}
+div#AreaSelectContainer>div>div.AreaSelectInputBlock>div>label{
+    width:50%;
+    height:100%;
+    font-weight: bold;
+    text-align: center;
+}
+div#AreaSelectContainer>div>div.AreaSelectInputBlock>div>input{
+    width:50%;
+    height:100%;
+    text-align: center;
+}
+
+div#MaskModifyButtonContainer{
+    width:100%;
+    /*height:30px;*/
+    height:var(--ModifyButtonContainerHeight);
+    display: flex;
+    flex-direction: row-reverse;
+    padding: 2px;
+}
+div#MaskModifyButtonContainer>button{
+    width: 30%;
+    height: 100%;
+    background-color: rgba(0, 0, 128, 0.733);
+    color: white;
+    font-weight: bold;
+    text-align: center;
+    vertical-align: top;
+}
+div#MaskModifyButtonContainer>button:hover{
+    background-color: #0000FF;
+    cursor: pointer;
+}
+div#MaskModifyButtonContainer>button:active{
+    background-color: #FF0000;
+    cursor: pointer;
+}
+
+div#MaskLabelingScreen{
+    width: 100%;
+    --MaskLabelingInputContainerHeight:300px;
+    --MaskLabelingButtonContainerHeight:30px;
+    height:calc(var(--MaskLabelingInputContainerHeight) + var(--MaskLabelingButtonContainerHeight));
+    display: none;
+    /*TubButtonContainerの真下に配置したい*/
+};
+div#MaskLabelingInputContainer{
+    width:100%;
+    height:var(--MaskLabelingInputContainerHeight);
+    display:flex;
+    flex-direction: column;
+}
+div#MaskLabelingInputContainer>div.label{
+    width:100%;
+    height:30px;
+    background-color: black;
+    color:white;
+    text-align: center;
+}
+div#MaskLabelingInputContainer>textarea{
+    width:100%;
+    height:calc(var(--MaskLabelingInputContainerHeight) - 30px - 2 * 2px);
+    resize:none;
+    padding:5px;
+    margin-top:2px;
+    margin-bottom:2px;
+}
+div#MaskLabelingButtonContainer{
+    width:100%;
+    height:var(--MaskLabelingButtonContainerHeight);
+    display: flex;
+    flex-direction: row-reverse;
+    padding:2px;
+}
+div#MaskLabelingButtonContainer>button{
+    width:30%;
+    height:100%;
+    text-align: center;
+    background-color: #01019b;
+    color:white;
+    vertical-align: top;
+    font-weight: bold;
+}
+div#MaskLabelingButtonContainer>button:hover{
+    background-color: #0000FF;
+}
+div#MaskLabelingButtonContainer>button:active{
+    background-color: #FF0000;
+}

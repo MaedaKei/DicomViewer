@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lange="ja">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self'">
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="stylesheet" href="MainWindow.css" type="text/css">
+        <title>Dicom Viewer</title>
+    </head>
+    <body id="body">
+        <div id="MenuContainer">
+            <ul class="MainMenu">
+                <li><button>File</button>
+                    <ul class="SubMenu">
+                        <!--いつでも読み込んでOK-->
+                        <li><button id="CTButton">CT</button></li>
+                        <li><button id="MaskButton">MASK</button></li>
+                        <!--条件次第ではOK-->
+                        <li><button id="ContourButton">CONTOUR</button></li>
+                        <li><button id="MaskDiffButton">MASKDIFF</button></li>
+                        <!--まとめてロード-->
+                        <li><button id="MultipleLoadButton">MultipleLoad</button></li>
+                        <!--初期化-->
+                        <li><button id="ResetButton">RESET</button></li>
+                    </ul>
+                </li>
+                <li><button>Layout</button>
+                    <ul class="SubMenu">
+                        <li><button id="GridChange_Button">Change Grid</button></li>
+                        <li><button id="CanvasMove_Button">Move Block</button></li>
+                        <li><button id="ChangeAndLoad_Button">Change & Load</button></li>
+                    </ul>
+                </li>
+                <li><button id="Evaluate_Button">Evaluate</button></li>
+            </ul>
+        </div>
+        <!--ここからダイアログを定義する-->
+        <!--マスク差分用ダイアログ-->
+        <dialog id="MaskDiffSelectDialog">
+            <h3>Mask Select Mode</h3>
+            <div class="MaskDiffSelectContainer">
+                <div>
+                    <label for="maskA">Mask A</label>
+                    <select id="maskA"></select>
+                </div>
+                <div>
+                   <label for="maskB">Mask B</label>
+                    <select id="maskB"></select>
+                </div>
+            </div>
+            <div class="MaskDiffButtonContainer">
+                <button id="MaskDiffConfirmButton" value="confirm" type="submit">確定</button>
+                <button id="MaskDiffCancelButton" value="cancel" type="submit">キャンセル</button>
+            </div>
+        </dialog>
+        <dialog id="MultipleLoadDialog">
+            <div id="MultipleLoadPathContainer">
+                <!--どのデータタイプを読み込めるかはアップデート時に変化するのでJSの方でここは初期化する-->
+                <!--ここはスクロール可能な状態にしてダイアログが縦に伸びるのを防ぐ-->
+            </div>
+            <div id="MultipleLoadButtonContainer">
+                <button id="MultipleLoadConfirmButton">読み込み</button>
+                <button id="MultipleLoadCancelButton">キャンセル</button>
+            </div>
+        </dialog>
+        <!--格子配置変更ダイアログ-->
+        <dialog id="GridChangeDialog">
+            <h3>GridChange</h3>
+            <div class="GridChangeInputContainer">
+                <div id="RowsInputContainer">
+                    <label for="RowsInput">Rows ⇩</label>
+                    <input type="number" id="RowsInput" value="1" min="1" step="1"></input>
+                </div>
+                <div id="ColumnsInputContainer">
+                    <label for="ColumnsInput">Columns ⇨</label>
+                    <input type="number" id="ColumnsInput" value="1" min="1" step="1"></input>
+                </div>
+            </div>
+            <div class="GridChangeButtonContainer">
+                <button id="GridChangeConfirmButton">変更</button>
+                <button id="GridChangeFinishButton" >キャンセル</button>
+             </div>
+        </dialog>
+        <!--キャンバス移動ダイアログ-->
+        <dialog id="CanvasMoveDialog">
+            <h3>CanvasMove</h3>
+            <div id="CanvasMoveSelecterContainer"></div>
+            <div class="CanvasMoveButtonContainer">
+                <button id="CanvasMoveConfirmButton">交換</button>
+                <button id="CanvasMoveCancelButton">キャンセル</button>
+            </div>
+        </dialog>
+        <!--パス変更＆一括読み込みダイアログ-->
+        <dialog id="ChangeAndLoadDialog">
+            <h3>パス一括変更</h3>
+            <div id="ChangeAndLoadCurrentPassContainer">
+                <!--ここはスクロール可能にする-->
+            </div>
+            <div id="ChangeTextContainer">
+                <textarea id="ChangeAndLoadChangeText"></textarea>
+            </div>
+            <div id="ChangeAndLoadButtonContainer">
+                <button id="ChangeAndLoadConfirmButton">読み込み</button>
+                <button id="ChangeAndLoadCancelButton">キャンセル</button>
+            </div>
+        </dialog>
+        <div id="CanvasContainer"></div>
+
+        <script src="../node_modules/dicom-parser/dist/dicomParser.js"></script>
+        <script src="../node_modules/cornerstone-core/dist/cornerstone.js"></script>
+        <script src="../node_modules/cornerstone-wado-image-loader/dist/cornerstoneWADOImageLoaderNoWebWorkers.bundle.min.js"></script>
+        <script src="MainWindowRenderer.js"></script>
+    </body>
+</html>
