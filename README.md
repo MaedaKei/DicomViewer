@@ -1,13 +1,39 @@
-# DicomViewer
-## 1.必要なツールのインストール  
-Node.js  
-Git  
-## 2.レポジトリのクローン  
-git clone https://github.com/MaedaKei/DicomViewer.git  
-cd DicomViewer  
-## 3.依存関係のインストール  
-npm ci  
-## 4.開発環境でのアプリの起動  
-npm run start  
-## 5.アプリのビルド
-npm run build
+# CT-Analyzer: DICOM画像解析ツール
+## 概要
+DICOM画像の表示・解析ができるビューワです。
+## セットアップ
+### 前提条件
+- node.js v22.18.0
+- npm 10.9.3
+### インストール
+1. リポジトリをクローン
+```bash
+git clone <repository-url>
+cd DicomViewer
+```
+
+2. 依存関係をインストール
+リポジトリをクローンして作成されたディレクトリに移動し、以下のコマンドを実行する。
+リポジトリ内のpackage-lock.jsonをもとに必要なパッケージをインストールします。
+```bash
+npm ci
+```
+## トラブルシューティング
+
+### よくある問題
+
+## ライセンス
+
+MIT License
+
+## サポート
+問題報告はissuesにて受付中(2025/11/15現在)
+##メモ
+2025/11/14時点：
+CT画像、セグメンテーションマスク、セグメンテーションマスクの差分画像を表示可能。
+評価指標はセグメンテーションマスク用のVolumetricDSCを搭載済み。
+今後の実装予定：
+1．セグメンテーションマスク用の評価指標HD
+2．輪郭データ対応
+3．症例の一括変更機能
+4．線量分布対応　
