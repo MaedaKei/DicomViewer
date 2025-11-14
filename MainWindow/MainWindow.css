@@ -53,7 +53,7 @@ ul.MainMenu li button{
     text-decoration:none;
     vertical-align: top;
 }
-ul.MainMenu li button#MultipleLoadButton{
+ul.MainMenu li button#MultiTypeLoadButton{
     color:rgb(95,95,245);
 }
 ul.MainMenu li button#ResetButton{
@@ -68,7 +68,7 @@ ul.MainMenu li button:active{
     background-color: #9c9c9c;
     color:black;
 }
-ul.MainMenu li button#MultipleLoadButton:active{
+ul.MainMenu li button#MultiTypeLoadButton:active{
     color:blue;
 }
 ul.MainMenu li button#ResetButton:active{

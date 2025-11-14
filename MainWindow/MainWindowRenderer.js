@@ -2786,8 +2786,8 @@ class Canvas{
 */
 class LoadAndLayout{ 
     /*静的メソッドとしてファイルパス読み込み関数を提供する*/
-    static async SelectPathes(PathType="openDirectory",MultipleLoad=""){
-        const LoadingPathList=await window.DicomLoadAPI.selectFiles([PathType,MultipleLoad]);
+    static async SelectPathes(PathType="openDirectory",MultiTypeLoad=""){
+        const LoadingPathList=await window.DicomLoadAPI.selectFiles([PathType,MultiTypeLoad]);
         return LoadingPathList;
     }
     static async LoadFiles(loadingPath){
@@ -2918,8 +2918,8 @@ class LoadAndLayout{
                 this.LoadDialogOpen(99999,"CONTOUR");
             }
         });
-        this.MultipleLoadButton=document.getElementById("MultipleLoadButton");
-        this.EventSetHelper(this.MultipleLoadButton,"mouseup",async (e)=>{
+        this.MultiTypeLoadButton=document.getElementById("MultiTypeLoadButton");
+        this.EventSetHelper(this.MultiTypeLoadButton,"mouseup",async (e)=>{
             if(e.button===0){
                 this.LoadDialogOpen(99999,"AllDataType");
             }

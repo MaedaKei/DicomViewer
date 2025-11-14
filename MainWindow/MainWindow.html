@@ -19,7 +19,7 @@
                         <li><button id="ContourButton">CONTOUR</button></li>
                         <li><button id="MaskDiffButton">MASKDIFF</button></li>
                         <!--まとめてロード-->
-                        <li><button id="MultipleLoadButton">MultipleLoad</button></li>
+                        <li><button id="MultiTypeLoadButton">MultiTypeLoad</button></li>
                         <!--初期化-->
                         <li><button id="ResetButton">RESET</button></li>
                     </ul>
@@ -53,14 +53,14 @@
                 <button id="MaskDiffCancelButton" value="cancel" type="submit">キャンセル</button>
             </div>
         </dialog>
-        <dialog id="MultipleLoadDialog">
-            <div id="MultipleLoadPathContainer">
+        <dialog id="MultiTypeLoadDialog">
+            <div id="MultiTypeLoadPathContainer">
                 <!--どのデータタイプを読み込めるかはアップデート時に変化するのでJSの方でここは初期化する-->
                 <!--ここはスクロール可能な状態にしてダイアログが縦に伸びるのを防ぐ-->
             </div>
-            <div id="MultipleLoadButtonContainer">
-                <button id="MultipleLoadConfirmButton">読み込み</button>
-                <button id="MultipleLoadCancelButton">キャンセル</button>
+            <div id="MultiTypeLoadButtonContainer">
+                <button id="MultiTypeLoadConfirmButton">読み込み</button>
+                <button id="MultiTypeLoadCancelButton">キャンセル</button>
             </div>
         </dialog>
         <!--格子配置変更ダイアログ-->
