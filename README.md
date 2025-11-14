@@ -1,4 +1,4 @@
-# CT-Analyzer: DICOM画像解析ツール
+# DicomViewer
 ## 概要
 DICOM画像の表示・解析ができるビューワです。
 ## セットアップ
