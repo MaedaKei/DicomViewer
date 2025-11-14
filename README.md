@@ -8,7 +8,7 @@ DICOM画像の表示・解析ができるビューワです。
 ### インストール
 1. リポジトリをクローン
 ```bash
-git clone <repository-url>
+git clone DicomViewer
 cd DicomViewer
 ```
 
