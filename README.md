@@ -10,10 +10,10 @@ WindowsOS上での使用を想定しています。
 - npm 10.9.3
 ### インストール
 1. リポジトリをクローン
-Windowsのコマンドプロンプトを起動後、任意のディレクトリに移動した後、以下のコマンドでリポジトリをクローンします。
+Windowsのコマンドプロンプトを起動後、任意のディレクトリに移動した後、以下のコマンドでリポジトリをクローンします。URLはその都度ご確認ください。
 クローンするとDicomViewer(クローン時点のこのレポジトリの名前)のディレクトリが作成されます。
 ```bash
-git clone DicomViewer
+git clone https://github.com/MaedaKei/DicomViewer
 cd DicomViewer
 ```
 2. 依存関係をインストール
