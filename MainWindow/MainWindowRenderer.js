@@ -1253,7 +1253,16 @@ class MASKDIFFclass{
         MASKDIFF
         loadPath=`{CanvasID}vs{CanvasID}`;
         これをそのまま吐き出す
-        */  
+        */ 
+        /*
+        const CanvasIDList=loadPath.split("vs").map(CanvasID=>parseInt(CanvasID));
+        const MaskADataID=CanvasClassDictionary.get(CanvasIDList[0]).LayerDataMap.get("MASK").get("DataID");
+        const MaskBDataID=CanvasClassDictionary.get(CanvasIDList[1]).LayerDataMap.get("MASK").get("DataID");
+        const LoadingResult=new Map([
+            ["MaskADataID",MaskADataID],
+            ["MaskBDataID",MaskBDataID]
+        ]);
+        */
         const LoadingResult=loadPath;
         return LoadingResult;//一度外部で読み込まれたかのチェックを受けてからコンストラクタに入る
     }
@@ -1349,10 +1358,14 @@ class MASKDIFFclass{
     }
 
     constructor(loadPath,loadedData){
-        //他のクラスと形式を合わせるためにこのような引数名になっているが中身はCIDのMap A,Bの順番
-        //このクラスはloadPathとloadedDataが同じになる
-        //loadedData=loadPath=`${CanvasID}vs${CanvasID}`
+        /*
+        このクラスはloadPathが"CanvasIDvsCanvasID"の形式である
+        loadedDataも同様である
+        */
         this.Path=loadPath;
+        //const CanvasIDList=loadedData.split("vs").map(CanvasID=>parseInt(CanvasID));
+        //const MaskADataID=CanvasClassDictionary.get(CanvasIDList[0]).LayerDataMap.get("MASK").get("DataID");
+        //const MaskBDataID=CanvasClassDictionary.get(CanvasIDList[1]).LayerDataMap.get("MASK").get("DataID");
         const CanvasIDList=loadedData.split("vs").map(CanvasID=>parseInt(CanvasID));
         const MaskADataID=CanvasClassDictionary.get(CanvasIDList[0]).LayerDataMap.get("MASK").get("DataID");
         const MaskBDataID=CanvasClassDictionary.get(CanvasIDList[1]).LayerDataMap.get("MASK").get("DataID");
@@ -2822,7 +2835,11 @@ class LoadAndLayout{
             this.DisplayHeight=height;
             //console.log(DisplayWidth,DisplayHeight);
         });
-        /*データロード用*/
+        /*
+        データロード用のデータクラスマップ
+        同時にデータを読み込む際の優先度順にもなっている
+        */
+        
         this.DataClassMap=new Map([
             [CTclass.DataType,CTclass],
             [MASKclass.DataType,MASKclass],
@@ -3091,7 +3108,70 @@ class LoadAndLayout{
             this.CanvasMoveSelecterContainer.innerHTML="";
             this.CanvasMoveDialog.close();
         });
-        //console.log("LoadAndLayout 初期設定完了");
+        /*ChangeAndLoad*/
+        this.ChangeAndLoadButton=document.getElementById("ChangeAndLoadButton");
+        this.ChangeAndLoadDialog=document.getElementById("ChangeAndLoadDialog");
+        this.ChangeAndLoadPathContainer=document.getElementById("ChangeAndLoadPathContainer");
+        this.ChangeAndLoadTargetInput1=document.getElementById("ChangeAndLoadTargetInput1");
+        this.ChangeAndLoadTargetInput2=document.getElementById("ChangeAndLoadTargetInput2");
+        this.ChangeAndLoadConfirmButton=document.getElementById("ChangeAndLoadConfirmButton");
+        this.ChangeAndLoadCancelButton=document.getElementById("ChangeAndLoadCancelButton");
+        this.EventSetHelper(this.ChangeAndLoadButton,"mouseup",(e)=>{
+            if(e.button===0){
+                this.ChangeAndLoadPathContainer.innerHTML="";
+                const ChangeAndLoadPathContainerFragment=document.createDocumentFragment();
+                //Canvasをチェックしてパス名の一覧を作成
+                for(const [CanvasID,CanvasClass] of CanvasClassDictionary.entries()){
+                    const CanvasLoadedInfoContainer=document.createElement("div");
+                    CanvasLoadedInfoContainer.className="CanvasLoadedInfoContainer";
+                    const CanvasLoadedInfoContainerFragment=document.createDocumentFragment();
+                    //CanvasPathContainerに各パーツを配置していく
+                    const CanvasIDDisplay=document.createElement("div");
+                    CanvasIDDisplay.className="CanvasIDDisplay";
+                    CanvasIDDisplay.textContent=`CanvasID : ${CanvasID}`;
+                    CanvasLoadedInfoContainerFragment.appendChild(CanvasIDDisplay);
+                    //PathLineをまとめるContainer
+                    const DataTypeIDPathContainer=document.createElement("div");
+                    DataTypeIDPathContainer.className="DataTypeIDPathContainer";
+                    const DataTypeIDPathContainerFragment=document.createDocumentFragment();
+
+                    const LayerDataMap=CanvasClass.LayerDataMap;
+                    for(const [DataType,LayerData] of LayerDataMap.entries()){
+                        const DataID=LayerData.get("DataID");
+                        const Path=DicomDataClassDictionary.get(DataType).get(DataID).get("Data").Path;
+                        const DataTypeIDPathLine=document.createElement("div");
+                        DataTypeIDPathLine.className="DataTypeIDPathLine";
+                        const DataTypeIDDisplay=document.createElement("div");
+                        DataTypeIDDisplay.className="DataTypeIDDisplay";
+                        DataTypeIDDisplay.textContent=`${DataType}:${DataID}`;
+                        const PathDisplay=document.createElement("div");
+                        PathDisplay.className="PathDisplay";
+                        PathDisplay.textContent=Path;
+                        const fragment=document.createDocumentFragment();
+                        fragment.appendChild(DataTypeIDDisplay);
+                        fragment.appendChild(PathDisplay);
+                        DataTypeIDPathLine.appendChild(fragment);
+                        DataTypeIDPathContainerFragment.appendChild(DataTypeIDPathLine);
+                    }
+                    DataTypeIDPathContainer.appendChild(DataTypeIDPathContainerFragment);
+                    CanvasLoadedInfoContainerFragment.appendChild(DataTypeIDPathContainer);
+                    CanvasLoadedInfoContainer.appendChild(CanvasLoadedInfoContainerFragment);
+                    ChangeAndLoadPathContainerFragment.appendChild(CanvasLoadedInfoContainer);
+                }
+                this.ChangeAndLoadPathContainer.appendChild(ChangeAndLoadPathContainerFragment);
+                this.ChangeAndLoadDialog.showModal();
+            }
+        });
+        this.EventSetHelper(this.ChangeAndLoadConfirmButton,"mouseup",(e)=>{
+            if(e.button===0){
+                this.ChangeAndLoadDialog.close();
+            }
+        });
+        this.EventSetHelper(this.ChangeAndLoadCancelButton,"mouseup",(e)=>{
+            if(e.button===0){
+                this.ChangeAndLoadDialog.close();
+            }
+        });
     }
     /*ダイアログの開閉に関するメソッド*/
     LoadDialogClose(){

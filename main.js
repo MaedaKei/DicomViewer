@@ -17,7 +17,7 @@ function createMainWindow(){
     });
     WindowManager.set("MainWindow",MainWindow);
     MainWindow.removeMenu();
-    //MainWindow.webContents.openDevTools({mode: 'detach'});
+    MainWindow.webContents.openDevTools({mode: 'detach'});
     MainWindow.loadFile(path.join("MainWindow","MainWindow.html"));
     /*
     ipcMain.on("FromMainToMainProcess",(event,data)=>{

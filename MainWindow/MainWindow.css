@@ -509,3 +509,125 @@ dialog#LoadDialog>div#LoadDialogButtonContainer>button:active{
     background-color: #2f93c9;
     color:black;
 }
+
+/*ChangeAndLoadDialog*/
+dialog#ChangeAndLoadDialog{
+    --PathContainerHeight:300px;
+    --TargetContainerHeight:30px;
+    --ButtonContainerHeight:40px;
+    width:600px;
+    height:calc(var(--PathContainerHeight) + var(--TargetContainerHeight) + var(--ButtonContainerHeight) + 2px);
+    background-color: rgb(255, 255, 255);
+}
+dialog#ChangeAndLoadDialog>div#ChangeAndLoadPathContainer{
+    width:100%;
+    height:var(--PathContainerHeight);
+    max-height: var(--PathContainerHeight);
+    overflow-y:scroll;
+    display:flex;
+    flex-direction: column;
+}
+div#ChangeAndLoadPathContainer>div.CanvasLoadedInfoContainer{
+    width: 100%;
+    height:auto;/*読み込み状況によっては中身の要素の量が変わるから*/
+    display:flex;
+    flex-direction: column;
+}
+div#ChangeAndLoadPathContainer>div.CanvasLoadedInfoContainer>div.CanvasIDDisplay{
+    width:100%;
+    height:20px;
+    font-size:12px;
+    font-weight: bold;
+    background-color: rgb(104, 7, 128);
+    color:white;
+    text-align:left;
+    vertical-align: top;
+}
+div#ChangeAndLoadPathContainer>div.CanvasLoadedInfoContainer>div.DataTypeIDPathContainer{
+    width:100%;
+    /*height:20px;*/
+    max-width: 100%;
+    overflow-x:auto;
+    display: flex;
+    flex-direction: column;
+}
+div#ChangeAndLoadPathContainer>div.CanvasLoadedInfoContainer>div.DataTypeIDPathContainer>div.DataTypeIDPathLine{
+    min-width: 100%;
+    height:30px;
+    display: flex;
+    flex-direction: row;
+    --DataTypeIDDisplayWidth:120px;
+    --PathDisplayWidth:calc(100% - var(--DataTypeIDDisplayWidth));
+}
+div#ChangeAndLoadPathContainer>div.CanvasLoadedInfoContainer>div.DataTypeIDPathContainer>div.DataTypeIDPathLine>div.DataTypeIDDisplay{
+    width:var(--DataTypeIDDisplayWidth);
+    height:100%;
+    font-size: 15px;
+    background-color: #504f4f;
+    color:white;
+    border:1px solid black;
+    text-align: center;
+}
+div#ChangeAndLoadPathContainer>div.CanvasLoadedInfoContainer>div.DataTypeIDPathContainer>div.DataTypeIDPathLine>div.PathDisplay{
+    width:var(--PathDisplayWidth);
+    height:100%;
+    padding:1px;
+    font-size: 15px;
+    background-color: rgb(175, 175, 175);
+    color:black;
+    border:1px solid black;
+    text-align: left;
+    vertical-align: top;
+}
+dialog#ChangeAndLoadDialog>div#ChangeAndLoadTargetContainer{
+    width:100%;
+    height:var(--TargetContainerHeight);
+    display: flex;
+    flex-direction: row;
+    --ChangeAndLoadTargetInputSeparaterWidth:80px;
+    --ChangeAndLoadTargetInputWidth:calc((100% - var(--ChangeAndLoadTargetInputSeparaterWidth)) / 2);
+}
+div#ChangeAndLoadTargetContainer>input[type="text"]{
+    width:var(--ChangeAndLoadTargetInputWidth);
+    height:100%;
+    padding:1px;
+    font-size: 20px;
+    vertical-align: top;
+    border: 1px solid black;
+}
+div#ChangeAndLoadTargetContainer>div{
+    width:var(--ChangeAndLoadTargetInputSeparaterWidth);
+    height:100%;
+    padding:2px;
+    font-size: 12px;
+    font-weight: bold;
+    background-color: #529395;
+    color:white;
+    text-align: center;
+    vertical-align: top;
+    border: 1px solid black;
+}
+dialog#ChangeAndLoadDialog>div#ChangeAndLoadButtonContainer{
+    width:100%;
+    height:var(--ButtonContainerHeight);
+    display: flex;
+    flex-direction: row;
+}
+div#ChangeAndLoadButtonContainer>button{
+    width:50%;
+    height:100%;
+    padding: 2px;
+    font-size:20px;
+    font-weight: bold;
+    text-align: center;
+    vertical-align: top;
+    background-color: rgb(95, 96, 95);
+    color:white;
+    border: 1px solid black;
+}
+div#ChangeAndLoadButtonContainer>button:hover{
+    background-color: rgb(229, 155, 155);
+}
+div#ChangeAndLoadButtonContainer>button:active{
+    color:rgb(38, 237, 38);
+}
