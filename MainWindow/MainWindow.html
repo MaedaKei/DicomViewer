@@ -64,22 +64,6 @@
                 <button id="MultiTypeLoadCancelButton">キャンセル</button>
             </div>
         </dialog>
-        <!--パス一括変更ダイアログ-->
-        <dialog id="ChangeAndLoadButton">
-            <div id="ChangeAndLoadPathContainer">
-                <!--CanvasIDごとに読み込まれているDataType,DataID,Pathをまとめて表示する-->
-            </div>
-            <div id="ChangeAndLoadTargetContainer">
-                <!--変更対象とするパスのパーツと変更後のパスのパーツを表示-->
-                <input type="text" id="ChangeAndLoadTargetInput1">
-                <div>vs</div>
-                <input type="text" id="ChangeAndLoadTargetInput2">
-            </div>
-            <div id="ChangeAndLoadButtonContainer">
-                <button id="ChangeAndLoadConfirmButton">変更</button>
-                <button id="ChangeAndLoadCancelButton">キャンセル</button>
-            </div>
-        </dialog>
         <!--格子配置変更ダイアログ-->
         <dialog id="GridChangeDialog">
             <h3>GridChange</h3>
@@ -107,17 +91,19 @@
                 <button id="CanvasMoveCancelButton">キャンセル</button>
             </div>
         </dialog>
-        <!--パス変更＆一括読み込みダイアログ-->
+        <!--パス一括変更ダイアログ-->
         <dialog id="ChangeAndLoadDialog">
-            <h3>パス一括変更</h3>
-            <div id="ChangeAndLoadCurrentPassContainer">
-                <!--ここはスクロール可能にする-->
+            <div id="ChangeAndLoadPathContainer">
+                <!--CanvasIDごとに読み込まれているDataType,DataID,Pathをまとめて表示する-->
             </div>
-            <div id="ChangeTextContainer">
-                <textarea id="ChangeAndLoadChangeText"></textarea>
+            <div id="ChangeAndLoadTargetContainer">
+                <!--変更対象とするパスのパーツと変更後のパスのパーツを表示-->
+                <input type="text" id="ChangeAndLoadTargetInput1">
+                <div>vs</div>
+                <input type="text" id="ChangeAndLoadTargetInput2">
             </div>
             <div id="ChangeAndLoadButtonContainer">
-                <button id="ChangeAndLoadConfirmButton">読み込み</button>
+                <button id="ChangeAndLoadConfirmButton">変更</button>
                 <button id="ChangeAndLoadCancelButton">キャンセル</button>
             </div>
         </dialog>
