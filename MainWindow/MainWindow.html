@@ -26,12 +26,12 @@
                 </li>
                 <li><button>Layout</button>
                     <ul class="SubMenu">
-                        <li><button id="GridChange_Button">Change Grid</button></li>
-                        <li><button id="CanvasMove_Button">Move Block</button></li>
-                        <li><button id="ChangeAndLoad_Button">Change & Load</button></li>
+                        <li><button id="GridChangeButton">Change Grid</button></li>
+                        <li><button id="CanvasMoveButton">Move Block</button></li>
+                        <li><button id="ChangeAndLoadButton">Change & Load</button></li>
                     </ul>
                 </li>
-                <li><button id="Evaluate_Button">Evaluate</button></li>
+                <li><button id="EvaluateButton">Evaluate</button></li>
             </ul>
         </div>
         <!--ここからダイアログを定義する-->
@@ -53,6 +53,7 @@
                 <button id="MaskDiffCancelButton" value="cancel" type="submit">キャンセル</button>
             </div>
         </dialog>
+        <!--データ読み込みダイアログ-->
         <dialog id="MultiTypeLoadDialog">
             <div id="MultiTypeLoadPathContainer">
                 <!--どのデータタイプを読み込めるかはアップデート時に変化するのでJSの方でここは初期化する-->
@@ -61,6 +62,22 @@
             <div id="MultiTypeLoadButtonContainer">
                 <button id="MultiTypeLoadConfirmButton">読み込み</button>
                 <button id="MultiTypeLoadCancelButton">キャンセル</button>
+            </div>
+        </dialog>
+        <!--パス一括変更ダイアログ-->
+        <dialog id="ChangeAndLoadButton">
+            <div id="ChangeAndLoadPathContainer">
+                <!--CanvasIDごとに読み込まれているDataType,DataID,Pathをまとめて表示する-->
+            </div>
+            <div id="ChangeAndLoadTargetContainer">
+                <!--変更対象とするパスのパーツと変更後のパスのパーツを表示-->
+                <input type="text" id="ChangeAndLoadTargetInput1">
+                <div>vs</div>
+                <input type="text" id="ChangeAndLoadTargetInput2">
+            </div>
+            <div id="ChangeAndLoadButtonContainer">
+                <button id="ChangeAndLoadConfirmButton">変更</button>
+                <button id="ChangeAndLoadCancelButton">キャンセル</button>
             </div>
         </dialog>
         <!--格子配置変更ダイアログ-->

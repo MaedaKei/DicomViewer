@@ -2964,7 +2964,7 @@ class LoadAndLayout{
             },200);
         });
         //GridChange用
-        this.GridChange_Button=document.getElementById("GridChange_Button");
+        this.GridChangeButton=document.getElementById("GridChangeButton");
         this.GridChangeDialog=document.getElementById("GridChangeDialog");
         this.RowsInputContainer=document.getElementById("RowsInputContainer");
         this.RowsInput=document.getElementById("RowsInput");
@@ -2975,7 +2975,7 @@ class LoadAndLayout{
         //初期化
         this.ResetLayoutStatus(true);
 
-        this.EventSetHelper(this.GridChange_Button,"mouseup",()=>{
+        this.EventSetHelper(this.GridChangeButton,"mouseup",()=>{
             this.GridChangeDialog.showModal();
         });
         this.EventSetHelper(this.RowsInput,"focus",()=>{
@@ -3027,12 +3027,12 @@ class LoadAndLayout{
             if(e.code==="Enter")this.GridChangeDialog.close();
         });
         //CanvasMoveダイアログ用
-        this.CanvasMove_Button=document.getElementById("CanvasMove_Button");
+        this.CanvasMoveButton=document.getElementById("CanvasMoveButton");
         this.CanvasMoveDialog=document.getElementById("CanvasMoveDialog");
         this.CanvasMoveSelecterContainer=document.getElementById("CanvasMoveSelecterContainer");
         this.CanvasMoveConfirmButton=document.getElementById("CanvasMoveConfirmButton");
         this.CanvasMoveCancelButton=document.getElementById("CanvasMoveCancelButton");
-        this.EventSetHelper(this.CanvasMove_Button,"mouseup",()=>{
+        this.EventSetHelper(this.CanvasMoveButton,"mouseup",()=>{
             //SelectorContainerの格子を更新する
             //CanvasContainer.style.gridTemplateColumns=`repeat(${this.currentColumns},1fr)`;
             //CanvasContainer.style.gridTemplateRows=`{repeat(${this.currentRows},1fr)}`;
@@ -3405,8 +3405,8 @@ function OrderSubWindowOpen(SendingData){
     });
 }
 /*
-const Evaluate_Button=document.getElementById("Evaluate_Button");
-Evaluate_Button.addEventListener("mouseup",(e)=>{
+const EvaluateButton=document.getElementById("EvaluateButton");
+EvaluateButton.addEventListener("mouseup",(e)=>{
     if(e.button==0){//左クリックだったら
         OrderEvaluateWindowOpen();
     }
@@ -3421,12 +3421,12 @@ class Evaluate{
         return String.split(delimita);
     }
     constructor(){
-        this.Evaluate_Button=document.getElementById("Evaluate_Button");
+        this.EvaluateButton=document.getElementById("EvaluateButton");
         this.setUserEvents();
         //Evaluate機能は削除されたりしないのでEventsethelperは不要
     }
     setUserEvents(){
-        this.Evaluate_Button.addEventListener("mouseup",(e)=>{
+        this.EvaluateButton.addEventListener("mouseup",(e)=>{
             if(e.button==0){
                 //評価可能かチェック
                 if(CanvasClassDictionary.size>0 || true){
