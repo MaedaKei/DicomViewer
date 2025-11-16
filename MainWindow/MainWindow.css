@@ -523,58 +523,73 @@ dialog#ChangeAndLoadDialog{
 dialog#ChangeAndLoadDialog>div#ChangeAndLoadPathContainer{
     width:100%;
     height:var(--PathContainerHeight);
-    overflow-y:scroll;
-    display:flex;
-    flex-direction: column;
-}
-div#ChangeAndLoadPathContainer>div.CanvasLoadInfoContainer{
-    width:100%;
-    /*height*/
-    display:flex;
-    flex-direction: column;
-}
-div#ChangeAndLoadPathContainer>div.CanvasLoadInfoContainer>div.CanvasIDDisplay{
-    width:100%;
-    height:20px;
-    font-size:15px;
-    background-color: #7500c8;
-    color:white;
-    text-align: left;
-    vertical-align: top;
-}
-div#ChangeAndLoadPathContainer>div.CanvasLoadInfoContainer>div.DataTypeIDPathContainer{
-    width:100%;
-    overflow-x:auto;
-    /*heightはパスラインが増減するから*/
-    display:flex;
-    flex-direction: column;
-}
-div#ChangeAndLoadPathContainer>div.CanvasLoadInfoContainer>div.DataTypeIDPathContainer>div.DataTypeIDPathLine{
-    height:30px;
     display: flex;
-    flex-direction: row;
-    --DataTypeIDDisplayWidth:90px;
-    --PathDisplayWidth:calc(100% - var(--DataTypeIDDisplayWidth));
-}
-div#ChangeAndLoadPathContainer>div.CanvasLoadInfoContainer>div.DataTypeIDPathContainer>div.DataTypeIDPathLine>div.DataTypeIDDisplay{
-    width:var(--DataTypeIDDisplayWidth);
-    height:100%;
+    flex-direction: column;
     background-color: gray;
-    color:white;
-    font-size:12px;
-    border:1px solid black;
 }
-div#ChangeAndLoadPathContainer>div.CanvasLoadInfoContainer>div.DataTypeIDPathContainer>div.DataTypeIDPathLine>div.PathDisplay{
-    width:var(--PathDisplayWidth);
-    height:100%;
-    padding:2px;
-    background-color: white;
-    color:black;
-    font-size:12px;
-    font-weight: bold;
-    border:1px solid black;
+div#ChangeAndLoadPathContainer>div.CanvasInfoContainer{
+    width:100%;
+    /*heightは可変*/
+    display:flex;
+    flex-direction: column;
+}
+div#ChangeAndLoadPathContainer>div.CanvasInfoContainer>div.CanvasIDDisplay{
+    width:100%;
+    height:30px;
+    background-color: rgb(95, 0, 95);
+    color:white;
+    font-size:20px;
+    font-weight:bold;
+    text-align: center;
     vertical-align: top;
-    text-align: left;
+}
+div#ChangeAndLoadPathContainer>div.CanvasInfoContainer>div.DataTypeIDPathContainer{
+    width:100%;
+    /*heightは可変*/
+    display:flex;
+    flex-direction: row;
+    --DataTypeIDPathLineHeight:25px;
+    --DataTypeIDPathLineFontSize:12px;
+    --DataTypeIDDisplayContainerWidth:120px;
+    --PathDisplayContainerWidth:calc(100% - var(--DataTypeIDContainerWidth));
+}
+div#ChangeAndLoadPathContainer>div.CanvasInfoContainer>div.DataTypeIDPathContainer>div.DataTypeIDDisplayContainer{
+    width:var(--DataTypeIDDisplayContainerWidth);
+    /*heightは可変*/
+    display: flex;
+    flex-direction: column;
+    overflow-x: scroll;
+}
+div#ChangeAndLoadPathContainer>div.CanvasInfoContainer>div.DataTypeIDPathContainer>div.DataTypeIDDisplayContainer>div.DataTypeIDDisplay{
+    width:100%;
+    height:var(--DataTypeIDPathLineHeight);
+    padding:2px;
+    background-color: rgb(63, 63, 63);
+    color:white;
+    font-size:var(--DataTypeIDPathLineFontSize);
+    font-weight: bold;
+    text-align: center;
+    vertical-align: top;
+    border: 1px solid black;
+}
+div#ChangeAndLoadPathContainer>div.CanvasInfoContainer>div.DataTypeIDPathContainer>div.PathDisplayContainer{
+    width:var(--PathDisplayContainerWidth);
+    /*heightは可変*/
+    display:flex;
+    flex-direction: column;
+    overflow-x: scroll;
+}
+div#ChangeAndLoadPathContainer>div.CanvasInfoContainer>div.DataTypeIDPathContainer>div.PathDisplayContainer>div.PathDisplay{
+    /*widthはJSにてファイルパス文字列の長さに応じて決定*/
+    height:var(--DataTypeIDPathLineHeight);
+    background-color: white;
+    padding:2px;
+    color:black;
+    font-size: var(--DataTypeIDPathLineFontSize);
+    font-weight: bold;
+    text-align:left;
+    vertical-align: top;
+    border: 1px solid black;
 }
 /*ChangeAndLoadDialogの変更対象を記述するコンテナ*/
 dialog#ChangeAndLoadDialog>div#ChangeAndLoadTargetContainer{
@@ -588,7 +603,7 @@ dialog#ChangeAndLoadDialog>div#ChangeAndLoadTargetContainer{
 div#ChangeAndLoadTargetContainer>input[type="text"]{
     width:var(--ChangeAndLoadTargetInputWidth);
     height:100%;
-    padding:1px;
+    padding:5px;
     font-size: 20px;
     vertical-align: top;
     border: 1px solid black;

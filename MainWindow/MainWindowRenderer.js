@@ -3119,8 +3119,8 @@ class LoadAndLayout{
         this.EventSetHelper(this.ChangeAndLoadButton,"mouseup",(e)=>{
             if(e.button===0){
                 this.ChangeAndLoadPathContainer.innerHTML="";
-                const ChangeAndLoadPathContainerFragment=document.createDocumentFragment();
                 //Canvasをチェックしてパス名の一覧を作成
+                const ChangeAndLoadPathContainerFragment=document.createDocumentFragment();
                 for(const [CanvasID,CanvasClass] of CanvasClassDictionary.entries()){
                     const LayerDataMap=CanvasClass.LayerDataMap;
                     let MaxPathLength=0;
@@ -3139,43 +3139,43 @@ class LoadAndLayout{
                             MaxPathLength=Math.max(MaxPathLength,PathLength);
                         }
                     }
-                    //console.log(DisplayDataList);
-                    const CanvasLoadedInfoContainer=document.createElement("div");
-                    CanvasLoadedInfoContainer.className="CanvasLoadInfoContainer";
-                    const CanvasLoadedInfoContainerFragment=document.createDocumentFragment();
-                    //CanvasPathContainerに各パーツを配置していく
+                    const CanvasInfoContainer=document.createElement("div");
+                    CanvasInfoContainer.className="CanvasInfoContainer";
+                    const CanvasInfoContainerFragment=document.createDocumentFragment();
                     const CanvasIDDisplay=document.createElement("div");
                     CanvasIDDisplay.className="CanvasIDDisplay";
-                    CanvasIDDisplay.textContent=`CanvasID : ${CanvasID}`;
-                    CanvasLoadedInfoContainerFragment.appendChild(CanvasIDDisplay);
-                    //PathLineをまとめるContainer
+                    CanvasIDDisplay.textContent=`CanvasID:${CanvasID}`;
+                    CanvasInfoContainerFragment.appendChild(CanvasIDDisplay);
                     const DataTypeIDPathContainer=document.createElement("div");
                     DataTypeIDPathContainer.className="DataTypeIDPathContainer";
                     const DataTypeIDPathContainerFragment=document.createDocumentFragment();
-                    const PathDisplayWidth=parseInt(7*MaxPathLength);
+                    const DataTypeIDDisplayContainer=document.createElement("div");
+                    DataTypeIDDisplayContainer.className="DataTypeIDDisplayContainer";
+                    const DataTypeIDContainerFragment=document.createDocumentFragment();
+                    const PathDisplayContainer=document.createElement("div");
+                    PathDisplayContainer.className="PathDisplayContainer";
+                    const PathDisplayContainerFragment=document.createDocumentFragment();
+                    const PathDisplayWidth=7*MaxPathLength+10;
                     for(const DisplayData of DisplayDataList){
-                        //console.log(DisplayData);
                         const [DataType,DataID,Path]=DisplayData.values();
-                        const DataTypeIDPathLine=document.createElement("div");
-                        DataTypeIDPathLine.className="DataTypeIDPathLine";
                         const DataTypeIDDisplay=document.createElement("div");
                         DataTypeIDDisplay.className="DataTypeIDDisplay";
                         DataTypeIDDisplay.textContent=`${DataType}:${DataID}`;
+                        DataTypeIDContainerFragment.appendChild(DataTypeIDDisplay);
                         const PathDisplay=document.createElement("div");
                         PathDisplay.className="PathDisplay";
-                        //console.log(Path);
                         PathDisplay.textContent=Path;
-                        const fragment=document.createDocumentFragment();
-                        fragment.appendChild(DataTypeIDDisplay);
-                        fragment.appendChild(PathDisplay);
-                        DataTypeIDPathLine.appendChild(fragment);
-                        DataTypeIDPathLine.style.width=`${90+PathDisplayWidth}px`;
-                        DataTypeIDPathContainerFragment.appendChild(DataTypeIDPathLine);
+                        PathDisplay.style.width=`${PathDisplayWidth}px`;
+                        PathDisplayContainerFragment.appendChild(PathDisplay);
                     }
+                    DataTypeIDDisplayContainer.appendChild(DataTypeIDContainerFragment);
+                    PathDisplayContainer.appendChild(PathDisplayContainerFragment);
+                    DataTypeIDPathContainerFragment.appendChild(DataTypeIDDisplayContainer);
+                    DataTypeIDPathContainerFragment.appendChild(PathDisplayContainer);
                     DataTypeIDPathContainer.appendChild(DataTypeIDPathContainerFragment);
-                    CanvasLoadedInfoContainerFragment.appendChild(DataTypeIDPathContainer);
-                    CanvasLoadedInfoContainer.appendChild(CanvasLoadedInfoContainerFragment);
-                    ChangeAndLoadPathContainerFragment.appendChild(CanvasLoadedInfoContainer);
+                    CanvasInfoContainerFragment.appendChild(DataTypeIDPathContainer);
+                    CanvasInfoContainer.appendChild(CanvasInfoContainerFragment);
+                    ChangeAndLoadPathContainerFragment.appendChild(CanvasInfoContainer);
                 }
                 this.ChangeAndLoadPathContainer.appendChild(ChangeAndLoadPathContainerFragment);
                 this.ChangeAndLoadDialog.showModal();
