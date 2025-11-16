@@ -460,6 +460,7 @@ class CTclass{
         const dWidth=ctx.canvas.width,dHeight=ctx.canvas.height;
         ctx.clearRect(0,0,dWidth,dHeight);
         //vMin,vMaxは階調時に変更され、そのあと再描画させることで反映される
+        //console.log("呼ばれたよ");
         if(DrawStatus.get("regenerate")){
             if(this.currentImageBitmap){
                 this.currentImageBitmap.close();
@@ -1672,7 +1673,7 @@ class Canvas{
         DicomClassDictionaryの参照数の更新(インクリメント)    
         さらに新しいDataTypeの場合はコンテキストメニューの再作成
         */
-        //DataInfoMap={"DataType":,"DataID":}
+        //DataInfoMap={DataType:DataID,}
         //console.log(DataInfoMap);
         for(const [DataType,DataID] of DataInfoMap.entries()){
             //console.log("SetLayer",DataType,DataID);
@@ -1720,6 +1721,7 @@ class Canvas{
                 //新しいレイヤーが追加された＝コンテキストメニューアクティブ化
                 this.ActivateContextMenuButton(DataType);
             }
+            //this.Layerdraw(DataType);
         }
     }
     Alldraw(){
@@ -3181,9 +3183,38 @@ class LoadAndLayout{
                 this.ChangeAndLoadDialog.showModal();
             }
         });
-        this.EventSetHelper(this.ChangeAndLoadConfirmButton,"mouseup",(e)=>{
+        this.EventSetHelper(this.ChangeAndLoadConfirmButton,"mouseup",async (e)=>{
             if(e.button===0){
                 this.ChangeAndLoadDialog.close();
+                /*パスを変更する*/
+                const ChangeTarget1=this.ChangeAndLoadTargetInput1.value;
+                const ChangeTarget2=this.ChangeAndLoadTargetInput2.value;
+                for(const [DataType,DataClass] of this.DataClassMap.entries()){//定めた順番に
+                    if(DicomDataClassDictionary.has(DataType)&&DicomDataClassDictionary.get(DataType).size>0){
+                        //新しいデータを逐次読み込み＆新旧DataIDのマッピングを完成させる
+                        const OldDataIDList=[];//以下の3つはすべて同じ長さになるはず
+                        const NewPathList=[];
+                        for(const [OldDataID,DicomDataMap] of DicomDataClassDictionary.get(DataType).entries()){
+                            const OldPath=DicomDataMap.get("Data").Path;
+                            OldDataIDList.push(OldDataID);
+                            NewPathList.push(OldPath.replace(ChangeTarget1,ChangeTarget2));
+                        }
+                        //新しいPathの読み込み開始
+                        //新しいPathをまとめて読み込んでいる
+                        const NewDataIDList=await DataClass.Loading(NewPathList);
+                        const Old2NewDataIDMap=new Map(OldDataIDList.map((key,i)=>[key,NewDataIDList[i]]));
+                        //新旧DataIDのマッピングを基にSetLayerしていく
+                        for(const Canvas of CanvasClassDictionary.values()){
+                            const LayerDataMap=Canvas.LayerDataMap;
+                            if(LayerDataMap.has(DataType)){//このデータタイプの層をもっているならば
+                                const OldDataID=LayerDataMap.get(DataType).get("DataID");
+                                const NewDataID=Old2NewDataIDMap.get(OldDataID);
+                                Canvas.SetLayer(new Map([[DataType,NewDataID]]));
+                                Canvas.Layerdraw(DataType);
+                            }
+                        }
+                    }
+                }
             }
         });
         this.EventSetHelper(this.ChangeAndLoadCancelButton,"mouseup",(e)=>{
@@ -3263,10 +3294,15 @@ class LoadAndLayout{
         //TargetCanvasIDをConfirmButtonから取得
         const TargetCanvasID=parseInt(this.LoadDialogConfirmButton.getAttribute("data-TargetCanvasID"));
         //既存のCanvasIDならSetLayer、そうじゃないならCanvasを新設する
-        const TargetCanvas=CanvasClassDictionary.get(TargetCanvasID);
-        if(TargetCanvas){
+        if(CanvasClassDictionary.has(TargetCanvasID)){
+            const TargetCanvas=CanvasClassDictionary.get(TargetCanvasID);
             for(const DataInfoMap of DataInfoMapList){//ここで繰り返しは起こらないはず
                 TargetCanvas.SetLayer(DataInfoMap);
+                //一応再描画命令
+                //ただし、SetLayer内では特に再描画フラグの設定をしていないのでたとえばズームパン後にこれを行っても再描画が起こらないかも
+                for(const DataType of DataInfoMap.keys()){
+                    TargetCanvas.Layerdraw(DataType);
+                }
             }
         }else{//TargetCanvasがない＝存在しないTargetCanvasIDだった
             for(const DataInfoMap of DataInfoMapList){//
