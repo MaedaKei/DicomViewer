@@ -519,66 +519,64 @@ dialog#ChangeAndLoadDialog{
     height:calc(var(--PathContainerHeight) + var(--TargetContainerHeight) + var(--ButtonContainerHeight) + 2px);
     background-color: rgb(255, 255, 255);
 }
+/*読み込まれているCanvasIDとファイルパスを一覧で表示するコンテナ*/
 dialog#ChangeAndLoadDialog>div#ChangeAndLoadPathContainer{
     width:100%;
     height:var(--PathContainerHeight);
-    max-height: var(--PathContainerHeight);
     overflow-y:scroll;
     display:flex;
     flex-direction: column;
 }
-div#ChangeAndLoadPathContainer>div.CanvasLoadedInfoContainer{
-    width: 100%;
-    height:auto;/*読み込み状況によっては中身の要素の量が変わるから*/
+div#ChangeAndLoadPathContainer>div.CanvasLoadInfoContainer{
+    width:100%;
+    /*height*/
     display:flex;
     flex-direction: column;
 }
-div#ChangeAndLoadPathContainer>div.CanvasLoadedInfoContainer>div.CanvasIDDisplay{
+div#ChangeAndLoadPathContainer>div.CanvasLoadInfoContainer>div.CanvasIDDisplay{
     width:100%;
     height:20px;
-    font-size:12px;
-    font-weight: bold;
-    background-color: rgb(104, 7, 128);
+    font-size:15px;
+    background-color: #7500c8;
     color:white;
-    text-align:left;
-    vertical-align: top;
-}
-div#ChangeAndLoadPathContainer>div.CanvasLoadedInfoContainer>div.DataTypeIDPathContainer{
-    width:100%;
-    /*height:20px;*/
-    max-width: 100%;
-    overflow-x:auto;
-    display: flex;
-    flex-direction: column;
-}
-div#ChangeAndLoadPathContainer>div.CanvasLoadedInfoContainer>div.DataTypeIDPathContainer>div.DataTypeIDPathLine{
-    min-width: 100%;
-    height:30px;
-    display: flex;
-    flex-direction: row;
-    --DataTypeIDDisplayWidth:120px;
-    --PathDisplayWidth:calc(100% - var(--DataTypeIDDisplayWidth));
-}
-div#ChangeAndLoadPathContainer>div.CanvasLoadedInfoContainer>div.DataTypeIDPathContainer>div.DataTypeIDPathLine>div.DataTypeIDDisplay{
-    width:var(--DataTypeIDDisplayWidth);
-    height:100%;
-    font-size: 15px;
-    background-color: #504f4f;
-    color:white;
-    border:1px solid black;
-    text-align: center;
-}
-div#ChangeAndLoadPathContainer>div.CanvasLoadedInfoContainer>div.DataTypeIDPathContainer>div.DataTypeIDPathLine>div.PathDisplay{
-    width:var(--PathDisplayWidth);
-    height:100%;
-    padding:1px;
-    font-size: 15px;
-    background-color: rgb(175, 175, 175);
-    color:black;
-    border:1px solid black;
     text-align: left;
     vertical-align: top;
 }
+div#ChangeAndLoadPathContainer>div.CanvasLoadInfoContainer>div.DataTypeIDPathContainer{
+    width:100%;
+    overflow-x:auto;
+    /*heightはパスラインが増減するから*/
+    display:flex;
+    flex-direction: column;
+}
+div#ChangeAndLoadPathContainer>div.CanvasLoadInfoContainer>div.DataTypeIDPathContainer>div.DataTypeIDPathLine{
+    height:30px;
+    display: flex;
+    flex-direction: row;
+    --DataTypeIDDisplayWidth:90px;
+    --PathDisplayWidth:calc(100% - var(--DataTypeIDDisplayWidth));
+}
+div#ChangeAndLoadPathContainer>div.CanvasLoadInfoContainer>div.DataTypeIDPathContainer>div.DataTypeIDPathLine>div.DataTypeIDDisplay{
+    width:var(--DataTypeIDDisplayWidth);
+    height:100%;
+    background-color: gray;
+    color:white;
+    font-size:12px;
+    border:1px solid black;
+}
+div#ChangeAndLoadPathContainer>div.CanvasLoadInfoContainer>div.DataTypeIDPathContainer>div.DataTypeIDPathLine>div.PathDisplay{
+    width:var(--PathDisplayWidth);
+    height:100%;
+    padding:2px;
+    background-color: white;
+    color:black;
+    font-size:12px;
+    font-weight: bold;
+    border:1px solid black;
+    vertical-align: top;
+    text-align: left;
+}
+/*ChangeAndLoadDialogの変更対象を記述するコンテナ*/
 dialog#ChangeAndLoadDialog>div#ChangeAndLoadTargetContainer{
     width:100%;
     height:var(--TargetContainerHeight);

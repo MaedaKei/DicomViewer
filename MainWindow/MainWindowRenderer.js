@@ -3122,8 +3122,26 @@ class LoadAndLayout{
                 const ChangeAndLoadPathContainerFragment=document.createDocumentFragment();
                 //Canvasをチェックしてパス名の一覧を作成
                 for(const [CanvasID,CanvasClass] of CanvasClassDictionary.entries()){
+                    const LayerDataMap=CanvasClass.LayerDataMap;
+                    let MaxPathLength=0;
+                    const DisplayDataList=[];
+                    for(const DataType of this.DataClassMap.keys()){
+                        if(LayerDataMap.has(DataType)){
+                            const DataID=LayerDataMap.get(DataType).get("DataID");
+                            const Path=DicomDataClassDictionary.get(DataType).get(DataID).get("Data").Path;
+                            const DisplayData=new Map([
+                                ["DataType",DataType],
+                                ["DataID",DataID],
+                                ["Path",Path]
+                            ]);
+                            DisplayDataList.push(DisplayData);
+                            const PathLength=Path.length;
+                            MaxPathLength=Math.max(MaxPathLength,PathLength);
+                        }
+                    }
+                    //console.log(DisplayDataList);
                     const CanvasLoadedInfoContainer=document.createElement("div");
-                    CanvasLoadedInfoContainer.className="CanvasLoadedInfoContainer";
+                    CanvasLoadedInfoContainer.className="CanvasLoadInfoContainer";
                     const CanvasLoadedInfoContainerFragment=document.createDocumentFragment();
                     //CanvasPathContainerに各パーツを配置していく
                     const CanvasIDDisplay=document.createElement("div");
@@ -3134,11 +3152,10 @@ class LoadAndLayout{
                     const DataTypeIDPathContainer=document.createElement("div");
                     DataTypeIDPathContainer.className="DataTypeIDPathContainer";
                     const DataTypeIDPathContainerFragment=document.createDocumentFragment();
-
-                    const LayerDataMap=CanvasClass.LayerDataMap;
-                    for(const [DataType,LayerData] of LayerDataMap.entries()){
-                        const DataID=LayerData.get("DataID");
-                        const Path=DicomDataClassDictionary.get(DataType).get(DataID).get("Data").Path;
+                    const PathDisplayWidth=parseInt(7*MaxPathLength);
+                    for(const DisplayData of DisplayDataList){
+                        //console.log(DisplayData);
+                        const [DataType,DataID,Path]=DisplayData.values();
                         const DataTypeIDPathLine=document.createElement("div");
                         DataTypeIDPathLine.className="DataTypeIDPathLine";
                         const DataTypeIDDisplay=document.createElement("div");
@@ -3146,11 +3163,13 @@ class LoadAndLayout{
                         DataTypeIDDisplay.textContent=`${DataType}:${DataID}`;
                         const PathDisplay=document.createElement("div");
                         PathDisplay.className="PathDisplay";
+                        //console.log(Path);
                         PathDisplay.textContent=Path;
                         const fragment=document.createDocumentFragment();
                         fragment.appendChild(DataTypeIDDisplay);
                         fragment.appendChild(PathDisplay);
                         DataTypeIDPathLine.appendChild(fragment);
+                        DataTypeIDPathLine.style.width=`${90+PathDisplayWidth}px`;
                         DataTypeIDPathContainerFragment.appendChild(DataTypeIDPathLine);
                     }
                     DataTypeIDPathContainer.appendChild(DataTypeIDPathContainerFragment);
