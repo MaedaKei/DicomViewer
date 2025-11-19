@@ -3048,37 +3048,61 @@ class LoadAndLayout{
         //CanvasMoveダイアログ用
         this.CanvasMoveButton=document.getElementById("CanvasMoveButton");
         this.CanvasMoveDialog=document.getElementById("CanvasMoveDialog");
-        this.CanvasMoveSelecterContainer=document.getElementById("CanvasMoveSelecterContainer");
+        this.CanvasMovePositionButtonContainer=document.getElementById("CanvasMovePositionButtonContainer");
         this.CanvasMoveConfirmButton=document.getElementById("CanvasMoveConfirmButton");
         this.CanvasMoveCancelButton=document.getElementById("CanvasMoveCancelButton");
         this.EventSetHelper(this.CanvasMoveButton,"mouseup",()=>{
+            this.CanvasMovePositionButtonContainer.innerHTML="";
             //SelectorContainerの格子を更新する
             //CanvasContainer.style.gridTemplateColumns=`repeat(${this.currentColumns},1fr)`;
             //CanvasContainer.style.gridTemplateRows=`{repeat(${this.currentRows},1fr)}`;
-            this.CanvasMoveSelecterContainer.style.gridTemplateColumns=`repeat(${this.currentColumns},1fr)`;
-            this.CanvasMoveSelecterContainer.style.gridTemplateRows=`{repeat(${this.currentRows},1fr)}`;
-            this.CanvasMoveSelecterContainer.style.gap=`${10}px`;
+            this.CanvasMovePositionButtonContainer.style.gridTemplateColumns=`repeat(${this.currentColumns},1fr)`;
+            this.CanvasMovePositionButtonContainer.style.gridTemplateRows=`{repeat(${this.currentRows},1fr)}`;
+            const gap=5;
+            this.CanvasMovePositionButtonContainer.style.gap=`${gap}px`;
+            const ButtonSize=60;//px
+            this.CanvasMovePositionButtonContainer.style.width=`${ButtonSize*this.currentColumns+gap*(this.currentColumns-1)}px`;
+            this.CanvasMovePositionButtonContainer.style.height=`${ButtonSize*this.currentRows+gap*(this.currentRows-1)}px`;
+            const CanvasMovePositionButtonContainerFragment=document.createDocumentFragment();
             //現在のgridの状態を基にチェックボックスを配置する
             for(let lp=0;lp<this.LP2CID.length;lp++){
                 const r=Math.floor(lp/this.currentColumns)+1;
                 const c=lp%this.currentColumns+1;
                 //const label=document.createElement("label");
-                const checkbox=document.createElement("input");
-                checkbox.type="checkbox";
-                checkbox.value=lp;
-                this.CanvasMoveSelecterContainer.appendChild(checkbox);
-                checkbox.style.gridArea=`${r}/${c}/${r+1}/${c+1}`;
-                if(this.LP2CID[lp]!=-1){
-                    checkbox.style.accentColor="#FF0000";
+                const button=document.createElement("button");
+                button.style.width=`${ButtonSize}`;
+                button.style.height=`${ButtonSize}`;
+                button.value=lp;
+                CanvasMovePositionButtonContainerFragment.appendChild(button);
+                button.style.gridArea=`${r}/${c}/${r+1}/${c+1}`;
+                /*ボタンの色を決定する*/
+                const CanvasID=this.LP2CID[lp];
+                if(CanvasID>=0){
+                    //画像があるLPである
+                    button.classList.add("NotEmpty");
+                    button.textContent=`CanvasID:${CanvasID}`;
                 }else{
-                    checkbox.style.accentColor="#333333";
+                    button.classList.add("Empty");
+                    button.textContent="empty area";
                 }
             }
+            this.CanvasMovePositionButtonContainer.appendChild(CanvasMovePositionButtonContainerFragment);
             this.CanvasMoveDialog.showModal();
+        });
+        this.EventSetHelper(this.CanvasMovePositionButtonContainer,"mouseup",(e)=>{
+            if(e.button===0&&e.target.tagName==="BUTTON"){
+                const PositionButton=e.target;
+                if(PositionButton.classList.contains("Selected")){
+                    //Selectedを外す
+                    PositionButton.classList.remove("Selected");
+                }else{
+                    PositionButton.classList.add("Selected");
+                }
+            }
         });
         this.EventSetHelper(this.CanvasMoveConfirmButton,"mouseup",()=>{
             //Canvasの移動処理
-            const checkedLPs=Array.from(this.CanvasMoveSelecterContainer.querySelectorAll("input[type='checkbox']:checked")).map(cb=>parseInt(cb.value));
+            const checkedLPs=Array.from(this.CanvasMovePositionButtonContainer.querySelectorAll(":scope>button.Selected")).map(PositionButton=>parseInt(PositionButton.value));
             if(checkedLPs.length!=2){
                 alert("必ず2つ選択してください");
             }else{
@@ -3100,14 +3124,14 @@ class LoadAndLayout{
                 if(styleupdateFlag){
                     this.UpdateStyle();
                 }
-                this.CanvasMoveSelecterContainer.innerHTML="";
+                this.CanvasMovePositionButtonContainer.innerHTML="";
                 this.CanvasMoveDialog.close();
             }
         });
         this.EventSetHelper(this.CanvasMoveCancelButton,"mouseup",()=>{
-            //CanvasMoveSelecterContainerの初期化
+            //CanvasMovePositionButtonContainerの初期化
             //Containerの中はgrid上に並んだチェックボックス
-            this.CanvasMoveSelecterContainer.innerHTML="";
+            this.CanvasMovePositionButtonContainer.innerHTML="";
             this.CanvasMoveDialog.close();
         });
         /*ChangeAndLoad*/
