@@ -104,7 +104,7 @@ GridChangeダイアログ
 }
 
 /* タイトル */
-dialog#GridChangeDialog h3 {
+dialog#GridChangeDialog>h3 {
     font-size: calc(var(--label-height) / 2);
     width:100%;
     height:var(--label-height);
@@ -112,26 +112,26 @@ dialog#GridChangeDialog h3 {
 }
 
 /* ドロップダウン横並び */
-dialog#GridChangeDialog div.GridChangeInputContainer{
+dialog#GridChangeDialog>div.GridChangeInputContainer{
     width:100%;
     height:var(--select-height);
     display: flex;
     gap:5px;
 }
-dialog#GridChangeDialog div.GridChangeInputContainer>div{
+dialog#GridChangeDialog>div.GridChangeInputContainer>div{
     width:100%;
     flex: 1;
     display: flex;
     flex-direction: column;
 }
 /* ラベルとセレクトを縦に並べて、横並びに配置 */
-dialog#GridChangeDialog div.GridChangeInputContainer>div>label{
+dialog#GridChangeDialog>div.GridChangeInputContainer>div>label{
     width:100%;
     display: block;
     font-weight: bold;
 }
 
-dialog#GridChangeDialog div.GridChangeInputContainer>div>input{
+dialog#GridChangeDialog>div.GridChangeInputContainer>div>input{
     width:100%;
     height:20px;
     padding: 3px;
@@ -140,7 +140,7 @@ dialog#GridChangeDialog div.GridChangeInputContainer>div>input{
 }
 
 /* ボタン横並び */
-dialog#GridChangeDialog div.GridChangeButtonContainer{
+dialog#GridChangeDialog>div.GridChangeButtonContainer{
     width:100%;
     height:var(--button-height);
     display: flex;
@@ -149,7 +149,7 @@ dialog#GridChangeDialog div.GridChangeButtonContainer{
 }
 
 /* ボタンスタイル */
-dialog#GridChangeDialog div.GridChangeButtonContainer>button{
+dialog#GridChangeDialog>div.GridChangeButtonContainer>button{
     width:50%;
     padding: 2px 3px;
     font-size: 12px;
@@ -161,7 +161,7 @@ dialog#GridChangeDialog div.GridChangeButtonContainer>button{
     transition: background-color 0.2s ease;
 }
 
-dialog#GridChangeDialog div.GridChangeButtonContainer>button:hover{
+dialog#GridChangeDialog>div.GridChangeButtonContainer>button:hover{
     background-color: #005a9e;
 }
 
@@ -198,7 +198,7 @@ dialog#CanvasMoveDialog>div#CanvasMoveSelecterContainer{
     place-items:center;
     overflow-x:auto;
     overflow-y:auto;
-    background-color: #529395;
+    background-color: #000000;
 }
 dialog#CanvasMoveDialog>div#CanvasMoveSelecterContainer>div#CanvasMovePositionButtonContainer{
     /*widthは可変*/
@@ -208,24 +208,25 @@ dialog#CanvasMoveDialog>div#CanvasMoveSelecterContainer>div#CanvasMovePositionBu
 dialog#CanvasMoveDialog>div#CanvasMoveSelecterContainer>div#CanvasMovePositionButtonContainer>button{
     /*width:30px;*/
     /*height:30px;*/
+    white-space: pre;
     padding:1px;
-    border:1px solid blue;
+    border:2px solid rgb(195, 195, 195);
 }
-dialog#CanvasMoveDialog>div#CanvasMoveSelecterContainer>div#CanvasMovePositionButtonContainer>button.NotEmpty{
-    background-color: gray;
-    color:black;
-    font-size:10px;
-}
-dialog#CanvasMoveDialog>div#CanvasMoveSelecterContainer>div#CanvasMovePositionButtonContainer>button.Empty{
+dialog#CanvasMoveDialog>div#CanvasMoveSelecterContainer>div#CanvasMovePositionButtonContainer>button[data-EmptyStatus="NotEmpty"]{
     background-color: white;
     color:black;
     font-size:10px;
 }
+dialog#CanvasMoveDialog>div#CanvasMoveSelecterContainer>div#CanvasMovePositionButtonContainer>button[data-EmptyStatus="Empty"]{
+    background-color: gray;
+    color:black;
+    font-size:10px;
+}
 dialog#CanvasMoveDialog>div#CanvasMoveSelecterContainer>div#CanvasMovePositionButtonContainer>button.Selected{
-    border:1px solid red;
+    border:2px solid rgb(255, 0, 0);
 }
 dialog#CanvasMoveDialog>div#CanvasMoveSelecterContainer>div#CanvasMovePositionButtonContainer>button:hover{
-    border-width: 2px;
+    background-color: #bb95d6;
 }
 /* ボタン横並び */
 dialog#CanvasMoveDialog>div.CanvasMoveButtonContainer{
@@ -237,7 +238,7 @@ dialog#CanvasMoveDialog>div.CanvasMoveButtonContainer{
 }
 
 /* ボタンスタイル */
-dialog#CanvasMoveDialog div.CanvasMoveButtonContainer>button{
+dialog#CanvasMoveDialog>div.CanvasMoveButtonContainer>button{
     width:50%;
     padding: 2px;
     font-size: 12px;
@@ -249,10 +250,12 @@ dialog#CanvasMoveDialog div.CanvasMoveButtonContainer>button{
     transition: background-color 0.2s ease;
 }
 
-dialog#CanvasMoveDialog div.CanvasMoveButtonContainer>button:hover{
+dialog#CanvasMoveDialog>div.CanvasMoveButtonContainer>button:hover{
     background-color: #005a9e;
 }
-
+dialog#CanvasMoveDialog>div.CanvasMoveButtonContainer>button:disabled{
+    background-color: #002846;
+}
 /*キャンバスコンテナ*/
 #CanvasContainer{
     width:100%;
@@ -332,7 +335,10 @@ div.Block input[type="range"]::-webkit-slider-thumb {
 div.CanvasBlock div.ContextMenuContainer{
     position:absolute;
     width:130px;
+    /*
     z-index:10;
+    コンテキストメニューのZindexもJS側で一括管理することでデータレイヤーの裏に配置されることを防ぐ
+    */
     display: none;
 }
 div.ContextMenuContainer div.ContextMenuTextContainer{
@@ -556,6 +562,7 @@ dialog#ChangeAndLoadDialog>div#ChangeAndLoadPathContainer{
     display: flex;
     flex-direction: column;
     background-color: gray;
+    overflow-y:scroll;
 }
 div#ChangeAndLoadPathContainer>div.CanvasInfoContainer{
     width:100%;

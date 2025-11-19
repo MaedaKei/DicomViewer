@@ -1624,6 +1624,7 @@ class Canvas{
         for(let i=0;i<LayerZindexKeyList.length;i++){
             this.LayerZindexMap.set(LayerZindexKeyList[i],(i+1)*(-1));//-1,-2,-3,...;
         }
+        this.LayerZindexMap.set("ContextMenu",10);
         //コンテキストメニューを初期化する。
         this.createContextMenu();
         //LayerはCT＞MASK＞CONTOUR,MASKDIFFの順で作成していく
@@ -1746,6 +1747,7 @@ class Canvas{
         //コンテキストメニューの初期化
         this.ContextMenuContainer=document.createElement("div");
         this.ContextMenuContainer.className="ContextMenuContainer";
+        this.ContextMenuContainer.style.zIndex=this.LayerZindexMap.get("ContextMenu");
         this.ContextMenuTextContainer=document.createElement("div");
         this.ContextMenuTextContainer.className="ContextMenuTextContainer";
         this.ContextMenuTextContainer.textContent=`CanvasID: ${this.id.get("CanvasID")}`;
@@ -1772,6 +1774,8 @@ class Canvas{
                 const y=e.offsetY;
                 const top=(y+contextsize.height<canvassize.height)?y:y-contextsize.height;
                 const left=(x+contextsize.width<canvassize.width)?x:x-contextsize.width;
+                console.log("Height",y,contextsize.height,canvassize.height,"=>",top);
+                console.log("Width",x,contextsize.width,canvassize.width,"=>",left);
                 this.ContextMenuContainer.style.top=`${top}px`;
                 this.ContextMenuContainer.style.left=`${left}px`;
             }else{
@@ -1789,6 +1793,7 @@ class Canvas{
         this.setCONTOURContext();
         
         const DataChangeButton=document.createElement("button");
+        DataChangeButton.style.display="block";
         DataChangeButton.textContent="データ変更";
         this.EventSetHelper(DataChangeButton,"click",(e)=>{
             if(e.button===0){
@@ -1798,6 +1803,7 @@ class Canvas{
         this.ContextMenuButtonContainer.appendChild(DataChangeButton);
         //削除ボタンの追加
         const delateButton=document.createElement("button");
+        delateButton.style.display="block";
         delateButton.textContent="削 除";
         delateButton.style.color="#FF0000";
         //delateli.setAttribute("data-action","delate");//delateボタンには不要かもしれない
@@ -1812,7 +1818,10 @@ class Canvas{
     }
     UpdateContextMenuSize(){
         //可視化状態にあるボタンをカウントしてコンテキストメニューの高さを調整する
-        const VisibleCount=Array.from(this.ContextMenuButtonContainer.children).filter((button)=>{return button.style.display==="block";}).length;
+        const VisibleButtonList=Array.from(this.ContextMenuButtonContainer.children).filter((button)=>{return button.style.display==="block";});
+        const VisibleCount=VisibleButtonList.length;
+        //console.log(VisibleButtonList);
+        //console.log("VisibleCount",VisibleCount);
         this.ContextMenuButtonContainer.style.height=`${VisibleCount*30}px`;
         this.ContextMenuContainer.style.height=this.ContextMenuTextContainer.style.height+this.ContextMenuButtonContainer.style.height;
     }
@@ -3052,7 +3061,7 @@ class LoadAndLayout{
         this.CanvasMoveConfirmButton=document.getElementById("CanvasMoveConfirmButton");
         this.CanvasMoveCancelButton=document.getElementById("CanvasMoveCancelButton");
         this.EventSetHelper(this.CanvasMoveButton,"mouseup",()=>{
-            this.CanvasMovePositionButtonContainer.innerHTML="";
+            //this.CanvasMovePositionButtonContainer.innerHTML="";
             //SelectorContainerの格子を更新する
             //CanvasContainer.style.gridTemplateColumns=`repeat(${this.currentColumns},1fr)`;
             //CanvasContainer.style.gridTemplateRows=`{repeat(${this.currentRows},1fr)}`;
@@ -3060,7 +3069,7 @@ class LoadAndLayout{
             this.CanvasMovePositionButtonContainer.style.gridTemplateRows=`{repeat(${this.currentRows},1fr)}`;
             const gap=5;
             this.CanvasMovePositionButtonContainer.style.gap=`${gap}px`;
-            const ButtonSize=60;//px
+            const ButtonSize=75;//px
             this.CanvasMovePositionButtonContainer.style.width=`${ButtonSize*this.currentColumns+gap*(this.currentColumns-1)}px`;
             this.CanvasMovePositionButtonContainer.style.height=`${ButtonSize*this.currentRows+gap*(this.currentRows-1)}px`;
             const CanvasMovePositionButtonContainerFragment=document.createDocumentFragment();
@@ -3070,8 +3079,8 @@ class LoadAndLayout{
                 const c=lp%this.currentColumns+1;
                 //const label=document.createElement("label");
                 const button=document.createElement("button");
-                button.style.width=`${ButtonSize}`;
-                button.style.height=`${ButtonSize}`;
+                button.style.width=`${ButtonSize}px`;
+                button.style.height=`${ButtonSize}px`;
                 button.value=lp;
                 CanvasMovePositionButtonContainerFragment.appendChild(button);
                 button.style.gridArea=`${r}/${c}/${r+1}/${c+1}`;
@@ -3079,11 +3088,12 @@ class LoadAndLayout{
                 const CanvasID=this.LP2CID[lp];
                 if(CanvasID>=0){
                     //画像があるLPである
-                    button.classList.add("NotEmpty");
-                    button.textContent=`CanvasID:${CanvasID}`;
+                    button.setAttribute("data-EmptyStatus","NotEmpty");
+                    const LayarMapArray=Array.from(CanvasClassDictionary.get(CanvasID).LayerDataMap.keys());
+                    const textContent=`CanvasID:${CanvasID}\n`+LayarMapArray.join("\n");
+                    button.textContent=textContent;
                 }else{
-                    button.classList.add("Empty");
-                    button.textContent="empty area";
+                    button.setAttribute("data-EmptyStatus","Empty");
                 }
             }
             this.CanvasMovePositionButtonContainer.appendChild(CanvasMovePositionButtonContainerFragment);
@@ -3098,14 +3108,21 @@ class LoadAndLayout{
                 }else{
                     PositionButton.classList.add("Selected");
                 }
+                //Selectedが2つあれば押していい状態にする
+                this.CanvasMoveConfirmButton.disabled=!(Array.from(this.CanvasMovePositionButtonContainer.querySelectorAll(":scope>button.Selected")).length===2);
             }
         });
+        this.CanvasMoveConfirmButton.disabled=true;//CanvasMoveボタンは2つ選択時にしかできないようにする
         this.EventSetHelper(this.CanvasMoveConfirmButton,"mouseup",()=>{
             //Canvasの移動処理
-            const checkedLPs=Array.from(this.CanvasMovePositionButtonContainer.querySelectorAll(":scope>button.Selected")).map(PositionButton=>parseInt(PositionButton.value));
-            if(checkedLPs.length!=2){
+            const SelectedPositionButtonList=Array.from(this.CanvasMovePositionButtonContainer.querySelectorAll(":scope>button.Selected"));
+            if(SelectedPositionButtonList.length!=2){
                 alert("必ず2つ選択してください");
             }else{
+                const checkedLPs=SelectedPositionButtonList.map((PositionButton)=>{
+                    PositionButton.classList.remove("Selected");//Selected解除
+                    return parseInt(PositionButton.value);
+                });
                 const lpA=checkedLPs[0];
                 const lpB=checkedLPs[1];
                 const cidA=this.LP2CID[lpA];//-1が入っている可能性あり
@@ -3124,8 +3141,17 @@ class LoadAndLayout{
                 if(styleupdateFlag){
                     this.UpdateStyle();
                 }
-                this.CanvasMovePositionButtonContainer.innerHTML="";
-                this.CanvasMoveDialog.close();
+                /*見た目の更新*/
+                //CanvasMoveDialogCloseFunction();
+                //ButtonのEmpty,NotEmptyの交換、textContentの交換を行う
+                const PositionButton1=SelectedPositionButtonList[0];
+                const PositionButton2=SelectedPositionButtonList[1];
+                const EmptyStatusBuffer=PositionButton1.getAttribute("data-EmptyStatus");
+                const TextContentBuffer=PositionButton1.textContent;
+                PositionButton1.setAttribute("data-EmptyStatus",PositionButton2.getAttribute("data-EmptyStatus"));
+                PositionButton1.textContent=PositionButton2.textContent;
+                PositionButton2.setAttribute("data-EmptyStatus",EmptyStatusBuffer);
+                PositionButton2.textContent=TextContentBuffer;
             }
         });
         this.EventSetHelper(this.CanvasMoveCancelButton,"mouseup",()=>{
