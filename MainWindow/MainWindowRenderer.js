@@ -1774,8 +1774,8 @@ class Canvas{
                 const y=e.offsetY;
                 const top=(y+contextsize.height<canvassize.height)?y:y-contextsize.height;
                 const left=(x+contextsize.width<canvassize.width)?x:x-contextsize.width;
-                console.log("Height",y,contextsize.height,canvassize.height,"=>",top);
-                console.log("Width",x,contextsize.width,canvassize.width,"=>",left);
+                //console.log("Height",y,contextsize.height,canvassize.height,"=>",top);
+                //console.log("Width",x,contextsize.width,canvassize.width,"=>",left);
                 this.ContextMenuContainer.style.top=`${top}px`;
                 this.ContextMenuContainer.style.left=`${left}px`;
             }else{
@@ -1794,7 +1794,7 @@ class Canvas{
         
         const DataChangeButton=document.createElement("button");
         DataChangeButton.style.display="block";
-        DataChangeButton.textContent="データ変更";
+        DataChangeButton.textContent="データ追加・変更";
         this.EventSetHelper(DataChangeButton,"click",(e)=>{
             if(e.button===0){
                 LoadAndLayoutFunctions.LoadDialogOpen(this.id.get("CanvasID"),"AllDataType");
@@ -1817,7 +1817,7 @@ class Canvas{
         this.UpdateContextMenuSize();
     }
     UpdateContextMenuSize(){
-        //可視化状態にあるボタンをカウントしてコンテキストメニューの高さを調整する
+        //可視化状態(display=block)にあるボタンをカウントしてコンテキストメニューの高さを調整する
         const VisibleButtonList=Array.from(this.ContextMenuButtonContainer.children).filter((button)=>{return button.style.display==="block";});
         const VisibleCount=VisibleButtonList.length;
         //console.log(VisibleButtonList);
