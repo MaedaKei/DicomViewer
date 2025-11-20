@@ -1466,14 +1466,300 @@ class MASKDIFFclass{
     }
 }
 class CONTOURclass{
-    static makeInfoText(loadPath){
-        return loadPath;
+    static DataType="CONTOUR";
+    static PathTarget="openFile";
+    static DefaultMultiSelections="";
+    static {
+        this.InitializePathSelectDOMTree();
     }
-    static DataLoading(loadPath){
+    //DOMTreeのパーツと必要なイベントの設定
+    static InitializePathSelectDOMTree(){
+        const PathSelectDOMTree=document.createElement("div");
+        PathSelectDOMTree.id=this.DataType;//CSSで個別設定をするために必要になる
+        PathSelectDOMTree.className="PathSelectDOMTree";
+        /*DataTypeのタイトル欄*/
+        const TitleDiv=document.createElement("div");
+        TitleDiv.className="DataTypeDisplay";
+        TitleDiv.textContent=`${this.DataType} の読み込み`;
+        PathSelectDOMTree.appendChild(TitleDiv);
+        /*パスの指定コンテナ*/
+        const PathSettingContainer=document.createElement("div");
+        PathSettingContainer.className="PathSettingContainer";
+        //1. modeセレクトボタン
+        const ModeSelectContainer=document.createElement("div");
+        ModeSelectContainer.className="ModeSelectContainer";
+        const NewModeButton=document.createElement("button");
+        NewModeButton.setAttribute("data-SelectMode","New");
+        NewModeButton.textContent="新規";
+        const ExistingModeButton=document.createElement("button");
+        ExistingModeButton.setAttribute("data-SelectMode","Existing");
+        ExistingModeButton.textContent="既存";
+        ModeSelectContainer.appendChild(NewModeButton);
+        ModeSelectContainer.appendChild(ExistingModeButton);
+        PathSettingContainer.appendChild(ModeSelectContainer);
+        //2. PathInputContainer
+        const PathInputContainer=document.createElement("div");
+        PathInputContainer.className="PathInputContainer";
+        const NewPathContainer=document.createElement("div");
+        NewPathContainer.classList.add("PathContainer");//パーツ名
+        NewPathContainer.classList.add("FilePathInput");//入力方法
+        NewPathContainer.setAttribute("data-SelectMode","New");
+        const NewPathInputText=document.createElement("input");
+        NewPathInputText.className="NewPathInputText";
+        NewPathInputText.type="text";
+        NewPathInputText.placeholder="パスを入力...";
+        const OpenFileDialogButton=document.createElement("button");
+        OpenFileDialogButton.className="OpenFildDialogButton";
+        OpenFileDialogButton.textContent="参照";
+        OpenFileDialogButton.setAttribute("data-MultipleSelections",this.DefaultMultiSelections);//このDomに複数選択状態を設定しておくことでその都度切り替えられるようにする
+        NewPathContainer.appendChild(NewPathInputText);
+        NewPathContainer.appendChild(OpenFileDialogButton);
+        PathInputContainer.appendChild(NewPathContainer);
+        //既存のデータの参照を指定する部分。セレクターはこの時点では空としておき、起動時にoptionを設定する。
+        //選択肢はCanvasIDとする(CanvasID＝？に映ってるCT画像をこっちのCanvasIDでも表示させたい、のようなイメージ)
+        const ExistingPathContainer=document.createElement("div");
+        ExistingPathContainer.classList.add("PathContainer");//パーツ名
+        ExistingPathContainer.classList.add("ExistingCanvasIDSelect");//入力方法
+        ExistingPathContainer.setAttribute("data-SelectMode","Existing");
+        const ExistingPathInputSelecter=document.createElement("select");
+        ExistingPathInputSelecter.className="ExistingPathInputSelecter";
+        ExistingPathContainer.appendChild(ExistingPathInputSelecter);
+        PathInputContainer.appendChild(ExistingPathContainer);
+        PathSettingContainer.appendChild(PathInputContainer);
+        PathSelectDOMTree.appendChild(PathSettingContainer);
+        //これはLoadAndLayoutなどから要請されて外部に渡したりする。
+        //そのとき、ExistingPathInputSelecterのOptionを再構成して渡す
+        this.OpenFileDialogButton=OpenFileDialogButton;//複数選択か単数選択かをセットしたり、確認する必要があるから
+        this.ModeSelectContainer=ModeSelectContainer;//Selectedクラスの有無を確かめる必要があるから
+        this.NewPathInputText=NewPathInputText;
+        this.ExistingPathInputSelecter=ExistingPathInputSelecter;
+        this.PathSelectDOMTree=PathSelectDOMTree;
+        //console.dir(this.PathSelectDOMTree);
+        /*OpenFileDialogButtonにイベントを設定する*/
+        this.OpenFileDialogButton.addEventListener("mouseup",async (e)=>{
+            if(e.button===0){//左クリックなら
+                //属性値を取得
+                const MultipleSelections=e.target.getAttribute("data-MultipleSelections");//"multipleSelections" or "" になるはず
+                const PathTarget=this.PathTarget;
+                const SelectedPathList=await LoadAndLayout.SelectPathes(PathTarget,MultipleSelections);//[]リストみたいな形式
+                //SelectedPathListはリストで帰ってくることもあれば単一文字列で帰ってくることもあるが、showOpenDialogはかならず[filepath,...]の形式でパス文字列を返すのでfor文を回して良し
+                /*
+                ここではパスの選択は行うが読み込みはまだ行わない。現在読み込んだパスの配列を", "で結合してtextに表示する
+                */
+                this.NewPathInputText.value=SelectedPathList.join(", ");
+            }
+        });
+        /*
+        ModeSelectContainer内のボタンにイベントを付与
+        */
+        this.ModeSelectContainer.addEventListener("mouseup",(e)=>{
+            if(e.button===0){
+                const button=e.target;
+                if(button.tagName==="BUTTON"){
+                    //押されたbuttonにSelectedクラスが付与されているか
+                    if(button.classList.contains("Selected")){
+                        //押されているのでbuttonからSelectedを解除して、ModeSelectContainerのmode属性値を空白にする
+                        button.classList.remove("Selected");
+                        this.ModeSelectContainer.setAttribute("data-SelectMode","");
+                    }else{
+                        //まずは直下のbutton全てからSelectedを取り除く
+                        const ButtonList=this.ModeSelectContainer.querySelectorAll(":scope>button");
+                        ButtonList.forEach((button)=>{
+                            button.classList.remove("Selected");
+                        });
+                        button.classList.add("Selected");
+                        const modeAttribute=button.getAttribute("data-SelectMode");
+                        this.ModeSelectContainer.setAttribute("data-SelectMode",modeAttribute);
+                    }
+                }
+            }
+        });
+        /*
+        PathInputContainerにクリックイベントを付与
+        マウスダウン時にPathContainerまで辿っていく
+        */
+        PathInputContainer.addEventListener("mouseup",(e)=>{
+            if(e.button===0){
+                //e.targetから親を辿る
+                const PathContainer=e.target.closest("div.PathContainer");
+                if(PathContainer){
+                    const PathContainerSelectMode=PathContainer.getAttribute("data-SelectMode");
+                    const ModeSelectContainerSelectMode=this.ModeSelectContainer.getAttribute("data-SelectMode");
+                    if(PathContainerSelectMode!==ModeSelectContainerSelectMode){
+                        //変更する必要あり
+                        this.ModeSelectContainer.querySelectorAll(":scope>button").forEach((button)=>{
+                            button.classList.remove("Selected");
+                        });
+                        //PathContainerSelectModeと同じ属性値を持つButtonを取得
+                        const SelectedButton=this.ModeSelectContainer.querySelector(`:scope>button[data-SelectMode="${PathContainerSelectMode}"]`);
+                        if(SelectedButton){
+                            SelectedButton.classList.add("Selected");
+                            this.ModeSelectContainer.setAttribute("data-SelectMode",PathContainerSelectMode);
+                        }
+                    }
+                }
+            }
+        });
+        /*
+        PathSelectDOMTree.addEventListener("mouseup",(e)=>{
+            if(e.button===0){
+                //クリックされたパスコンテナを取得
+                const ClickedPathContainer=e.target.closest("div.PathContainer");
+                //このパスコンテナのクラスリストをチェックして選択済みかどうか確認
+                if(ClickedPathContainer.classList.contains("Selected")){
+                    //既に選択されている状態で押されたことになるので、選択を解除する
+                    ClickedPathContainer.classList.remove("Selected");
+                }else{
+                    //まずは全てのPathContainerからSelectedを解除
+                    const PathContainerList=this.PathSelectDOMTree.querySelectorAll(":scope>div.PathContainer");
+                    PathContainerList.forEach((PathContainer)=>{
+                        PathContainer.classList.remove("Selected");
+                    });
+                    //クリックされたものだけSelected
+                    ClickedPathContainer.classList.add("Selected");
+                }
+            }
+        });
+        */
+    }
+    //LoadAndLayoutにDOMTreeを渡す
+    static setPathSelectDOMTree(MultipleSelections=this.DefaultMultiSelections){
+        /*
+        外部から要請を受けてDOMTreeを渡す。
+        */
+        //状況によって複数パス選択可能か否か変動するため、これが呼ばれるたびにOpenFileDialogのAttributeを更新する
+        this.OpenFileDialogButton.setAttribute("data-MultipleSelections",MultipleSelections);
+        //ExistingPathInputSelecterのOptionを更新する
+        this.NewPathInputText.value="";
+        this.ExistingPathInputSelecter.innerHTML="";//初期化
+        const initialoption=document.createElement("option");
+        initialoption.text="DataIDを選択";
+        initialoption.value=(-99999);
+        initialoption.disabled=true;//選択不可
+        initialoption.hidden=true;//選択肢から除外
+        initialoption.selected=true;//初期表示
+        //CanvasClassのthis.DataTypeをチェックしていく
+        const fragment=document.createDocumentFragment();//仮想DOM
+        fragment.appendChild(initialoption);
+        const DataIDCanvasIDListMap=new Map();
+        for(const [CanvasID,Canvas] of CanvasClassDictionary.entries()){
+            if(Canvas.LayerDataMap.has(this.DataType)){
+                const DataID=Canvas.LayerDataMap.get(this.DataType).get("DataID");
+                /*
+                const option=document.createElement("option");
+                option.text=`DataID:${DataID}(CanvasID:${CanvasID}) ${Path}`;
+                option.value=DataID;
+                fragment.appendChild(option);
+                */
+                if(DataIDCanvasIDListMap.has(DataID)){
+                    DataIDCanvasIDListMap.get(DataID).push(CanvasID);
+                }else{
+                    DataIDCanvasIDListMap.set(DataID,[CanvasID]);
+                }
+            }
+        }
+        for(const [DataID,CanvasIDList] of DataIDCanvasIDListMap){
+            const option=document.createElement("option");
+            option.text=`DataID: ${DataID} ( CanvasID= ${CanvasIDList.join(", ")} )`;
+            option.value=DataID;
+            fragment.appendChild(option);
+        }
+        this.ExistingPathInputSelecter.appendChild(fragment);
+        return this.PathSelectDOMTree;
+    }
+    /*
+    static makeInfoText(LoadPath){
+        return LoadPath;
+    }
+    */
+
+    static async DataLoader(loadPath){
+        //CTclass用のパス読み込み静的関数
         //戻り値の形式はこのコンストラクターが受け付けるものとする
-        //戻り値の形式はこのコンストラクターが受け付けるものとする
-        const LoadingResult=LoadAndLayout.LoadFiles(loadPath);
+        const LoadingResult=await LoadAndLayout.LoadFiles(loadPath);
         return LoadingResult;//一度外部で読み込まれたかのチェックを受けてからコンストラクタに入る
+    }
+
+    static async Loading(LoadPathList=[]){
+        /*
+        makeInfoTextの戻り値と同じ形式のリスト(複数選択対応)を受け取る
+        戻り値は
+        [DataID,...,DataID]とする。
+        複数選択された際、すべてのDataType,DataIDが完璧に読み込めた場合のみ戻り値を返し、
+        一つでも不備がある場合はfalseを返すこととする。
+        */
+        if(LoadPathList.length==0){
+            //console.log("選択されませんでした");
+            return false;
+        }else{
+            const DataInfoList=[];
+            for(const LoadPath of LoadPathList){
+                const LoadedData=await this.DataLoader(LoadPath);
+                if(LoadedData){//ちゃんと読み込めているか
+                    const DataType=this.DataType;
+                    const DicomData=new this(LoadPath,LoadedData);
+                    const NewDataID=DicomNextID.get(DataType);
+                    DicomNextID.set(DataType,NewDataID+1);
+                    const DicomDataMap=new Map([
+                        ["Data",DicomData],
+                        ["RefCount",0]
+                    ]);
+                    DicomDataClassDictionary.get(DataType).set(NewDataID,DicomDataMap);
+                    DataInfoList.push(NewDataID);
+                }else{
+                    return false;
+                }
+            }
+            return DataInfoList;
+        }
+        
+    }
+    //LoadAndLayoutからデータの読み込みが命令された。データの差し替えや一括読み込みからの経路
+    static async LoadingFromDialog(){
+        /*
+        ダイアログからの入力でがデータを読み込むラッパー
+        戻り値はLoadingと同じ
+        [[DataType,DataID],[DataType,DataID]...]とする。
+        ダメなときはfalseを返す。
+        受け取り側は
+        CT:リスト or falseとなる感じ
+        これをもとにDataInfoMapを作成⇒CanvasInstance.SetLayer()に渡す、という流れ
+        */
+        /*
+        const SelectedPathContainer=this.PathSelectDOMTree.querySelector(":scope>div.PathContainer.Selected");
+        if(SelectedPathContainer){
+            const PathTypeSelect=SelectedPathContainer.getAttribute("data-Path");//NewPath or ExistingPath
+            if(PathTypeSelect==="ExistingPath"){
+                const SelectedCanvasID=parseInt(this.ExistingPathInputSelecter.value);
+                if(SelectedCanvasID>=0){//誤クリックにより、PathContainerだけクリックされたことを想定
+                    const SelectedCanvas=CanvasClassDictionary.get(SelectedCanvasID);
+                    const DataID=SelectedCanvas.LayerDataMap.get(this.DataType).get("DataID");
+                    return [DataID];//Loadingの形式に合わせてある
+                }
+            }else if(PathTypeSelect=="NewPath"){
+                //まずはダイアログからLoadingに渡せる形式の入力を作成する
+                const PathText=this.NewPathInputText.value;
+                const LoadPathList=PathText.split(", ");
+                return this.Loading(LoadPathList);//[DataID,DataID]
+            }
+        }
+        return false;
+        */
+        const SelectMode=this.ModeSelectContainer.getAttribute("data-SelectMode");
+        if(SelectMode==="Existing"){
+            const DataID=parseInt(this.ExistingPathInputSelecter.value);
+            if(DataID>=0){
+                //const SelectedCanvas=CanvasClassDictionary.get(SelectedCanvasID);
+                //const DataID=SelectedCanvas.LayerDataMap.get(this.DataType).get("DataID");
+                return [DataID];//Loadingの戻り値の形式に一致させる
+            }
+        }else if(SelectMode==="New"){
+            const PathText=this.NewPathInputText.value;
+            const LoadPathList=PathText.split(", ");
+            const DataIDList=await this.Loading(LoadPathList);
+            return DataIDList;
+        }
+        return false;
     }
     constructor(loadPath,loadedData){
         this.Path=loadPath;
@@ -1960,7 +2246,7 @@ class Canvas{
             if(e.button==0){
                 const Layer="CONTOUR";
                 const DataID=this.LayerDataMap.get(Layer).get("DataID");
-                const targetDicomClass=DicomDataClassDictionary.get("MASK").get(DataID);
+                const targetDicomClass=DicomDataClassDictionary.get(Layer).get(DataID);
                 const OPMode=true;
                 const windowsize=[300,400];
                 const data=new Map([
