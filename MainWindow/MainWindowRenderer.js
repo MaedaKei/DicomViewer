@@ -94,7 +94,7 @@ class CTclass{
         PathSelectDOMTree.appendChild(TitleDiv);
         /*パスの指定コンテナ*/
         const PathSettingContainer=document.createElement("div");
-        PathSettingContainer.className="PathSettingContainer";
+        PathSettingContainer.className="FilePathInputSettingContainer";//入力方法ごとのクラス名を設定する
         //1. modeセレクトボタン
         const ModeSelectContainer=document.createElement("div");
         ModeSelectContainer.className="ModeSelectContainer";
@@ -112,7 +112,7 @@ class CTclass{
         PathInputContainer.className="PathInputContainer";
         const NewPathContainer=document.createElement("div");
         NewPathContainer.classList.add("PathContainer");//パーツ名
-        NewPathContainer.classList.add("FilePathInput");//入力方法
+        //NewPathContainer.classList.add("FilePathInput");//入力方法
         NewPathContainer.setAttribute("data-SelectMode","New");
         const NewPathInputText=document.createElement("input");
         NewPathInputText.className="NewPathInputText";
@@ -129,7 +129,7 @@ class CTclass{
         //選択肢はCanvasIDとする(CanvasID＝？に映ってるCT画像をこっちのCanvasIDでも表示させたい、のようなイメージ)
         const ExistingPathContainer=document.createElement("div");
         ExistingPathContainer.classList.add("PathContainer");//パーツ名
-        ExistingPathContainer.classList.add("ExistingCanvasIDSelect");//入力方法
+        //ExistingPathContainer.classList.add("ExistingCanvasIDSelect");//入力方法
         ExistingPathContainer.setAttribute("data-SelectMode","Existing");
         const ExistingPathInputSelecter=document.createElement("select");
         ExistingPathInputSelecter.className="ExistingPathInputSelecter";
@@ -576,7 +576,7 @@ class MASKclass{
         PathSelectDOMTree.appendChild(TitleDiv);
         /*パスの指定コンテナ*/
         const PathSettingContainer=document.createElement("div");
-        PathSettingContainer.className="PathSettingContainer";
+        PathSettingContainer.className="FilePathInputSettingContainer";
         //1. modeセレクトボタン
         const ModeSelectContainer=document.createElement("div");
         ModeSelectContainer.className="ModeSelectContainer";
@@ -594,7 +594,7 @@ class MASKclass{
         PathInputContainer.className="PathInputContainer";
         const NewPathContainer=document.createElement("div");
         NewPathContainer.classList.add("PathContainer");//パーツ名
-        NewPathContainer.classList.add("FilePathInput");//入力方法
+        //NewPathContainer.classList.add("FilePathInput");//入力方法
         NewPathContainer.setAttribute("data-SelectMode","New");
         const NewPathInputText=document.createElement("input");
         NewPathInputText.className="NewPathInputText";
@@ -611,7 +611,7 @@ class MASKclass{
         //選択肢はCanvasIDとする(CanvasID＝？に映ってるCT画像をこっちのCanvasIDでも表示させたい、のようなイメージ)
         const ExistingPathContainer=document.createElement("div");
         ExistingPathContainer.classList.add("PathContainer");//パーツ名
-        ExistingPathContainer.classList.add("ExistingCanvasIDSelect");//入力方法
+        //ExistingPathContainer.classList.add("ExistingCanvasIDSelect");//入力方法
         ExistingPathContainer.setAttribute("data-SelectMode","Existing");
         const ExistingPathInputSelecter=document.createElement("select");
         ExistingPathInputSelecter.className="ExistingPathInputSelecter";
@@ -1049,7 +1049,7 @@ class MASKDIFFclass{
         PathSelectDOMTree.appendChild(TitleDiv);
         /*パスの指定コンテナ*/
         const PathSettingContainer=document.createElement("div");
-        PathSettingContainer.className="PathSettingContainer";
+        PathSettingContainer.className="ComparableCanvasIDSelectSettingContainer";
         //1. modeセレクトボタン
         const ModeSelectContainer=document.createElement("div");
         ModeSelectContainer.className="ModeSelectContainer";
@@ -1067,7 +1067,7 @@ class MASKDIFFclass{
         PathInputContainer.className="PathInputContainer";
         const NewPathContainer=document.createElement("div");
         NewPathContainer.classList.add("PathContainer");//パーツ名
-        NewPathContainer.classList.add("ComparableCanvasIDSelect");//入力方法
+        //NewPathContainer.classList.add("ComparableCanvasIDSelect");//入力方法
         NewPathContainer.setAttribute("data-SelectMode","New");
         const Input1Selecter=document.createElement("select");
         const SeparateDiv=document.createElement("div");
@@ -1081,7 +1081,7 @@ class MASKDIFFclass{
         //選択肢はCanvasIDとする(CanvasID＝？に映ってるCT画像をこっちのCanvasIDでも表示させたい、のようなイメージ)
         const ExistingPathContainer=document.createElement("div");
         ExistingPathContainer.classList.add("PathContainer");//パーツ名
-        ExistingPathContainer.classList.add("ExistingCanvasIDSelect");//入力方法
+        //ExistingPathContainer.classList.add("ExistingCanvasIDSelect");//入力方法
         ExistingPathContainer.setAttribute("data-SelectMode","Existing");
         const ExistingPathInputSelecter=document.createElement("select");
         ExistingPathInputSelecter.className="ExistingPathInputSelecter";
@@ -1484,7 +1484,7 @@ class CONTOURclass{
         PathSelectDOMTree.appendChild(TitleDiv);
         /*パスの指定コンテナ*/
         const PathSettingContainer=document.createElement("div");
-        PathSettingContainer.className="PathSettingContainer";
+        PathSettingContainer.className="FilePathInputWithCanvasIDSelectSettingContainer";
         //1. modeセレクトボタン
         const ModeSelectContainer=document.createElement("div");
         ModeSelectContainer.className="ModeSelectContainer";
@@ -1502,8 +1502,11 @@ class CONTOURclass{
         PathInputContainer.className="PathInputContainer";
         const NewPathContainer=document.createElement("div");
         NewPathContainer.classList.add("PathContainer");//パーツ名
-        NewPathContainer.classList.add("FilePathInput");//入力方法
+        //NewPathContainer.classList.add("FilePathInput");//入力方法
         NewPathContainer.setAttribute("data-SelectMode","New");
+        //ファイルパス参照＆入力部分
+        const LoadPathParts=document.createElement("div");
+        LoadPathParts.className="LoadPathParts";
         const NewPathInputText=document.createElement("input");
         NewPathInputText.className="NewPathInputText";
         NewPathInputText.type="text";
@@ -1512,14 +1515,22 @@ class CONTOURclass{
         OpenFileDialogButton.className="OpenFildDialogButton";
         OpenFileDialogButton.textContent="参照";
         OpenFileDialogButton.setAttribute("data-MultipleSelections",this.DefaultMultiSelections);//このDomに複数選択状態を設定しておくことでその都度切り替えられるようにする
-        NewPathContainer.appendChild(NewPathInputText);
-        NewPathContainer.appendChild(OpenFileDialogButton);
+        LoadPathParts.appendChild(NewPathInputText);
+        LoadPathParts.appendChild(OpenFileDialogButton);
+        //元となったCT画像をCanvasIDから選択するセレクタ部分
+        const ReferOriginalParts=document.createElement("div");
+        ReferOriginalParts.className="ReferOriginalParts";
+        const ReferOriginalPathInputSelecter=document.createElement("select");
+        ReferOriginalParts.appendChild(ReferOriginalPathInputSelecter);
+        NewPathContainer.appendChild(LoadPathParts);
+        NewPathContainer.appendChild(ReferOriginalParts);
         PathInputContainer.appendChild(NewPathContainer);
+
         //既存のデータの参照を指定する部分。セレクターはこの時点では空としておき、起動時にoptionを設定する。
         //選択肢はCanvasIDとする(CanvasID＝？に映ってるCT画像をこっちのCanvasIDでも表示させたい、のようなイメージ)
         const ExistingPathContainer=document.createElement("div");
         ExistingPathContainer.classList.add("PathContainer");//パーツ名
-        ExistingPathContainer.classList.add("ExistingCanvasIDSelect");//入力方法
+        //ExistingPathContainer.classList.add("ExistingCanvasIDSelect");//入力方法
         ExistingPathContainer.setAttribute("data-SelectMode","Existing");
         const ExistingPathInputSelecter=document.createElement("select");
         ExistingPathInputSelecter.className="ExistingPathInputSelecter";
@@ -1532,6 +1543,7 @@ class CONTOURclass{
         this.OpenFileDialogButton=OpenFileDialogButton;//複数選択か単数選択かをセットしたり、確認する必要があるから
         this.ModeSelectContainer=ModeSelectContainer;//Selectedクラスの有無を確かめる必要があるから
         this.NewPathInputText=NewPathInputText;
+        this.ReferOriginalPathInputSelecter=ReferOriginalPathInputSelecter;
         this.ExistingPathInputSelecter=ExistingPathInputSelecter;
         this.PathSelectDOMTree=PathSelectDOMTree;
         //console.dir(this.PathSelectDOMTree);
@@ -1629,42 +1641,73 @@ class CONTOURclass{
         */
         //状況によって複数パス選択可能か否か変動するため、これが呼ばれるたびにOpenFileDialogのAttributeを更新する
         this.OpenFileDialogButton.setAttribute("data-MultipleSelections",MultipleSelections);
-        //ExistingPathInputSelecterのOptionを更新する
+        //ReferOriginalPathInputSelecterを更新し、CT画像を持つCanvasIDとパスを表示する
+        this.ReferOriginalPathInputSelecter.innerHTML="";
+        const ReferOriginalPathInputSelecterInitialOption=document.createElement("option");
+        ReferOriginalPathInputSelecterInitialOption.text="元のCTとなるDataIDを選択";
+        ReferOriginalPathInputSelecterInitialOption.value=(-99999);
+        ReferOriginalPathInputSelecterInitialOption.disabled=true;
+        ReferOriginalPathInputSelecterInitialOption.hidden=true;
+        ReferOriginalPathInputSelecterInitialOption.selected=true;
+        const ReferOriginalPathInputSelecterFragment=document.createDocumentFragment();
+        ReferOriginalPathInputSelecterFragment.appendChild(ReferOriginalPathInputSelecterInitialOption);
+        const ReferOriginalPathInputSelecterDataIDCanvasIDListMap=new Map();
+        //Path入力欄の初期化
         this.NewPathInputText.value="";
+        //ExistingPathInputSelecterのOptionを更新する
         this.ExistingPathInputSelecter.innerHTML="";//初期化
-        const initialoption=document.createElement("option");
-        initialoption.text="DataIDを選択";
-        initialoption.value=(-99999);
-        initialoption.disabled=true;//選択不可
-        initialoption.hidden=true;//選択肢から除外
-        initialoption.selected=true;//初期表示
+        const ExistingPathInputSelecterInitialOption=document.createElement("option");
+        ExistingPathInputSelecterInitialOption.text="DataIDを選択";
+        ExistingPathInputSelecterInitialOption.value=(-99999);
+        ExistingPathInputSelecterInitialOption.disabled=true;//選択不可
+        ExistingPathInputSelecterInitialOption.hidden=true;//選択肢から除外
+        ExistingPathInputSelecterInitialOption.selected=true;//初期表示
         //CanvasClassのthis.DataTypeをチェックしていく
-        const fragment=document.createDocumentFragment();//仮想DOM
-        fragment.appendChild(initialoption);
-        const DataIDCanvasIDListMap=new Map();
+        const ExistingPathInputSelecterFragment=document.createDocumentFragment();//仮想DOM
+        ExistingPathInputSelecterFragment.appendChild(ExistingPathInputSelecterInitialOption);
+        const ExistingPathInputSelecterDataIDCanvasIDListMap=new Map();
+        const CONTOURDataType=this.DataType;
+        const CTDataType=CTclass.DataType;
         for(const [CanvasID,Canvas] of CanvasClassDictionary.entries()){
-            if(Canvas.LayerDataMap.has(this.DataType)){
-                const DataID=Canvas.LayerDataMap.get(this.DataType).get("DataID");
+            if(Canvas.LayerDataMap.has(CONTOURDataType)){
+                const DataID=Canvas.LayerDataMap.get(CONTOURDataType).get("DataID");
                 /*
                 const option=document.createElement("option");
                 option.text=`DataID:${DataID}(CanvasID:${CanvasID}) ${Path}`;
                 option.value=DataID;
                 fragment.appendChild(option);
                 */
-                if(DataIDCanvasIDListMap.has(DataID)){
-                    DataIDCanvasIDListMap.get(DataID).push(CanvasID);
+                if(ExistingPathInputSelecterDataIDCanvasIDListMap.has(DataID)){
+                    ExistingPathInputSelecterDataIDCanvasIDListMap.get(DataID).push(CanvasID);
                 }else{
-                    DataIDCanvasIDListMap.set(DataID,[CanvasID]);
+                    ExistingPathInputSelecterDataIDCanvasIDListMap.set(DataID,[CanvasID]);
+                }
+            }
+            if(Canvas.LayerDataMap.has(CTDataType)){
+                const DataID=Canvas.LayerDataMap.get(CTDataType).get("DataID");
+                if(ReferOriginalPathInputSelecterDataIDCanvasIDListMap.has(DataID)){
+                    ReferOriginalPathInputSelecterDataIDCanvasIDListMap.get(DataID).push(CanvasID);
+                }else{
+                    ReferOriginalPathInputSelecterDataIDCanvasIDListMap.set(DataID,[CanvasID]);
                 }
             }
         }
-        for(const [DataID,CanvasIDList] of DataIDCanvasIDListMap){
+        //既存セレクタの再構成
+        for(const [DataID,CanvasIDList] of ExistingPathInputSelecterDataIDCanvasIDListMap.entries()){
             const option=document.createElement("option");
             option.text=`DataID: ${DataID} ( CanvasID= ${CanvasIDList.join(", ")} )`;
             option.value=DataID;
-            fragment.appendChild(option);
+            ExistingPathInputSelecterFragment.appendChild(option);
         }
-        this.ExistingPathInputSelecter.appendChild(fragment);
+        this.ExistingPathInputSelecter.appendChild(ExistingPathInputSelecterFragment);
+        //オリジナルとなるCTセレクタの再構成
+        for(const [DataID,CanvasIDList] of ReferOriginalPathInputSelecterDataIDCanvasIDListMap.entries()){
+            const option=document.createElement("option");
+            option.text=`DataID: ${DataID} ( CanvasID= ${CanvasIDList.join(", ")} )`;
+            option.value=DataID;
+            ReferOriginalPathInputSelecterFragment.appendChild(option);
+        }
+        this.ReferOriginalPathInputSelecter.appendChild(ReferOriginalPathInputSelecterFragment);
         return this.PathSelectDOMTree;
     }
     /*
@@ -1716,35 +1759,6 @@ class CONTOURclass{
     }
     //LoadAndLayoutからデータの読み込みが命令された。データの差し替えや一括読み込みからの経路
     static async LoadingFromDialog(){
-        /*
-        ダイアログからの入力でがデータを読み込むラッパー
-        戻り値はLoadingと同じ
-        [[DataType,DataID],[DataType,DataID]...]とする。
-        ダメなときはfalseを返す。
-        受け取り側は
-        CT:リスト or falseとなる感じ
-        これをもとにDataInfoMapを作成⇒CanvasInstance.SetLayer()に渡す、という流れ
-        */
-        /*
-        const SelectedPathContainer=this.PathSelectDOMTree.querySelector(":scope>div.PathContainer.Selected");
-        if(SelectedPathContainer){
-            const PathTypeSelect=SelectedPathContainer.getAttribute("data-Path");//NewPath or ExistingPath
-            if(PathTypeSelect==="ExistingPath"){
-                const SelectedCanvasID=parseInt(this.ExistingPathInputSelecter.value);
-                if(SelectedCanvasID>=0){//誤クリックにより、PathContainerだけクリックされたことを想定
-                    const SelectedCanvas=CanvasClassDictionary.get(SelectedCanvasID);
-                    const DataID=SelectedCanvas.LayerDataMap.get(this.DataType).get("DataID");
-                    return [DataID];//Loadingの形式に合わせてある
-                }
-            }else if(PathTypeSelect=="NewPath"){
-                //まずはダイアログからLoadingに渡せる形式の入力を作成する
-                const PathText=this.NewPathInputText.value;
-                const LoadPathList=PathText.split(", ");
-                return this.Loading(LoadPathList);//[DataID,DataID]
-            }
-        }
-        return false;
-        */
         const SelectMode=this.ModeSelectContainer.getAttribute("data-SelectMode");
         if(SelectMode==="Existing"){
             const DataID=parseInt(this.ExistingPathInputSelecter.value);
@@ -1763,60 +1777,7 @@ class CONTOURclass{
     }
     constructor(loadPath,loadedData){
         this.Path=loadPath;
-        //このなかでシリーズデータを解析して必要な情報を抽出
-        //console.log("MASK data loaded:");
-        //loadedDataのsort
-        loadedData = sortDicomFiles(loadedData);
-        //まずはpixeldataを抽出しつつzとImagePositionPatientの紐づけ。また、患者座標系のx,y,zの境界値を取得する
-        this.width=loadedData[0]["dataset"].uint16("x00280011");//cols
-        this.height=loadedData[0]["dataset"].uint16("x00280010");//rows
-        this.depth=loadedData.length;
-        const sizePerSlice=this.width*this.height;
-        //loadDataから３次元配列、ヒストグラム、zとImagePositionPatientの紐づけを行う
-        this.i2p=new Map();
-        this.ImageVolume=new Float32Array(sizePerSlice*this.depth);
-        this.histgram=new Map();//MASKのカラーマップ生成時の情報にも使える
-        //console.log("Depth",this.depth);
-        for(let z=0;z<this.depth;z++){
-            const dataset=loadedData[z]["dataset"];
-            this.i2p.set(z,dataset.string("x00200032").split('\\')[2]);//z座標を取得
-            const slope=parseFloat(dataset.string("x00281053")||"1");
-            const intercept=parseFloat(dataset.string("x00281052")||"0");
-            const bitsAllocated=dataset.uint16("x00280100");
-            const isSigned=dataset.uint16("x00280103")===1;
-
-            const pixelElement=dataset.elements.x7fe00010;
-            const pixelBuffer=new DataView(dataset.byteArray.buffer,pixelElement.dataOffset,pixelElement.length);
-            let getHUvalue=null;
-            if(bitsAllocated===16){
-                if(isSigned){
-                    getHUvalue=(pixelBuffer,i)=>{pixelBuffer.getInt16(i*2,true)};
-                }else{
-                    getHUvalue=(pixelBuffer,i)=>{pixelBuffer.getUint16(i*2,true)};
-                }
-            }else{
-                getHUvalue=(pixelBuffer,i)=>{pixelBuffer.getUint8(i)};
-            }
-            //画素値を平坦配列に入れていく。このとき、一緒に出現画素の集計を行う
-            for(let i=0;i<sizePerSlice;i++){
-                const value=getHUvalue(pixelBuffer,i)*slope+intercept;
-                this.ImageVolume[z*sizePerSlice+i]=value;
-                //valueの回数を取得、なければ0を取得。その後、インクリメントして再セット
-                this.histgram.set(value,(this.histgram.get(value)||0)+1);
-            }
-        }
-        //座標系の境界値を取得
-        const PixelSpacing=loadedData[0]["dataset"].string("x00280030")?.split('\\').map(parseFloat) || [1,1];
-        const rowSpacing=PixelSpacing[0];
-        const colSpacing=PixelSpacing[1];
-        const ipp0=loadedData[0]["dataset"].string("x00200032")?.split("\\").map(parseFloat);
-        this.xMin=ipp0?ipp0[0]:0;
-        this.xMax=this.xMin+(this.width-1)*colSpacing;
-        this.yMin=ipp0?ipp0[1]:0;
-        this.yMax=this.yMin+(this.height-1)*rowSpacing;
-        this.zMin=this.i2p[0];
-        this.zMax=this.i2p[this.depth];
-        this.imagesize=this.width*this.height;
+        
     }
     draw(ctx,index){
         
@@ -3142,8 +3103,8 @@ class LoadAndLayout{
             [MASKclass.DataType,MASKclass],
             //[DOSEclass.DataType,DOSEclass],
             [MASKDIFFclass.DataType,MASKDIFFclass],
-            //[CONTOURclass.DataType,CONTOURclass],
-        ])
+            [CONTOURclass.DataType,CONTOURclass],
+        ]);
         //Resize用
         //console.log("PixelRatio",window.devicePixelRatio);
         this.gridgap=5;

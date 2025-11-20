@@ -391,39 +391,50 @@ dialog#LoadDialog>div#LoadDialogDOMTreeContainer{
 }
 /*各データタイプが持っているDOMツリーに関するCSS*/
 div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree{
+    /*
     --DataTypeDisplay:20px;
     --PathSettngContainerHeight:60px;
+    */
     width:100%;
-    height:calc(var(--DataTypeDisplay) + var(--PathSettngContainerHeight));
+    /*height:calc(var(--DataTypeDisplay) + var(--PathSettngContainerHeight));*/
     display: flex;
     flex-direction: column;
 }
 div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.DataTypeDisplay{
     width:100%;
-    height: var(--DataTypeDisplay);
+    height: 20px;
     background-color: #bb95d6;
     color:black;
     font-weight: bold;
     text-align: center;
     vertical-align: top;
 }
-div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.PathSettingContainer{
+/*
+PathSettingContainer
+で入力タイプごとにまとまりで定義する。
+CT、MASK　FilePathInputSettingContainer
+MASKDIFF ComparableCanvasIDSelectSettingContainer
+CONTOUR FilePathInputWithCanvasIDSelectSettingContainer
+*/
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.FilePathInputSettingContainer{
     width: 100%;
-    height: var(--PathSettngContainerHeight);
+    --NewPartsHeight:30px;
+    --ExistingPartsHeight:30px;
+    height: calc(var(--NewPartsHeight) + var(--ExistingPartsHeight));
     display:flex;
     flex-direction: row;
     --ModeSelectContainerWidth:50px;
     --PathInputContainerWidth:calc(100% - var(--ModeSelectContainerWidth));
 }
-div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.PathSettingContainer>div.ModeSelectContainer{
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.FilePathInputSettingContainer>div.ModeSelectContainer{
     width:var(--ModeSelectContainerWidth);
     height:100%;
     display: flex;
     flex-direction: column;
 }
-div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.PathSettingContainer>div.ModeSelectContainer>button{
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.FilePathInputSettingContainer>div.ModeSelectContainer>button[data-SelectMode="New"]{
     width:100%;
-    height:50%;
+    height:var(--NewPartsHeight);
     text-align: center;
     vertical-align: top;
     background-color: white;
@@ -432,23 +443,33 @@ div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.PathSettingContainer>di
     font-weight: bold;
     border:1px solid black;
 }
-div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.PathSettingContainer>div.ModeSelectContainer>button:hover{
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.FilePathInputSettingContainer>div.ModeSelectContainer>button[data-SelectMode="Existing"]{
+    width:100%;
+    height:var(--ExistingPartsHeight);
+    text-align: center;
+    vertical-align: top;
+    background-color: white;
+    color:black;
+    font-size:12px;
+    font-weight: bold;
+    border:1px solid black;
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.FilePathInputSettingContainer>div.ModeSelectContainer>button:hover{
     background-color: #878686;
 }
-div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.PathSettingContainer>div.ModeSelectContainer>button.Selected{
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.FilePathInputSettingContainer>div.ModeSelectContainer>button.Selected{
     background-color: rgb(244, 158, 158);
 }
-div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.PathSettingContainer>div.PathInputContainer{
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.FilePathInputSettingContainer>div.PathInputContainer{
     width:var(--PathInputContainerWidth);
     height: 100%;
     display: flex;
     flex-direction: column;
     background-color: #002846;
 }
-/*PathInputContainerの種類ごとにCSSを設定する*/
-div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.PathSettingContainer>div.PathInputContainer>div.FilePathInput{
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.FilePathInputSettingContainer>div.PathInputContainer>div.PathContainer[data-SelectMode="New"]{
     width: 100%;
-    height:50%;
+    height:var(--NewPartsHeight);
     display: flex;
     flex-direction: row;
     padding:1px;
@@ -456,12 +477,12 @@ div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.PathSettingContainer>di
     --PathInputTextContainerWidth:calc(100% - var(--OpenFileDialogButtonWidth));
 }
 /*ファイルパスを入力するInputと参照ボタン*/
-div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.PathSettingContainer>div.PathInputContainer>div.FilePathInput>input[type="text"]{
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.FilePathInputSettingContainer>div.PathInputContainer>div.PathContainer[data-SelectMode="New"]>input[type="text"]{
     width: var(--PathInputTextContainerWidth);
     height:100%;
     vertical-align: top;
 }
-div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.PathSettingContainer>div.PathInputContainer>div.FilePathInput>button{
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.FilePathInputSettingContainer>div.PathInputContainer>div.PathContainer[data-SelectMode="New"]>button{
     width: var(--OpenFileDialogButtonWidth);
     height: 100%;
     vertical-align: top;
@@ -471,29 +492,201 @@ div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.PathSettingContainer>di
     border:1px solid rgb(0, 0, 0);
     font-size: 12px;
 }
-div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.PathSettingContainer>div.PathInputContainer>div.FilePathInput>button:hover{
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.FilePathInputSettingContainer>div.PathInputContainer>div.PathContainer[data-SelectMode="New"]>button:hover{
     background-color: gray;
 }
-div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.PathSettingContainer>div.PathInputContainer>div.FilePathInput>button:active{
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.FilePathInputSettingContainer>div.PathInputContainer>div.PathContainer[data-SelectMode="New"]>button:active{
     background-color: #005a9e;
 }
 /*既存のCanvasIDを参照するセレクター*/
-div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.PathSettingContainer>div.PathInputContainer>div.ExistingCanvasIDSelect{
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.FilePathInputSettingContainer>div.PathInputContainer>div.PathContainer[data-SelectMode="Existing"]{
     width: 100%;
-    height:50%;
+    height:var(--ExistingPartsHeight);
     padding:1px;
 }
-div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.PathSettingContainer>div.PathInputContainer>div.ExistingCanvasIDSelect>select{
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.FilePathInputSettingContainer>div.PathInputContainer>div.PathContainer[data-SelectMode="Existing"]>select{
     width:100%;
     height:100%;
     vertical-align: top;
 }
-div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.PathSettingContainer>div.PathInputContainer>div.ExistingCanvasIDSelect>select>option{
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.FilePathInputSettingContainer>div.PathInputContainer>div.PathContainer[data-SelectMode="Existing"]>select>option{
     background-color: rgb(63, 63, 63);
     color:white;
 }
-/*既存のCanvasを2つ比較するためのセレクター*/
-div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.PathSettingContainer>div.PathInputContainer>div.ComparableCanvasIDSelect{
+
+/*FilePathInputWithCanvasIDSelect*/
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.FilePathInputWithCanvasIDSelectSettingContainer{
+    width: 100%;
+    height: calc(var(--NewPartsHeight) + var(--ExistingPartsHeight));
+    display:flex;
+    flex-direction: row;
+    --NewPartsHeight:60px;
+    --ExistingPartsHeight:30px;
+    --ModeSelectContainerWidth:50px;
+    --PathInputContainerWidth:calc(100% - var(--ModeSelectContainerWidth));
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.FilePathInputWithCanvasIDSelectSettingContainer>div.ModeSelectContainer{
+    width:var(--ModeSelectContainerWidth);
+    height:100%;
+    display: flex;
+    flex-direction: column;
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.FilePathInputWithCanvasIDSelectSettingContainer>div.ModeSelectContainer>button[data-SelectMode="New"]{
+    width:100%;
+    height:var(--NewPartsHeight);
+    text-align: center;
+    vertical-align: top;
+    background-color: white;
+    color:black;
+    font-size:12px;
+    font-weight: bold;
+    border:1px solid black;
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.FilePathInputWithCanvasIDSelectSettingContainer>div.ModeSelectContainer>button[data-SelectMode="Existing"]{
+    width:100%;
+    height:var(--ExistingPartsHeight);
+    text-align: center;
+    vertical-align: top;
+    background-color: white;
+    color:black;
+    font-size:12px;
+    font-weight: bold;
+    border:1px solid black;
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.FilePathInputWithCanvasIDSelectSettingContainer>div.ModeSelectContainer>button:hover{
+    background-color: #878686;
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.FilePathInputWithCanvasIDSelectSettingContainer>div.ModeSelectContainer>button.Selected{
+    background-color: rgb(244, 158, 158);
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.FilePathInputWithCanvasIDSelectSettingContainer>div.PathInputContainer{
+    width:var(--PathInputContainerWidth);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background-color: #002846;
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.FilePathInputWithCanvasIDSelectSettingContainer>div.PathInputContainer>div.PathContainer[data-SelectMode="New"]{
+    width: 100%;
+    height:var(--NewPartsHeight);
+    display: flex;
+    flex-direction: column;
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.FilePathInputWithCanvasIDSelectSettingContainer>div.PathInputContainer>div.PathContainer[data-SelectMode="New"]>div.LoadPathParts{
+    --OpenFileDialogButtonWidth:50px;
+    --PathInputTextContainerWidth:calc(100% - var(--OpenFileDialogButtonWidth));
+    width:100%;
+    height:50%;
+    padding:1px;
+    display: flex;
+    flex-direction: row;
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.FilePathInputWithCanvasIDSelectSettingContainer>div.PathInputContainer>div.PathContainer[data-SelectMode="New"]>div.LoadPathParts>input[type="text"]{
+    width: var(--PathInputTextContainerWidth);
+    height:100%;
+    vertical-align: top;
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.FilePathInputWithCanvasIDSelectSettingContainer>div.PathInputContainer>div.PathContainer[data-SelectMode="New"]>div.LoadPathParts>button{
+    width: var(--OpenFileDialogButtonWidth);
+    height: 100%;
+    vertical-align: top;
+    text-align: center;
+    background-color: #373737;
+    color:rgb(255, 255, 255);
+    border:1px solid rgb(0, 0, 0);
+    font-size: 12px;
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.FilePathInputWithCanvasIDSelectSettingContainer>div.PathInputContainer>div.PathContainer[data-SelectMode="New"]>div.LoadPathParts>button:hover{
+    background-color: gray;
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.FilePathInputWithCanvasIDSelectSettingContainer>div.PathInputContainer>div.PathContainer[data-SelectMode="New"]>div.LoadPathParts>button:active{
+    background-color: #005a9e;
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.FilePathInputWithCanvasIDSelectSettingContainer>div.PathInputContainer>div.PathContainer[data-SelectMode="New"]>div.ReferOriginalParts{
+    width:100%;
+    height:50%;
+    padding:1px;
+    display: flex;
+    flex-direction: row;
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.FilePathInputWithCanvasIDSelectSettingContainer>div.PathInputContainer>div.PathContainer[data-SelectMode="New"]>div.ReferOriginalParts>select{
+    width: 100%;
+    height: 100%;
+    vertical-align: top;
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.FilePathInputWithCanvasIDSelectSettingContainer>div.PathInputContainer>div.PathContainer[data-SelectMode="New"]>div.ReferOriginalParts>select>option{
+    background-color: rgb(63, 63, 63);
+    color:white;
+}
+/*既存のCanvasIDを参照するセレクター*/
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.FilePathInputWithCanvasIDSelectSettingContainer>div.PathInputContainer>div.PathContainer[data-SelectMode="Existing"]{
+    width: 100%;
+    height:var(--ExistingPartsHeight);
+    padding:1px;
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.FilePathInputWithCanvasIDSelectSettingContainer>div.PathInputContainer>div.PathContainer[data-SelectMode="Existing"]>select{
+    width:100%;
+    height:100%;
+    vertical-align: top;
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.FilePathInputWithCanvasIDSelectSettingContainer>div.PathInputContainer>div.PathContainer[data-SelectMode="Existing"]>select>option{
+    background-color: rgb(63, 63, 63);
+    color:white;
+}
+
+/*ComparableCanvasIDSelect*/
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.ComparableCanvasIDSelectSettingContainer{
+    width: 100%;
+    --NewPartsHeight:30px;
+    --ExistingPartsHeight:30px;
+    height: calc(var(--NewPartsHeight) + var(--ExistingPartsHeight));
+    display:flex;
+    flex-direction: row;
+    --ModeSelectContainerWidth:50px;
+    --PathInputContainerWidth:calc(100% - var(--ModeSelectContainerWidth));
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.ComparableCanvasIDSelectSettingContainer>div.ModeSelectContainer{
+    width:var(--ModeSelectContainerWidth);
+    height:100%;
+    display: flex;
+    flex-direction: column;
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.ComparableCanvasIDSelectSettingContainer>div.ModeSelectContainer>button[data-SelectMode="New"]{
+    width:100%;
+    height:var(--NewPartsHeight);
+    text-align: center;
+    vertical-align: top;
+    background-color: white;
+    color:black;
+    font-size:12px;
+    font-weight: bold;
+    border:1px solid black;
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.ComparableCanvasIDSelectSettingContainer>div.ModeSelectContainer>button[data-SelectMode="Existing"]{
+    width:100%;
+    height:var(--ExistingPartsHeight);
+    text-align: center;
+    vertical-align: top;
+    background-color: white;
+    color:black;
+    font-size:12px;
+    font-weight: bold;
+    border:1px solid black;
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.ComparableCanvasIDSelectSettingContainer>div.ModeSelectContainer>button:hover{
+    background-color: #878686;
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.ComparableCanvasIDSelectSettingContainer>div.ModeSelectContainer>button.Selected{
+    background-color: rgb(244, 158, 158);
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.ComparableCanvasIDSelectSettingContainer>div.PathInputContainer{
+    width:var(--PathInputContainerWidth);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background-color: #002846;
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.ComparableCanvasIDSelectSettingContainer>div.PathInputContainer>div.PathContainer[data-SelectMode="New"]{
     width:100%;
     height:50%;
     padding:1px;
@@ -502,16 +695,17 @@ div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.PathSettingContainer>di
     display:flex;
     flex-direction: row;
 }
-div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.PathSettingContainer>div.PathInputContainer>div.ComparableCanvasIDSelect>select{
+/*ファイルパスを入力するInputと参照ボタン*/
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.ComparableCanvasIDSelectSettingContainer>div.PathInputContainer>div.PathContainer[data-SelectMode="New"]>select{
     width:var(--SelecterWidth);
     height: 100%;
     vertical-align: top;
 }
-div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.PathSettingContainer>div.PathInputContainer>div.ComparableCanvasIDSelect>select>option{
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.ComparableCanvasIDSelectSettingContainer>div.PathInputContainer>div.PathContainer[data-SelectMode="New"]>select>option{
     background-color: rgb(63, 63, 63);
     color:white;
 }
-div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.PathSettingContainer>div.PathInputContainer>div.ComparableCanvasIDSelect>div{
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.ComparableCanvasIDSelectSettingContainer>div.PathInputContainer>div.PathContainer[data-SelectMode="New"]>div{
     width:var(--SeparateWidth);
     height: 100%;
     vertical-align: top;
@@ -520,6 +714,21 @@ div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.PathSettingContainer>di
     color:white;
     font-weight: bold;
     font-size:12px;
+}
+/*既存のCanvasIDを参照するセレクター*/
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.ComparableCanvasIDSelectSettingContainer>div.PathInputContainer>div.PathContainer[data-SelectMode="Existing"]{
+    width: 100%;
+    height:var(--ExistingPartsHeight);
+    padding:1px;
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.ComparableCanvasIDSelectSettingContainer>div.PathInputContainer>div.PathContainer[data-SelectMode="Existing"]>select{
+    width:100%;
+    height:100%;
+    vertical-align: top;
+}
+div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.ComparableCanvasIDSelectSettingContainer>div.PathInputContainer>div.PathContainer[data-SelectMode="Existing"]>select>option{
+    background-color: rgb(63, 63, 63);
+    color:white;
 }
 
 dialog#LoadDialog>div#LoadDialogButtonContainer{
