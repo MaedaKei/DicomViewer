@@ -117,7 +117,7 @@ class CTclass{
         const NewPathInputText=document.createElement("input");
         NewPathInputText.className="NewPathInputText";
         NewPathInputText.type="text";
-        NewPathInputText.placeholder="パスを入力...";
+        NewPathInputText.placeholder="新しく読み込むデータのパスを入力...";
         const OpenFileDialogButton=document.createElement("button");
         OpenFileDialogButton.className="OpenFildDialogButton";
         OpenFileDialogButton.textContent="参照";
@@ -243,7 +243,7 @@ class CTclass{
         this.NewPathInputText.value="";
         this.ExistingPathInputSelecter.innerHTML="";//初期化
         const initialoption=document.createElement("option");
-        initialoption.text="DataIDを選択";
+        initialoption.text="既にあるDataIDを選択...";
         initialoption.value=(-99999);
         initialoption.disabled=true;//選択不可
         initialoption.hidden=true;//選択肢から除外
@@ -599,7 +599,7 @@ class MASKclass{
         const NewPathInputText=document.createElement("input");
         NewPathInputText.className="NewPathInputText";
         NewPathInputText.type="text";
-        NewPathInputText.placeholder="パスを入力...";
+        NewPathInputText.placeholder="新しく読み込むデータのパスを入力...";
         const OpenFileDialogButton=document.createElement("button");
         OpenFileDialogButton.className="OpenFildDialogButton";
         OpenFileDialogButton.textContent="参照";
@@ -725,7 +725,7 @@ class MASKclass{
         this.NewPathInputText.value="";
         this.ExistingPathInputSelecter.innerHTML="";//初期化
         const initialoption=document.createElement("option");
-        initialoption.text="DataIDを選択";
+        initialoption.text="既にあるDataIDを選択...";
         initialoption.value=(-99999);
         initialoption.disabled=true;//選択不可
         initialoption.hidden=true;//選択肢から除外
@@ -1177,7 +1177,7 @@ class MASKDIFFclass{
         */
         this.ExistingPathInputSelecter.innerHTML="";//初期化
         const initialoption=document.createElement("option");
-        initialoption.text="DataIDを選択";
+        initialoption.text="既にあるDataIDを選択...";
         initialoption.value=(-99999);
         initialoption.disabled=true;//選択不可
         initialoption.hidden=true;//選択肢から除外
@@ -1511,7 +1511,7 @@ class CONTOURclass{
         const NewPathInputText=document.createElement("input");
         NewPathInputText.className="NewPathInputText";
         NewPathInputText.type="text";
-        NewPathInputText.placeholder="パスを入力...";
+        NewPathInputText.placeholder="新しく読み込むデータのパスを入力...";
         const OpenFileDialogButton=document.createElement("button");
         OpenFileDialogButton.className="OpenFildDialogButton";
         OpenFileDialogButton.textContent="参照";
@@ -1658,7 +1658,7 @@ class CONTOURclass{
         //ExistingPathInputSelecterのOptionを更新する
         this.ExistingPathInputSelecter.innerHTML="";//初期化
         const ExistingPathInputSelecterInitialOption=document.createElement("option");
-        ExistingPathInputSelecterInitialOption.text="DataIDを選択";
+        ExistingPathInputSelecterInitialOption.text="既にあるDataIDを選択...";
         ExistingPathInputSelecterInitialOption.value=(-99999);
         ExistingPathInputSelecterInitialOption.disabled=true;//選択不可
         ExistingPathInputSelecterInitialOption.hidden=true;//選択肢から除外
@@ -1700,7 +1700,7 @@ class CONTOURclass{
         //オリジナルとなるCTセレクタの再構成
         for(const [CanvasID,DataID] of ReferOriginalPathInputSelecterCanvasIDDataIDMap.entries()){
             const option=document.createElement("option");
-            const Path=CanvasClassDictionary.get(CTclass.DataType).get(DataID).get("Data").Path;
+            const Path=DicomDataClassDictionary.get(CTclass.DataType).get(DataID).get("Data").Path;
             option.text=`CanvasID:${CanvasID} ${Path}`;
             option.value=CanvasID;
             ReferOriginalPathInputSelecterFragment.appendChild(option);
