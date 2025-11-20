@@ -1469,6 +1469,7 @@ class CONTOURclass{
     static DataType="CONTOUR";
     static PathTarget="openFile";
     static DefaultMultiSelections="";
+    static FilePathCanvasIDDelimita="|";//このデータクラスでは (読み込むファイルパス)|(元となるCT画像のCanvasID) という形でパスを持つ
     static {
         this.InitializePathSelectDOMTree();
     }
@@ -1644,14 +1645,14 @@ class CONTOURclass{
         //ReferOriginalPathInputSelecterを更新し、CT画像を持つCanvasIDとパスを表示する
         this.ReferOriginalPathInputSelecter.innerHTML="";
         const ReferOriginalPathInputSelecterInitialOption=document.createElement("option");
-        ReferOriginalPathInputSelecterInitialOption.text="元のCTとなるDataIDを選択";
+        ReferOriginalPathInputSelecterInitialOption.text="元のCTとなるCanvasIDを選択";
         ReferOriginalPathInputSelecterInitialOption.value=(-99999);
         ReferOriginalPathInputSelecterInitialOption.disabled=true;
         ReferOriginalPathInputSelecterInitialOption.hidden=true;
         ReferOriginalPathInputSelecterInitialOption.selected=true;
         const ReferOriginalPathInputSelecterFragment=document.createDocumentFragment();
         ReferOriginalPathInputSelecterFragment.appendChild(ReferOriginalPathInputSelecterInitialOption);
-        const ReferOriginalPathInputSelecterDataIDCanvasIDListMap=new Map();
+        const ReferOriginalPathInputSelecterCanvasIDDataIDMap=new Map();//{CanvasID:DataID}
         //Path入力欄の初期化
         this.NewPathInputText.value="";
         //ExistingPathInputSelecterのOptionを更新する
@@ -1685,11 +1686,7 @@ class CONTOURclass{
             }
             if(Canvas.LayerDataMap.has(CTDataType)){
                 const DataID=Canvas.LayerDataMap.get(CTDataType).get("DataID");
-                if(ReferOriginalPathInputSelecterDataIDCanvasIDListMap.has(DataID)){
-                    ReferOriginalPathInputSelecterDataIDCanvasIDListMap.get(DataID).push(CanvasID);
-                }else{
-                    ReferOriginalPathInputSelecterDataIDCanvasIDListMap.set(DataID,[CanvasID]);
-                }
+                ReferOriginalPathInputSelecterCanvasIDDataIDMap.set(CanvasID,DataID);
             }
         }
         //既存セレクタの再構成
@@ -1701,10 +1698,11 @@ class CONTOURclass{
         }
         this.ExistingPathInputSelecter.appendChild(ExistingPathInputSelecterFragment);
         //オリジナルとなるCTセレクタの再構成
-        for(const [DataID,CanvasIDList] of ReferOriginalPathInputSelecterDataIDCanvasIDListMap.entries()){
+        for(const [CanvasID,DataID] of ReferOriginalPathInputSelecterCanvasIDDataIDMap.entries()){
             const option=document.createElement("option");
-            option.text=`DataID: ${DataID} ( CanvasID= ${CanvasIDList.join(", ")} )`;
-            option.value=DataID;
+            const Path=CanvasClassDictionary.get(CTclass.DataType).get(DataID).get("Data").Path;
+            option.text=`CanvasID:${CanvasID} ${Path}`;
+            option.value=CanvasID;
             ReferOriginalPathInputSelecterFragment.appendChild(option);
         }
         this.ReferOriginalPathInputSelecter.appendChild(ReferOriginalPathInputSelecterFragment);
@@ -1737,8 +1735,16 @@ class CONTOURclass{
         }else{
             const DataInfoList=[];
             for(const LoadPath of LoadPathList){
-                const LoadedData=await this.DataLoader(LoadPath);
-                if(LoadedData){//ちゃんと読み込めているか
+                const [FilePath,CanvasID]=LoadPath.split(this.FilePathCanvasIDDelimita);
+                const NewLoadedData=await this.DataLoader(FilePath);
+                const OriginalCTDataID=CanvasClassDictionary.get(CanvasID).LayerDataMap.get(CTclass.DataType).get("DataID");
+                const OriginalCTData=DicomDataClassDictionary.get(CTclass.DataType).get(OriginalCTDataID).get("Data");
+                if(NewLoadedData&&OriginalCTData){//ちゃんと読み込めているか
+                    //OriginalCTの参照はコンストラクタ内でもできるが、コンストラクタが走るとエラーに関わらずインスタンスが生成されるような気がするので、確実に完了させるために事前にチェックする方策をとる
+                    const LoadedData=new Map([
+                        ["NewLoadedData",NewLoadedData],
+                        ["OriginalCTData",OriginalCTData]//サイズ関連のデータをconstructerで参照する
+                    ]);
                     const DataType=this.DataType;
                     const DicomData=new this(LoadPath,LoadedData);
                     const NewDataID=DicomNextID.get(DataType);
@@ -1768,8 +1774,16 @@ class CONTOURclass{
                 return [DataID];//Loadingの戻り値の形式に一致させる
             }
         }else if(SelectMode==="New"){
+            //CONTOURはセレクタにてCanvasIDの指定もされているのでそれと合わせたパス文字列を生成する
             const PathText=this.NewPathInputText.value;
-            const LoadPathList=PathText.split(", ");
+            const CanvasID=this.ReferOriginalPathInputSelecter.value;
+            const LoadPathList=PathText.split(", ").map(path=>`${path}${this.FilePathCanvasIDDelimita}${CanvasID}`);//複数読み込みを禁止しているので必ず長さ1の配列になるはず
+            //一応個数チェック
+            if(LoadPathList.length!=1){
+                console.log(this.DataType,"読み込み時エラー パスが複数あり",LoadPathList);
+                return false;
+            }
+            //FilePath|CanvasIDという形式の文字列を渡す
             const DataIDList=await this.Loading(LoadPathList);
             return DataIDList;
         }
@@ -1777,6 +1791,18 @@ class CONTOURclass{
     }
     constructor(loadPath,loadedData){
         this.Path=loadPath;
+        const DicomData=loadedData.get("NewLoadedData");
+        const OriginalCTData=loadedData.get("OriginalCTData");
+        /*
+        DicomData内の輪郭データの解析を始める
+        このとき、患者座標系から画像座標系への変換も行う。そのためにOriginalCTDataのIPP、IOP、pixelScaleなどが必要
+        */
+        /*
+        1. データを読み取るときは{ROIName:{Z-index:,...,}}にする
+        2. {Z-index:{ROIName:[Path2D,...,]}}の形式にする.
+        3. 1.のMapのkeyをもとにフラグマップも作っておく
+        */
+        //1. DicomDataを解析してMap形式にする
         
     }
     draw(ctx,index){
