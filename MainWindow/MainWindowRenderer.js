@@ -1828,7 +1828,7 @@ class CONTOURclass{
     }
     constructor(loadPath,loadedData){
         this.Path=loadPath;
-        const DicomData=loadedData.get("NewLoadedData");
+        const DicomData=loadedData.get("NewLoadedData")[0]["dataset"];//かならずシングルロードだから
         const OriginalCTData=loadedData.get("OriginalCTData");
         //OriginalCTDataからサイズに関する情報をもらう
         /*画像座標系の情報*/
@@ -1856,7 +1856,14 @@ class CONTOURclass{
         */
         //ROIStructerSetROISequenceからROINameとROINumberに対応を保持する
         const ROINumberROINameMap=new Map();
-        const StructureSetROISequenceItemArray=DicomData.element.x30060020.items;
+        /*
+        console.log(DicomData);
+        const a=DicomData.elements;
+        const b=a.x30060020;
+        const c=b.items;
+        const StructureSetROISequenceItemArray=c;
+        */
+        const StructureSetROISequenceItemArray=DicomData.elements.x30060020.items;
         for(const StructureSetROISequenceItem of StructureSetROISequenceItemArray){
             const ROINumber=StructureSetROISequenceItem.dataSet.intString("x30060022");//ROINumber
             const ROIName=StructureSetROISequenceItem.dataSet.string("x30060026");//ROIName
@@ -1884,10 +1891,17 @@ class CONTOURclass{
                 const ContourGeometricType=ContourSequenceItem.dataSet.string("x30060042");//輪郭データの形状
                 if(ContourGeometricType==="CLOSED_PLANAR"){//閉じている輪郭だけを対象としている
                     //輪郭データを抜き出す
-                    const ContourData=ContourSequenceItem.dataSet.floatString("x30060050");//[x,y,z,x,y,z,...,]
+                    const ContourDataLength=ContourSequenceItem.dataSet.elements["x30060050"].length;//[x,y,z,x,y,z,...,]
+                    const ContourData=[];
+                    for(let i=0;i<ContourDataLength;i++){
+                        const value=ContourSequenceItem.dataSet.floatString("x30060050");
+                        ContourData.push(value);
+                    }
+                    console.log("ContourData完成");
                     /*ここで、OriginalCTDataの情報を基に画像座標系に変換しながら読み込んでいく*/
                     //スライスごとの輪郭で、Z座標は全て一致するという前提のもとZ座標を取得
                     const PatientZ=ContourData[2];
+                    console.log(ContourData,typeof(ContourData));
                     const Z=this.p2i.get(PatientZ)||null;
                     if(Z===null){
                         console.error(`PatientZ : ${PatientZ} となる画像座標系が見つからなかった`);
@@ -1901,7 +1915,7 @@ class CONTOURclass{
                     const StartY=(this.height)*(StartPatientY-this.yMin)/(this.yMax-this.yMin);
                     const ContourPath=new Path2D();
                     ContourPath.moveTo(StartX,StartY);
-                    for(const BaseIndex=3;BaseIndex<ContourData.length;BaseIndex+3){//始点の次の点から
+                    for(let BaseIndex=3;BaseIndex<ContourData.length;BaseIndex+3){//始点の次の点から
                         const PatientX=ContourData[BaseIndex];
                         const PatientY=ContourData[BaseIndex+1];
                         //const PatientZ=ContourData[BaseIndex+2];
@@ -1933,21 +1947,32 @@ class CONTOURclass{
             this.ContourColorMap.set(ROIName,HexText);
         }
         //ROISelectStatusSet集合内にあるROINameは描画する輪郭
-        this.ROISelectStatusSet=new Set(ROINameList);//初期状態では全表示とする
+        this.ROISelectStatusSet=new Set();//初期状態では全表示とする
+        this.ROISelectStatusSet.add(ROINameList[0]);
     }
-    draw(ctx,index){
+    draw(ctx,DrawStatus){
         const dWidth=ctx.canvas.width,dHeight=ctx.canvas.height;
+        const index=DrawStatus.get("index");
         ctx.clearRect(0,0,dWidth,dHeight);//初期化
-        if(DrawStatus.get("regenerate")){
-            if(this.currentImageBitmap){
-                this.currentImageBitmap.close();
+        //座標系の移動・拡縮
+        ctx.save();
+        ctx.translate(-DrawStatus.get("w0"),-DrawStatus.get("h0"));
+        ctx.scale(DrawStatus.get("width")/dWidth,DrawStatus.get("height")/dHeight);
+        //輪郭の描画
+        for(const ROIName of this.ROISelectStatusSet){
+            const ROIContourDataMap=this.ContourDataMap.get(ROIName);
+            if(ROIContourDataMap.has(index)){
+                const ContourPath=ROIContourDataMap.get(index);
+                const ContourColorHexText=this.ContourColorMap.get(ROIName);
+                ctx.strokeStyle=ContourColorHexText;
+                ctx.stroke(ContourPath);
+                ctx.fillStyle=ContourColorHexText;
+                ctx.fill(ContourPath);
             }
-            //新しいImageBitMapを作成して保持
-            this.currentImageBitmap= await this.createImageBitmap(DrawStatus.get("index"));
-            //console.log("Bitmap",this.currentImageBitmap);
-            //DrawStatus.set("regenerate",false);
         }
+        ctx.restore();
         //保存されたImageBitMapを描画する
+        /*
         if(this.currentImageBitmap){
             ctx.drawImage(
                 this.currentImageBitmap,
@@ -1955,6 +1980,7 @@ class CONTOURclass{
                 0,0,dWidth,dHeight
             );
         }
+        */
     }
 }
 //グローバル変数としてCanvasContainerを保持・グローバルスライドショーを紐づけ
