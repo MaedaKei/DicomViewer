@@ -1,4 +1,4 @@
-lass RTSS:
+class RTSS:
     def __init__(self,rtss_filepath,index2position_dict,position2index_dict):
         #読み込む
         rtss=dicom.dcmread(rtss_filepath)

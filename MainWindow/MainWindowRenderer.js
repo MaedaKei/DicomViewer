@@ -386,13 +386,16 @@ class CTclass{
         const sizePerSlice=this.width*this.height;
         //loadDataから３次元配列、ヒストグラム、zとImagePositionPatientの紐づけを行う
         this.i2p=new Map();
+        this.p2i=new Map();
         this.ImageVolume=new Float32Array(sizePerSlice*this.depth);
         const histgram=new Map();//MASKのカラーマップ生成時の情報にも使える
         //console.log("Depth",this.depth);
         let vMin=Infinity,vMax=-Infinity;
         for(let z=0;z<this.depth;z++){
             const dataset=loadedData[z]["dataset"];
-            this.i2p.set(z,dataset.string("x00200032").split('\\')[2]);//z座標を取得
+            const position=parseFloat(dataset.string("x00200032").split('\\')[2]);//患者座標系
+            this.i2p.set(z,position);//indexからｚ座標を取得
+            this.p2i.set(position,z);//z座標からindexを取得
             const slope=parseFloat(dataset.string("x00281053")||"1");
             const intercept=parseFloat(dataset.string("x00281052")||"0");
             const bitsAllocated=dataset.uint16("x00280100");
@@ -452,6 +455,8 @@ class CTclass{
         this.imagesize=this.width*this.height;
         this.vMin=vMin;
         this.vMax=vMax;
+        this.rowSpacing=rowSpacing;
+        this.colSpacing=colSpacing;
         //console.log(vMin,"~",vMax);
         //一時保存用の変数
         this.currentImageBitmap=null;
@@ -875,7 +880,9 @@ class MASKclass{
         let vMin=Infinity,vMax=-Infinity;
         for(let z=0;z<this.depth;z++){
             const dataset=loadedData[z]["dataset"];
-            this.i2p.set(z,dataset.string("x00200032").split('\\')[2]);//z座標を取得
+            const position=parseFloat(dataset.string("x00200032").split('\\')[2]);//患者座標系
+            this.i2p.set(z,position);//indexからｚ座標を取得
+            this.p2i.set(position,z);//z座標からindexを取得
             const slope=parseFloat(dataset.string("x00281053")||"1");
             const intercept=parseFloat(dataset.string("x00281052")||"0");
             const bitsAllocated=dataset.uint16("x00280100");
@@ -935,6 +942,8 @@ class MASKclass{
         this.imagesize=this.width*this.height;
         this.vMin=vMin;
         this.vMax=vMax;
+        this.rowSpacing=rowSpacing;
+        this.colSpacing=colSpacing;
         //console.log(vMin,"~",vMax);
         //一時保存用の変数
         this.currentImageBitmap=null;
@@ -1390,7 +1399,8 @@ class MASKDIFFclass{
         this.histgram=new Map(
             [...histgram.entries()].sort((a,b)=>a[0]-b[0])
         );
-        this.i2p=MASKA.i2p;
+        this.i2p=MASKA.i2p;//スライスインデックスから患者座標系ｚ軸を取得(int => float)
+        this.p2i=MASKA.p2i;//患者座標系ｚ軸からスライスインデックスを取得(flloat => int)
         this.xMin=MASKA.xMin;
         this.xMax=MASKA.xMax;
         this.yMin=MASKA.yMin;
@@ -1400,6 +1410,8 @@ class MASKDIFFclass{
         this.imagesize=this.width*this.height;
         this.vMin=vMin;
         this.vMax=vMax;
+        this.rowSpacing=MASKA.rowSpacing;
+        this.colSpacing=MASKA.colSpacing;
         //console.log(vMin,"~",vMax);
         this.currentImageBitmap=null;
     }
@@ -1735,9 +1747,11 @@ class CONTOURclass{
         }else{
             const DataInfoList=[];
             for(const LoadPath of LoadPathList){
-                const [FilePath,CanvasID]=LoadPath.split(this.FilePathCanvasIDDelimita);
+                const [FilePath,CanvasIDstr]=LoadPath.split(this.FilePathCanvasIDDelimita);
                 const NewLoadedData=await this.DataLoader(FilePath);
-                const OriginalCTDataID=CanvasClassDictionary.get(CanvasID).LayerDataMap.get(CTclass.DataType).get("DataID");
+                const CanvasID=parseInt(CanvasIDstr);
+                const OriginalCTCanvas=CanvasClassDictionary.get(CanvasID);
+                const OriginalCTDataID=OriginalCTCanvas.LayerDataMap.get(CTclass.DataType).get("DataID");
                 const OriginalCTData=DicomDataClassDictionary.get(CTclass.DataType).get(OriginalCTDataID).get("Data");
                 if(NewLoadedData&&OriginalCTData){//ちゃんと読み込めているか
                     //OriginalCTの参照はコンストラクタ内でもできるが、コンストラクタが走るとエラーに関わらずインスタンスが生成されるような気がするので、確実に完了させるために事前にチェックする方策をとる
@@ -1793,16 +1807,34 @@ class CONTOURclass{
         this.Path=loadPath;
         const DicomData=loadedData.get("NewLoadedData");
         const OriginalCTData=loadedData.get("OriginalCTData");
+        //OriginalCTDataからサイズに関する情報をもらう
+        /*画像座標系の情報*/
+        this.width=OriginalCTData.width;//画像座標系の幅
+        this.height=OriginalCTData.height;//画像座標系の高さ
+        this.depth=OriginalCTData.depth;//スライス枚数
+        /*患者座標系の情報*/
+        this.xMin=OriginalCTData.xMin;
+        this.xMax=OriginalCTData.xMax;
+        this.yMin=OriginalCTData.yMin;
+        this.yMax=OriginalCTData.yMax;
+        this.zMin=OriginalCTData.zMin;
+        this.zMax=OriginalCTData.zMax;
+        /*画像座標スライスインデックスと患者座標ｚ軸の相互変換*/
+        this.i2p=OriginalCTData.i2p;
+        this.p2i=OriginalCTData.p2i;
+        //以上の情報を基に、輪郭データを読み込みながら逐次画像座標に変換してPath2Dにする
         /*
         DicomData内の輪郭データの解析を始める
         このとき、患者座標系から画像座標系への変換も行う。そのためにOriginalCTDataのIPP、IOP、pixelScaleなどが必要
         */
         /*
-        1. データを読み取るときは{ROIName:{Z-index:,...,}}にする
-        2. {Z-index:{ROIName:[Path2D,...,]}}の形式にする.
-        3. 1.のMapのkeyをもとにフラグマップも作っておく
+        1. データは{ROIName:{z1:Path2D,z2:Path2D,...,}}という形式で保存する。このようにすればROIごとの出現スライスも容易にアクセス可能
+        2．現在の選択状態はROINameのSetとする。
         */
-        //1. DicomDataを解析してMap形式にする
+        const ReferncedROINumberROINameMap=new Map();
+        //ROIStructerSetROISequenceからROINameとROINumberに対応を保持する
+        this.ROISelectStatusSet=new Set();
+        this.ContourMap=new Map();//{ROIName:{z:[Path2D],...,z:[Path2D]}}のようにし、zに対して輪郭Path2Dのリストとする。同じスライスで複数の輪郭を持つことがあるため
         
     }
     draw(ctx,index){
@@ -3099,7 +3131,7 @@ class LoadAndLayout{
             const name=item["name"];//ファイル名
             const arraybuffer=item["arrayBuffer"];//そのファイルの中身
             const byteArray=new Uint8Array(arraybuffer);
-            const dataset=dicomParser.parseDicom(byteArray);
+            const dataset=dicomParser.parseDicom(byteArray);//DICOMデータ全般をなんでも解析する
             dicomdata.push({"name":name,"dataset":dataset});
         }
         return dicomdata;
