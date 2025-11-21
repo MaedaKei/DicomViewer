@@ -1804,7 +1804,7 @@ class CONTOURclass{
         return false;
     }
     //Contour専用のカラーマップ生成関数
-    static hsv2rgb(h,s=1,v=1,alpha=0.5){
+    static hsv2rgb(h,s=1,v=1){
         // 引数処理
         h = (h < 0 ? h % 360 + 360 : h) % 360 / 60;
         s = s < 0 ? 0 : s > 1 ? 1 : s;
@@ -1821,8 +1821,7 @@ class CONTOURclass{
             rgb: c, r: c[0], g: c[1], b: c[2],
         };
         */
-        const a=Math.round(255*alpha);//透過率を8bitに変換
-        const HexValueList=[c[0],c[1],c[2],a];
+        const HexValueList=[c[0],c[1],c[2]];
         const HexText=`#${HexValueList.map(v=>v.toString(16).padStart(2,"0")).join("")}`;
         return HexText;
     }
@@ -1942,6 +1941,8 @@ class CONTOURclass{
         const ROINameList=Array.from(this.ContourDataMap.keys());
         const ROINum=ROINameList.length;
         this.ContourColorMap=new Map();//{ROIName:"#RRBBGGAA"}
+        this.LineAlpha=Math.round(255*0.8).toString(16).padStart(2,"0");
+        this.FillAlpha=Math.round(255*0.3).toString(16).padStart(2,"0");
         for(const [n,ROIName] of ROINameList.entries()){
             //色相hを決定
             const h=360*(n/ROINum);
@@ -1949,10 +1950,9 @@ class CONTOURclass{
             this.ContourColorMap.set(ROIName,HexText);
         }
         //ROISelectStatusSet集合内にあるROINameは描画する輪郭
-        this.ROISelectStatusSet=new Set();//初期状態では全表示とする
-        this.ROISelectStatusSet.add(ROINameList[0]);
-        console.log(this.ContourColorMap);
-        console.log(this.ContourDataMap);
+        this.ROISelectStatusSet=new Set(ROINameList);//初期状態では全表示とする
+        //console.log(this.ContourColorMap);
+        //console.log(this.ContourDataMap);
     }
     draw(ctx,DrawStatus){
         const dWidth=ctx.canvas.width,dHeight=ctx.canvas.height;
@@ -1968,12 +1968,12 @@ class CONTOURclass{
             if(ROIContourDataMap.has(index)){
                 const ContourPathArray=ROIContourDataMap.get(index);
                 const ContourColorHexText=this.ContourColorMap.get(ROIName);
-                ctx.strokeStyle=ContourColorHexText;
-                ctx.fillStyle=ContourColorHexText;
+                ctx.strokeStyle=ContourColorHexText+this.LineAlpha;
+                ctx.fillStyle=ContourColorHexText+this.FillAlpha;
                 ctx.lineWidth=1;
                 for(const ContourPath of ContourPathArray){
                     ctx.stroke(ContourPath);
-                    //ctx.fill(ContourPath);
+                    ctx.fill(ContourPath);
                 }
             }
         }
