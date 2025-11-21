@@ -1803,6 +1803,29 @@ class CONTOURclass{
         }
         return false;
     }
+    //Contour専用のカラーマップ生成関数
+    static hsv2rgb(h,s=1,v=1,alpha=0.5){
+        // 引数処理
+        h = (h < 0 ? h % 360 + 360 : h) % 360 / 60;
+        s = s < 0 ? 0 : s > 1 ? 1 : s;
+        v = v < 0 ? 0 : v > 1 ? 1 : v;
+
+        // HSV to RGB 変換
+        const c = [5, 3, 1].map(n =>
+            Math.round((v - Math.max(0, Math.min(1, 2 - Math.abs(2 - (h + n) % 6))) * s * v) * 255));
+
+        // 戻り値
+        /*
+        return {
+            hex: `#${(c[0] << 16 | c[1] << 8 | c[2]).toString(16).padStart(6, '0')}`,
+            rgb: c, r: c[0], g: c[1], b: c[2],
+        };
+        */
+        const a=parseInt(255*alpha);//透過率を8bitに変換
+        const HexValue=(c[0]<<24|c[1]<<16|c[2]<<8|a);
+        const HexText=`#${HexValue.toString(16).padStart(8,'0')}`;
+        return HexText;
+    }
     constructor(loadPath,loadedData){
         this.Path=loadPath;
         const DicomData=loadedData.get("NewLoadedData");
@@ -1831,11 +1854,86 @@ class CONTOURclass{
         1. データは{ROIName:{z1:Path2D,z2:Path2D,...,}}という形式で保存する。このようにすればROIごとの出現スライスも容易にアクセス可能
         2．現在の選択状態はROINameのSetとする。
         */
-        const ReferncedROINumberROINameMap=new Map();
         //ROIStructerSetROISequenceからROINameとROINumberに対応を保持する
-        this.ROISelectStatusSet=new Set();
-        this.ContourMap=new Map();//{ROIName:{z:[Path2D],...,z:[Path2D]}}のようにし、zに対して輪郭Path2Dのリストとする。同じスライスで複数の輪郭を持つことがあるため
-        
+        const ROINumberROINameMap=new Map();
+        const StructureSetROISequenceItemArray=DicomData.element.x30060020.items;
+        for(const StructureSetROISequenceItem of StructureSetROISequenceItemArray){
+            const ROINumber=StructureSetROISequenceItem.dataSet.intString("x30060022");//ROINumber
+            const ROIName=StructureSetROISequenceItem.dataSet.string("x30060026");//ROIName
+            ROINumberROINameMap.set(ROINumber,ROIName);//ROINumber⇒ROIName
+        }
+        //ROIContourSequenceの解析
+        this.ContourDataMap=new Map();
+        const ROIContourSequenceItemArray=DicomData.elements.x30060039.items;
+        for(const ROIContourSequneceItem of ROIContourSequenceItemArray){
+            //この組織の輪郭のROINumberを取得
+            const ROINumber=ROIContourSequneceItem.dataSet.intString("x30060084")//参照ROI番号
+            const ROIName=ROINumberROINameMap.get(ROINumber);
+            //ContourSequenceの中身を解析する
+            const ContourSequenceElement=ROIContourSequneceItem.dataSet.elements.x30060040;
+            //輪郭データが登録されているかのチェック
+            if(!(ContourSequenceElement&&ContourSequenceElement.items)){
+                //何かしらの理由でこのROIの輪郭データがない
+                console.log(ROINumber,ROIName,"ContourSequenceなし");
+                continue;
+            }
+            const ContourSequenceItemArray=ContourSequenceElement.items;//あるROIに対してスライス分(輪郭分、同じスライスに複数の輪郭があったりもする)のデータがある
+            //この組織の輪郭マップ
+            const ROIContourDataMap=new Map();//{z:[Path2D]という感じにする}
+            for(const ContourSequenceItem of ContourSequenceItemArray){
+                const ContourGeometricType=ContourSequenceItem.dataSet.string("x30060042");//輪郭データの形状
+                if(ContourGeometricType==="CLOSED_PLANAR"){//閉じている輪郭だけを対象としている
+                    //輪郭データを抜き出す
+                    const ContourData=ContourSequenceItem.dataSet.floatString("x30060050");//[x,y,z,x,y,z,...,]
+                    /*ここで、OriginalCTDataの情報を基に画像座標系に変換しながら読み込んでいく*/
+                    //スライスごとの輪郭で、Z座標は全て一致するという前提のもとZ座標を取得
+                    const PatientZ=ContourData[2];
+                    const Z=this.p2i.get(PatientZ)||null;
+                    if(Z===null){
+                        console.error(`PatientZ : ${PatientZ} となる画像座標系が見つからなかった`);
+                    }
+                    //[[x,y],...,のArrayを作る
+                    //const XYArray=[];
+                    //X,Yの解析とPath2D化を同時進行する
+                    const StartPatientX=ContourData[0];
+                    const StartPatientY=ContourData[1];
+                    const StartX=(this.width)*(StartPatientX-this.xMin)/(this.xMax-this.xMin);
+                    const StartY=(this.height)*(StartPatientY-this.yMin)/(this.yMax-this.yMin);
+                    const ContourPath=new Path2D();
+                    ContourPath.moveTo(StartX,StartY);
+                    for(const BaseIndex=3;BaseIndex<ContourData.length;BaseIndex+3){//始点の次の点から
+                        const PatientX=ContourData[BaseIndex];
+                        const PatientY=ContourData[BaseIndex+1];
+                        //const PatientZ=ContourData[BaseIndex+2];
+                        /*画像座標系に変換*/
+                        const X=(this.width)*(PatientX-this.xMin)/(this.xMax-this.xMin);
+                        const Y=(this.height)*(PatientY-this.yMin)/(this.yMax-this.yMin);
+                        ContourPath.lineTo(X,Y);
+                    }
+                    ContourPath.closePath();
+                    //このROIの輪郭をまとめるROIContourDataMapにZをkeyとして登録する
+                    if(ROIContourDataMap.has(Z)){
+                        ROIContourDataMap.get(Z).push(ContourPath);
+                    }else{//初めてのZ
+                        ROIContourDataMap.set(Z,[ContourPath]);
+                    }
+                }
+            }
+            //ROIContourDataMapをContourDataMapに追加するKeyはROIName
+            this.ContourDataMap.set(ROIName,ROIContourDataMap);
+        }
+        //ROINameごとの色を決定する
+        const ROINameList=Array.from(this.ContourDataMap.keys());
+        const ROINum=ROINameList.length;
+        this.ContourColorMap=new Map();//{ROIName:"#RRBBGGAA"}
+        for(const [n,ROIName] of ROINameList){
+            //色相hを決定
+            const h=360*(n/ROINum);
+            const HexText=CONTOURclass.hsv2rgb(h);
+            this.ContourColorMap.set(ROIName,HexText);
+        }
+        //ROISelectStatusSet集合内にあるROINameは描画する輪郭
+        this.ROISelectStatusSet=new Set(ROINameList);//初期状態では全表示とする
     }
     draw(ctx,index){
         
