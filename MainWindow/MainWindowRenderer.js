@@ -1821,9 +1821,9 @@ class CONTOURclass{
             rgb: c, r: c[0], g: c[1], b: c[2],
         };
         */
-        const a=parseInt(255*alpha);//透過率を8bitに変換
-        const HexValue=(c[0]<<24|c[1]<<16|c[2]<<8|a);
-        const HexText=`#${HexValue.toString(16).padStart(8,'0')}`;
+        const a=Math.round(255*alpha);//透過率を8bitに変換
+        const HexValueList=[c[0],c[1],c[2],a];
+        const HexText=`#${HexValueList.map(v=>v.toString(16).padStart(2,"0")).join("")}`;
         return HexText;
     }
     constructor(loadPath,loadedData){
@@ -1845,6 +1845,7 @@ class CONTOURclass{
         /*画像座標スライスインデックスと患者座標ｚ軸の相互変換*/
         this.i2p=OriginalCTData.i2p;
         this.p2i=OriginalCTData.p2i;
+        //console.log(this.p2i);
         //以上の情報を基に、輪郭データを読み込みながら逐次画像座標に変換してPath2Dにする
         /*
         DicomData内の輪郭データの解析を始める
@@ -1891,20 +1892,21 @@ class CONTOURclass{
                 const ContourGeometricType=ContourSequenceItem.dataSet.string("x30060042");//輪郭データの形状
                 if(ContourGeometricType==="CLOSED_PLANAR"){//閉じている輪郭だけを対象としている
                     //輪郭データを抜き出す
-                    const ContourDataLength=ContourSequenceItem.dataSet.elements["x30060050"].length;//[x,y,z,x,y,z,...,]
-                    const ContourData=[];
-                    for(let i=0;i<ContourDataLength;i++){
-                        const value=ContourSequenceItem.dataSet.floatString("x30060050");
-                        ContourData.push(value);
+                    const ContourDataString=ContourSequenceItem.dataSet.string("x30060050");
+                    if(!ContourDataString){
+                        console.error("ContourData (x30060050) が取得できませんでした");
+                        continue;
                     }
-                    console.log("ContourData完成");
+                    const ContourData=ContourDataString.split("\\").map(parseFloat);
                     /*ここで、OriginalCTDataの情報を基に画像座標系に変換しながら読み込んでいく*/
                     //スライスごとの輪郭で、Z座標は全て一致するという前提のもとZ座標を取得
                     const PatientZ=ContourData[2];
-                    console.log(ContourData,typeof(ContourData));
-                    const Z=this.p2i.get(PatientZ)||null;
+                    //console.log(ContourData,typeof(ContourData));
+                    const Z=this.p2i.has(PatientZ)?this.p2i.get(PatientZ):null;
                     if(Z===null){
-                        console.error(`PatientZ : ${PatientZ} となる画像座標系が見つからなかった`);
+                        console.error(`${ROIName}のPatientZ : ${PatientZ} となる画像座標系が見つからなかった`);
+                        console.log(ContourData);
+                        continue;
                     }
                     //[[x,y],...,のArrayを作る
                     //const XYArray=[];
@@ -1915,7 +1917,7 @@ class CONTOURclass{
                     const StartY=(this.height)*(StartPatientY-this.yMin)/(this.yMax-this.yMin);
                     const ContourPath=new Path2D();
                     ContourPath.moveTo(StartX,StartY);
-                    for(let BaseIndex=3;BaseIndex<ContourData.length;BaseIndex+3){//始点の次の点から
+                    for(let BaseIndex=3;BaseIndex<ContourData.length;BaseIndex+=3){//始点の次の点から
                         const PatientX=ContourData[BaseIndex];
                         const PatientY=ContourData[BaseIndex+1];
                         //const PatientZ=ContourData[BaseIndex+2];
@@ -1940,7 +1942,7 @@ class CONTOURclass{
         const ROINameList=Array.from(this.ContourDataMap.keys());
         const ROINum=ROINameList.length;
         this.ContourColorMap=new Map();//{ROIName:"#RRBBGGAA"}
-        for(const [n,ROIName] of ROINameList){
+        for(const [n,ROIName] of ROINameList.entries()){
             //色相hを決定
             const h=360*(n/ROINum);
             const HexText=CONTOURclass.hsv2rgb(h);
@@ -1949,6 +1951,8 @@ class CONTOURclass{
         //ROISelectStatusSet集合内にあるROINameは描画する輪郭
         this.ROISelectStatusSet=new Set();//初期状態では全表示とする
         this.ROISelectStatusSet.add(ROINameList[0]);
+        console.log(this.ContourColorMap);
+        console.log(this.ContourDataMap);
     }
     draw(ctx,DrawStatus){
         const dWidth=ctx.canvas.width,dHeight=ctx.canvas.height;
@@ -1962,12 +1966,15 @@ class CONTOURclass{
         for(const ROIName of this.ROISelectStatusSet){
             const ROIContourDataMap=this.ContourDataMap.get(ROIName);
             if(ROIContourDataMap.has(index)){
-                const ContourPath=ROIContourDataMap.get(index);
+                const ContourPathArray=ROIContourDataMap.get(index);
                 const ContourColorHexText=this.ContourColorMap.get(ROIName);
                 ctx.strokeStyle=ContourColorHexText;
-                ctx.stroke(ContourPath);
                 ctx.fillStyle=ContourColorHexText;
-                ctx.fill(ContourPath);
+                ctx.lineWidth=1;
+                for(const ContourPath of ContourPathArray){
+                    ctx.stroke(ContourPath);
+                    //ctx.fill(ContourPath);
+                }
             }
         }
         ctx.restore();
