@@ -1936,7 +1936,25 @@ class CONTOURclass{
         this.ROISelectStatusSet=new Set(ROINameList);//初期状態では全表示とする
     }
     draw(ctx,index){
-        
+        const dWidth=ctx.canvas.width,dHeight=ctx.canvas.height;
+        ctx.clearRect(0,0,dWidth,dHeight);//初期化
+        if(DrawStatus.get("regenerate")){
+            if(this.currentImageBitmap){
+                this.currentImageBitmap.close();
+            }
+            //新しいImageBitMapを作成して保持
+            this.currentImageBitmap= await this.createImageBitmap(DrawStatus.get("index"));
+            //console.log("Bitmap",this.currentImageBitmap);
+            //DrawStatus.set("regenerate",false);
+        }
+        //保存されたImageBitMapを描画する
+        if(this.currentImageBitmap){
+            ctx.drawImage(
+                this.currentImageBitmap,
+                DrawStatus.get("w0"),DrawStatus.get("h0"),DrawStatus.get("width"),DrawStatus.get("height"),
+                0,0,dWidth,dHeight
+            );
+        }
     }
 }
 //グローバル変数としてCanvasContainerを保持・グローバルスライドショーを紐づけ
