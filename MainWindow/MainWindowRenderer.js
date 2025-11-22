@@ -275,7 +275,8 @@ class CTclass{
             fragment.appendChild(option);
         }
         this.ExistingPathInputSelecter.appendChild(fragment);
-        //ModeSelectButtonを初期化する
+        //ModeSelectContainerのSelectMode属性値とModeSelectButtonを初期化する
+        this.ModeSelectContainer.setAttribute("data-SelectMode","");
         const ModeSelectButtonArray=this.ModeSelectContainer.querySelectorAll(":scope>button.Selected");
         for(const button of ModeSelectButtonArray){
             button.classList.remove("Selected");
@@ -768,6 +769,7 @@ class MASKclass{
         }
         this.ExistingPathInputSelecter.appendChild(fragment);
         //ModeSelectButtonを初期化する
+        this.ModeSelectContainer.setAttribute("data-SelectMode","");
         const ModeSelectButtonArray=this.ModeSelectContainer.querySelectorAll(":scope>button.Selected");
         for(const button of ModeSelectButtonArray){
             button.classList.remove("Selected");
@@ -1262,6 +1264,7 @@ class MASKDIFFclass{
         this.Input1Selecter.appendChild(Input1Fragment);
         this.Input2Selecter.appendChild(Input2Fragment);
         //ModeSelectButtonを初期化する
+        this.ModeSelectContainer.setAttribute("data-SelectMode","");
         const ModeSelectButtonArray=this.ModeSelectContainer.querySelectorAll(":scope>button.Selected");
         for(const button of ModeSelectButtonArray){
             button.classList.remove("Selected");
@@ -1735,6 +1738,7 @@ class CONTOURclass{
         }
         this.ReferOriginalPathInputSelecter.appendChild(ReferOriginalPathInputSelecterFragment);
         //ModeSelectButtonを初期化する
+        this.ModeSelectContainer.setAttribute("data-SelectMode","");
         const ModeSelectButtonArray=this.ModeSelectContainer.querySelectorAll(":scope>button.Selected");
         for(const button of ModeSelectButtonArray){
             button.classList.remove("Selected");
@@ -1830,7 +1834,7 @@ class CONTOURclass{
         h = (h < 0 ? h % 360 + 360 : h) % 360 / 60;
         s = s < 0 ? 0 : s > 1 ? 1 : s;
         v = v < 0 ? 0 : v > 1 ? 1 : v;
-
+        
         // HSV to RGB 変換
         const c = [5, 3, 1].map(n =>
             Math.round((v - Math.max(0, Math.min(1, 2 - Math.abs(2 - (h + n) % 6))) * s * v) * 255));
@@ -1976,13 +1980,16 @@ class CONTOURclass{
         //console.log(this.ContourDataMap);
     }
     draw(ctx,DrawStatus){
-        const dWidth=ctx.canvas.width,dHeight=ctx.canvas.height;
+        const dx=0,dy=0,dWidth=ctx.canvas.width,dHeight=ctx.canvas.height;
         const index=DrawStatus.get("index");
         ctx.clearRect(0,0,dWidth,dHeight);//初期化
         //座標系の移動・拡縮
+        const sx=DrawStatus.get("w0");
+        const sy=DrawStatus.get("h0");
         ctx.save();
-        ctx.translate(-DrawStatus.get("w0"),-DrawStatus.get("h0"));
-        ctx.scale(DrawStatus.get("width")/dWidth,DrawStatus.get("height")/dHeight);
+        ctx.translate(dx,dy);
+        ctx.scale(dWidth/DrawStatus.get("width"),dHeight/DrawStatus.get("height"));
+        ctx.translate(-sx,-sy);
         //輪郭の描画
         for(const ROIName of this.ROISelectStatusSet){
             const ROIContourDataMap=this.ContourDataMap.get(ROIName);
@@ -3793,6 +3800,7 @@ class LoadAndLayout{
         let OutputArrayMaxLength=-999;
         let OutputArrayMinLength=999;
         for(const DataType of DataTypeList){
+            console.log(DataType);
             const DataClass=this.DataClassMap.get(DataType);
             const LoadResult=await DataClass.LoadingFromDialog();
             //console.log(DataType,"DataIDのチェック",LoadResult);
