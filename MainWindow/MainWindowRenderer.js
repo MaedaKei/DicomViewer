@@ -275,6 +275,11 @@ class CTclass{
             fragment.appendChild(option);
         }
         this.ExistingPathInputSelecter.appendChild(fragment);
+        //ModeSelectButtonを初期化する
+        const ModeSelectButtonArray=this.ModeSelectContainer.querySelectorAll(":scope>button.Selected");
+        for(const button of ModeSelectButtonArray){
+            button.classList.remove("Selected");
+        }
         return this.PathSelectDOMTree;
     }
     /*
@@ -762,6 +767,11 @@ class MASKclass{
             fragment.appendChild(option);
         }
         this.ExistingPathInputSelecter.appendChild(fragment);
+        //ModeSelectButtonを初期化する
+        const ModeSelectButtonArray=this.ModeSelectContainer.querySelectorAll(":scope>button.Selected");
+        for(const button of ModeSelectButtonArray){
+            button.classList.remove("Selected");
+        }
         return this.PathSelectDOMTree;
     }
     /*
@@ -1250,6 +1260,11 @@ class MASKDIFFclass{
         }
         this.Input1Selecter.appendChild(Input1Fragment);
         this.Input2Selecter.appendChild(Input2Fragment);
+        //ModeSelectButtonを初期化する
+        const ModeSelectButtonArray=this.ModeSelectContainer.querySelectorAll(":scope>button.Selected");
+        for(const button of ModeSelectButtonArray){
+            button.classList.remove("Selected");
+        }
         return this.PathSelectDOMTree;
     }
     /*
@@ -1718,6 +1733,11 @@ class CONTOURclass{
             ReferOriginalPathInputSelecterFragment.appendChild(option);
         }
         this.ReferOriginalPathInputSelecter.appendChild(ReferOriginalPathInputSelecterFragment);
+        //ModeSelectButtonを初期化する
+        const ModeSelectButtonArray=this.ModeSelectContainer.querySelectorAll(":scope>button.Selected");
+        for(const button of ModeSelectButtonArray){
+            button.classList.remove("Selected");
+        }
         return this.PathSelectDOMTree;
     }
     /*
