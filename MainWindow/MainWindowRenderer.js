@@ -884,6 +884,7 @@ class MASKclass{
         const sizePerSlice=this.width*this.height;
         //loadDataから３次元配列、ヒストグラム、zとImagePositionPatientの紐づけを行う
         this.i2p=new Map();
+        this.p2i=new Map();
         this.ImageVolume=new Float32Array(sizePerSlice*this.depth);
         const histgram=new Map();//MASKのカラーマップ生成時の情報にも使える
         //console.log("Depth",this.depth);
