@@ -3820,19 +3820,14 @@ class LoadAndLayout{
                         ["Before",this.ChangeAndLoadTargetInput1.value],
                         ["After",this.ChangeAndLoadTargetInput2.value]
                     ]);
-                    console.log(PathChangeTargetMap);
+                    //console.log(PathChangeTargetMap);
                     const Old2NewDataIDMap=new Map();//{DataType:{OldDataID:NewID}}
                     for(const [DataType,DataTypeDataPathMap] of DicomDataPathMap.entries()){
-                        //console.log(DataType);
-                        //console.log(this.DataClassMap);
                         const DataTypeClass=this.DataClassMap.get(DataType);
-                        //console.log(DataTypeClass);
                         //パス変換はDataTypeClassに担当させる
                         const OldDataIDArray=Array.from(DataTypeDataPathMap.keys());
                         const OldPathArray=Array.from(DataTypeDataPathMap.values());
                         const NewPathArray=DataTypeClass.ChangePath(OldPathArray,PathChangeTargetMap,Old2NewDataIDMap);
-                        console.log(OldPathArray);
-                        console.log(NewPathArray);
                         const NewDataIDArray=await DataTypeClass.Loading(NewPathArray);
                         //OldDataID=>NewDataIDのMapを作成
                         const Old2NewDataIDPareArray=[];
