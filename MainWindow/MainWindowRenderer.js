@@ -2035,11 +2035,26 @@ class CONTOURclass{
             const HexText=CONTOURclass.hsv2rgb(h);
             this.ContourColorMap.set(ROIName,HexText);
         }
-        const ROINameLengthArray=ROINameList.map(ROIName=>ROIName.length);
-        this.MaxROINameLength=Math.max(ROINameLengthArray);
-        this.ROICount=ROINameList.length;
         //ROISelectStatusSet集合内にあるROINameは描画する輪郭
         this.ROISelectStatusSet=new Set(ROINameList);//初期状態では全表示とする
+        /*
+        コンテキストメニューのコンテンツサイズを計算する
+        画面情報のディスプレイエリアは高さ30px、幅100％とする
+        セレクトボタンは高さ20px,幅は7px×最大文字数とする。また、girdで配置し、gapは2pxとする
+        一列に20個ずつ配置する。カラー部分は幅10px、高さ100％とする。
+        fontは12pxとする。一文字あたり横7pxとして計算する
+        */
+        const ROINameLengthArray=ROINameList.map(ROIName=>ROIName.length);
+        const MaxROINameLength=Math.max(ROINameLengthArray);
+        const ROICount=ROINameList.length;
+        const RowsNum=Math.min(20,ROICount);//行数
+        const ColumnsNum=Math.ceil(ROICount/20);//列数
+        const Gap=2;
+        const ButtonWidth=7*MaxROINameLength;//px
+        const ButtonHeight=20;//px
+        const SelectWidth=(ButtonWidth+Gap)*ColumnsNum-Gap;
+        const SelectHeight=30+(ButtonHeight+Gap)*RowsNum-Gap;//上部のディスプレイ分も加算
+        this.ROISelectWindowSize=[SelectWidth,SelectHeight];
         //console.log(this.ContourColorMap);
         //console.log(this.ContourDataMap);
     }
@@ -2508,9 +2523,8 @@ class Canvas{
                 const DataID=this.LayerDataMap.get(Layer).get("DataID");
                 const targetDicomClass=DicomDataClassDictionary.get(Layer).get(DataID);
                 const OPMode=true;
-                const MaxROINameLength=targetDicomClass.MaxROINameLength;//最長の長さ
-                const ROICount=targetDicomClass.ROICount;//ROIの個数
-                const windowsize=[300,400];//ROINameの最長＆ROIの個数を基に動的に変える必要がある
+                //const windowsize=[300,400];//ROINameの最長＆ROIの個数を基に動的に変える必要がある
+                windowsize=targetDicomClass.ROISelectWindowSize;
                 const data=new Map([
                     ["ROINameColorMap",targetDicomClass.ContourColorMap],//{ROIName:Hex} ROI名と色の表示に必要
                     ["ROISelectStatusSet",targetDicomClass.ROISelectStatusSet],//現時点で何が選ばれているかを示す
