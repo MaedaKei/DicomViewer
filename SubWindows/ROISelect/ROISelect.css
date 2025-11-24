@@ -51,7 +51,7 @@ div#SelectInfoDisplayContainer>div#SelectedROINumDisplay{
     color:white;
     border:1px solid white;
 }
-div#SelectInfoDisplayContainer>div#RecordedROINumDisplay{
+div#SelectInfoDisplayContainer>div#MemorizedROINumDisplay{
     width:33%;
     height:100%;
     padding:1px;

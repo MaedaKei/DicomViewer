@@ -2061,7 +2061,7 @@ class CONTOURclass{
         const SelectInfoDisplayContainerHeight=SelectInfoDisplayFontSize+10;
 
         const ButtonFontSize=15;//px
-        const CharacterWidth=Math.ceil(ButtonFontSize*0.8);
+        const CharacterWidth=Math.ceil(ButtonFontSize);
         const ButtonWidth=CharacterWidth*MaxROINameLength;//px
         const ButtonHeight=ButtonFontSize+5;//px
         const ROISelectContainerHeight=(ButtonHeight+Gap)*RowsNum-Gap;
@@ -2117,8 +2117,11 @@ class CONTOURclass{
         }
         ctx.restore();
     }
-    SetROISelectedStatusSet(data){
+    ChangeROISelectStatus(data){
         /*this.ROISelectedStatusSetを更新する*/
+        const ReceivedDataBody=data.get("data");
+        const NewROISelectStatusSet=ReceivedDataBody.get("ROISelectStatusSet");
+        this.ROISelectStatusSet=NewROISelectStatusSet;
     }
 }
 //グローバル変数としてCanvasContainerを保持・グローバルスライドショーを紐づけ
@@ -2547,7 +2550,7 @@ class Canvas{
                 const DataID=this.LayerDataMap.get(Layer).get("DataID");
                 const DicomDataInfoMap=DicomDataClassDictionary.get(Layer).get(DataID);
                 const DicomDataClass=DicomDataInfoMap.get("Data");
-                const OPMode=true;
+                const OPMode=false;
                 //const windowsize=[300,400];//ROINameの最長＆ROIの個数を基に動的に変える必要がある
                 const windowsize=DicomDataClass.ROISelectWindowSize;
                 //console.log(windowsize);
@@ -2568,6 +2571,20 @@ class Canvas{
         });
         RoiSelectButton.style.display="none";
         this.ContextMenuButtonContainer.appendChild(RoiSelectButton);
+         /*サブウィンドウからの更新用の関数を定義する*/
+        const ChangeROISelectStatusFunction=(data)=>{
+            const ReceivedDataBody=data.get("data");
+            const targetLayer=ReceivedDataBody.get("Layer");
+            const DataType=targetLayer;
+            const DataID=this.LayerDataMap.get(targetLayer).get("DataID");
+            const DicomDataInfoMap=DicomDataClassDictionary.get(DataType).get(DataID);
+            const DicomDataClass=DicomDataInfoMap.get("Data");
+            //console.log(ReceivedDataBody.get("data").get("ROISelectStatusSet"));
+            DicomDataClass.ChangeROISelectStatus(data);
+            this.DrawStatus.set("regenerate",true);
+            this.Layerdraw(targetLayer);
+        }
+        this.FromMainProcessToMainFunctions.set("ChangeROISelectStatus",ChangeROISelectStatusFunction);
     }
     setslider(){
         //MainlayerとBGの有無から、スライダーを設定する
