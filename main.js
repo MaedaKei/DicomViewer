@@ -148,7 +148,7 @@ function createSubWindow(SendingData){
     });
     WindowManager.set("SubWindow",SubWindow);
     SubWindow.removeMenu();
-    //SubWindow.webContents.openDevTools({mode: 'detach'});
+    SubWindow.webContents.openDevTools({mode: 'detach'});
     SubWindow.loadFile(path.join(__dirname,"SubWindows",actionName,HTMLfileName));
     SubWindow.setAlwaysOnTop(true);
     //SubWindowの準備が整ったらOperationModeの可否の返答を受け取る

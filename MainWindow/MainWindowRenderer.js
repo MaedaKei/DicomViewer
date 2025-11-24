@@ -2042,19 +2042,50 @@ class CONTOURclass{
         画面情報のディスプレイエリアは高さ30px、幅100％とする
         セレクトボタンは高さ20px,幅は7px×最大文字数とする。また、girdで配置し、gapは2pxとする
         一列に20個ずつ配置する。カラー部分は幅10px、高さ100％とする。
-        fontは12pxとする。一文字あたり横7pxとして計算する
+        fontは15pxとする。一文字あたり横9pxとして計算する
         */
         const ROINameLengthArray=ROINameList.map(ROIName=>ROIName.length);
-        const MaxROINameLength=Math.max(ROINameLengthArray);
+        let MaxROINameLength=0;
+        //最大値を求める。メモリ増加を恐れて古典的な方法で
+        for(const ROINameLength of ROINameLengthArray){
+            if(MaxROINameLength<ROINameLength){
+                MaxROINameLength=ROINameLength;
+            }
+        }
         const ROICount=ROINameList.length;
         const RowsNum=Math.min(20,ROICount);//行数
         const ColumnsNum=Math.ceil(ROICount/20);//列数
         const Gap=2;
-        const ButtonWidth=7*MaxROINameLength;//px
-        const ButtonHeight=20;//px
+
+        const SelectInfoDisplayFontSize=20;
+        const SelectInfoDisplayContainerHeight=SelectInfoDisplayFontSize+10;
+
+        const ButtonFontSize=15;//px
+        const CharacterWidth=Math.ceil(ButtonFontSize*0.8);
+        const ButtonWidth=CharacterWidth*MaxROINameLength;//px
+        const ButtonHeight=ButtonFontSize+5;//px
+        const ROISelectContainerHeight=(ButtonHeight+Gap)*RowsNum-Gap;
+
         const SelectWidth=(ButtonWidth+Gap)*ColumnsNum-Gap;
-        const SelectHeight=30+(ButtonHeight+Gap)*RowsNum-Gap;//上部のディスプレイ分も加算
+        const SelectHeight=SelectInfoDisplayContainerHeight+ROISelectContainerHeight;//上部のディスプレイ分も加算
         this.ROISelectWindowSize=[SelectWidth,SelectHeight];
+        this.ROISelectWindowStyleMap=new Map([
+            /*
+            ここのKeyはROISelect.cssのカスタム変数名に直結するので変更は厳重に注意すること
+            */
+            /*ページ上部の選択数などの情報を表示するContainer*/
+            ["SelectInfoDisplayContainerHeight",`${SelectInfoDisplayContainerHeight}px`],
+            ["SelectInfoDisplayFontSize",`${SelectInfoDisplayFontSize}px`],
+            /*ROINameのボタンを配置するContainer*/
+            ["ROISelectContainerHeight",`${ROISelectContainerHeight}px`],
+            ["ButtonFontSize",`${ButtonFontSize}px`],
+            ["ButtonWidth",`${ButtonWidth}px`],
+            ["ButtonHeight",`${ButtonHeight}px`],
+            /*Gridに関する情報*/
+            ["GridRowsNum",RowsNum],//ここは行数と列数を示すだけなのでpxは付けない
+            ["GridColumnsNum",ColumnsNum],
+            ["GridGap",`${Gap}px`],
+        ]);
         //console.log(this.ContourColorMap);
         //console.log(this.ContourDataMap);
     }
@@ -2085,16 +2116,9 @@ class CONTOURclass{
             }
         }
         ctx.restore();
-        //保存されたImageBitMapを描画する
-        /*
-        if(this.currentImageBitmap){
-            ctx.drawImage(
-                this.currentImageBitmap,
-                DrawStatus.get("w0"),DrawStatus.get("h0"),DrawStatus.get("width"),DrawStatus.get("height"),
-                0,0,dWidth,dHeight
-            );
-        }
-        */
+    }
+    SetROISelectedStatusSet(data){
+        /*this.ROISelectedStatusSetを更新する*/
     }
 }
 //グローバル変数としてCanvasContainerを保持・グローバルスライドショーを紐づけ
@@ -2521,20 +2545,22 @@ class Canvas{
             if(e.button==0){
                 const Layer="CONTOUR";
                 const DataID=this.LayerDataMap.get(Layer).get("DataID");
-                const targetDicomClass=DicomDataClassDictionary.get(Layer).get(DataID);
+                const DicomDataInfoMap=DicomDataClassDictionary.get(Layer).get(DataID);
+                const DicomDataClass=DicomDataInfoMap.get("Data");
                 const OPMode=true;
                 //const windowsize=[300,400];//ROINameの最長＆ROIの個数を基に動的に変える必要がある
-                windowsize=targetDicomClass.ROISelectWindowSize;
+                const windowsize=DicomDataClass.ROISelectWindowSize;
+                //console.log(windowsize);
                 const data=new Map([
-                    ["ROINameColorMap",targetDicomClass.ContourColorMap],//{ROIName:Hex} ROI名と色の表示に必要
-                    ["ROISelectStatusSet",targetDicomClass.ROISelectStatusSet],//現時点で何が選ばれているかを示す
-                    /*ROISelectでは、ROI一覧とその色を送る必要がある*/
+                    ["ROINameColorMap",DicomDataClass.ContourColorMap],//{ROIName:Hex} ROI名と色の表示に必要
+                    ["ROISelectStatusSet",DicomDataClass.ROISelectStatusSet],//現時点で何が選ばれているかを示す
+                    ["ROISelectWindowStyleMap",DicomDataClass.ROISelectWindowStyleMap],//ボタンサイズなどの諸設定
                     ["windowsize",windowsize],
                     ["OPMode",OPMode],
                     ["Layer",Layer],
                 ]);
                 const initialAlldata=new Map([
-                    ["action","RoiSelect"],
+                    ["action","ROISelect"],
                     ["data",data],
                 ]);
                 this.openSubWindow(initialAlldata);
