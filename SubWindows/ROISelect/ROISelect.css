@@ -30,7 +30,7 @@ body>div#SelectInfoDisplayContainer{
     flex-direction: row;
 }
 div#SelectInfoDisplayContainer>div#AllROINumDisplay{
-    width:33%;
+    width:40%;
     height:100%;
     padding:1px;
     /*font-size:var(--SelectInfoDisplayFontSize);*/
@@ -41,7 +41,7 @@ div#SelectInfoDisplayContainer>div#AllROINumDisplay{
     border:1px solid white;
 }
 div#SelectInfoDisplayContainer>div#SelectedROINumDisplay{
-    width:33%;
+    width:30%;
     height:100%;
     padding:1px;
     /*font-size:var(--SelectInfoDisplayFontSize);*/
@@ -52,7 +52,7 @@ div#SelectInfoDisplayContainer>div#SelectedROINumDisplay{
     border:1px solid white;
 }
 div#SelectInfoDisplayContainer>div#MemorizedROINumDisplay{
-    width:33%;
+    width:30%;
     height:100%;
     padding:1px;
     /*font-size:var(--SelectInfoDisplayFontSize);*/

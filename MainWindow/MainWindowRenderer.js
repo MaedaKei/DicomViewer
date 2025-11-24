@@ -2028,7 +2028,7 @@ class CONTOURclass{
         const ROINum=ROINameList.length;
         this.ContourColorMap=new Map();//{ROIName:"#RRBBGGAA"}
         this.LineAlpha=Math.round(255*0.8).toString(16).padStart(2,"0");
-        this.FillAlpha=Math.round(255*0.3).toString(16).padStart(2,"0");
+        this.FillAlpha=Math.round(255*0.2).toString(16).padStart(2,"0");
         for(const [n,ROIName] of ROINameList.entries()){
             //色相hを決定
             const h=360*(n/ROINum);
@@ -2061,13 +2061,14 @@ class CONTOURclass{
         const SelectInfoDisplayContainerHeight=SelectInfoDisplayFontSize+10;
 
         const ButtonFontSize=15;//px
-        const CharacterWidth=Math.ceil(ButtonFontSize);
+        const CharacterWidth=Math.min(Math.ceil(ButtonFontSize*0.9));
         const ButtonWidth=CharacterWidth*MaxROINameLength;//px
         const ButtonHeight=ButtonFontSize+5;//px
         const ROISelectContainerHeight=(ButtonHeight+Gap)*RowsNum-Gap;
 
         const SelectWidth=(ButtonWidth+Gap)*ColumnsNum-Gap;
         const SelectHeight=SelectInfoDisplayContainerHeight+ROISelectContainerHeight;//上部のディスプレイ分も加算
+        //Windowの幅が200px以上になるように調整し、そこからボタンwidthを調整したい
         this.ROISelectWindowSize=[SelectWidth,SelectHeight];
         this.ROISelectWindowStyleMap=new Map([
             /*

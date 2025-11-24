@@ -106,7 +106,6 @@ class ROISelectClass{
         this.pressedkey=new Map();
         this.EventSetHelper(document,"keydown",(e)=>{
             this.pressedkey.set(e.code,true);
-            console.log(e.code,"pushed");
             this.FlagManager();
         });
         this.EventSetHelper(document,"keyup",(e)=>{
