@@ -1969,6 +1969,7 @@ class CONTOURclass{
             }
             const ContourSequenceItemArray=ContourSequenceElement.items;//あるROIに対してスライス分(輪郭分、同じスライスに複数の輪郭があったりもする)のデータがある
             //この組織の輪郭マップ
+            //くりぬきなども含めて一つのPath2Dにしないとevenoddでくりぬき出来ない
             const ROIContourDataMap=new Map();//{z:[Path2D]という感じにする}
             for(const ContourSequenceItem of ContourSequenceItemArray){
                 const ContourGeometricType=ContourSequenceItem.dataSet.string("x30060042");//輪郭データの形状
@@ -2013,9 +2014,10 @@ class CONTOURclass{
                 ContourPath.closePath();
                 //このROIの輪郭をまとめるROIContourDataMapにZをkeyとして登録する
                 if(ROIContourDataMap.has(Z)){
-                    ROIContourDataMap.get(Z).push(ContourPath);
+                    const ExistingZPath=ROIContourDataMap.get(Z);
+                    ExistingZPath.addPath(ContourPath);//すでにこの組織のZの輪郭があるので、そこにまとめる
                 }else{//初めてのZ
-                    ROIContourDataMap.set(Z,[ContourPath]);
+                    ROIContourDataMap.set(Z,ContourPath);
                 }
             }
             //ROIContourDataMapをContourDataMapに追加するKeyはROIName
@@ -2105,15 +2107,13 @@ class CONTOURclass{
         for(const ROIName of this.ROISelectStatusSet){
             const ROIContourDataMap=this.ContourDataMap.get(ROIName);
             if(ROIContourDataMap.has(index)){
-                const ContourPathArray=ROIContourDataMap.get(index);
+                const ContourPath=ROIContourDataMap.get(index);
                 const ContourColorHexText=this.ContourColorMap.get(ROIName);
                 ctx.strokeStyle=ContourColorHexText+this.LineAlpha;
                 ctx.fillStyle=ContourColorHexText+this.FillAlpha;
                 ctx.lineWidth=1;
-                for(const ContourPath of ContourPathArray){
-                    ctx.stroke(ContourPath);
-                    ctx.fill(ContourPath);
-                }
+                ctx.stroke(ContourPath);
+                ctx.fill(ContourPath,"evenodd");
             }
         }
         ctx.restore();
