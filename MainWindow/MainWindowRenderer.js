@@ -2063,8 +2063,13 @@ class CONTOURclass{
         const SelectInfoDisplayContainerHeight=SelectInfoDisplayFontSize+10;
 
         const ButtonFontSize=15;//px
-        const CharacterWidth=Math.min(Math.ceil(ButtonFontSize*0.9));
-        const ButtonWidth=CharacterWidth*MaxROINameLength;//px
+        const CharacterWidth=Math.ceil(ButtonFontSize*0.7);
+        /*
+        SelectWidthが240px以上になるようにボタンの幅を調整する
+        これくらいの幅がないと、サブウィンドウの上部の余白がコントロールで埋まってしまい、ウィンドウの移動が不便になるため
+        */
+        const MinButtonWidth=Math.ceil((240-Gap*(ColumnsNum-1))/ColumnsNum);//240pxぴったりのときのボタンの幅を計算し、小数点を切り上げしている。
+        const ButtonWidth=Math.max(CharacterWidth*MaxROINameLength,MinButtonWidth);//px
         const ButtonHeight=ButtonFontSize+5;//px
         const ROISelectContainerHeight=(ButtonHeight+Gap)*RowsNum-Gap;
 
