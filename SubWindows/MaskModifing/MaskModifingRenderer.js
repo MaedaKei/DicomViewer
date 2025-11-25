@@ -71,10 +71,22 @@ class MaskModifingClass{
         this.colornum=this.MaskValues.length;
         //ラベルの保持が終わってからセレクタ設定する
         this.setMaskSelecters();
+        //メインウィンドウにMultiUseLayerの使用を申請
+        this.SendMultiUseLayerSwitching(this.TargetCanvasID,"AreaSelectModeSwitching",true);//ラッパー
         //イベントの登録
         this.ElementsWithEvents=new Map();
         this.setUserEvents();
         this.setSubWindowCloseEvents();
+    }
+    SendMultiUseLayerSwitching(TargetCanvasID,ModeSwitching,Activate){
+        const FromSubToMainProcessData=new Map([
+            ["action",ModeSwitching],
+            ["data",new Map([
+                ["CanvasID",TargetCanvasID],
+                ["Activate",Activate]
+            ])]
+        ]);
+        this.PassChangesToMainWindow(FromSubToMainProcessData);
     }
     setMaskSelecters(){
         //マスクセレクタを設定する
@@ -360,16 +372,13 @@ class MaskModifingClass{
         window.SubWindowMainProcessAPI.CloseSubWindowFromMainProcessToSub((event,ReceiveData)=>{
             //console.log("SubWindow終了準備");
             const ClosingDataList=[];
-            const data=new Map([
-                ["OPMode",false],
-
-                ["CanvasID",this.TargetCanvasID],
-                ["Layer",this.TargetLayer]
-            ]);
             const ClosingData=new Map([
-                ["action","ChangeOPMode"],
-                ["data",data]
-            ])
+                ["action","AreaSelectModeSwitching"],
+                ["data",new Map([
+                    ["CanvasID",this.TargetCanvasID],
+                    ["Activate",false]
+                ])]
+            ]);
             ClosingDataList.push(ClosingData);
             window.SubWindowMainProcessAPI.CloseSubWindowFromSubToMainProcess(ClosingDataList);
         });

@@ -640,6 +640,7 @@ class Evaluate{
     SendTargetCanvasChange(OFFCIDLayerMap,ONCIDLayerMap){//ラッパー
         //適切なデータを形成して送る
         //const action="ChangeTargetCanvas";
+        //LayerMapは{CanvasID,Layer,DataID}というMapになっている
         const TargetCID=new Map([
             ["ON",ONCIDLayerMap],
             ["OFF",OFFCIDLayerMap]
@@ -710,33 +711,23 @@ class Evaluate{
         window.SubWindowMainProcessAPI.CloseSubWindowFromMainProcessToSub((event,ReceiveData)=>{
             console.log("SubWindow終了準備");
             const SendDataList=[];
-            /*
-            const SendingData=new Map([
-                ["action","ChangeOPMode"],
-                ["data",new Map([
-                    ["OPMode",false],
-                ])]
-            ]);
-            */
+            //AreaSelectModeを解除
             for(const CIDLayerMap of this.PreviousSelectedCID.values()){
                 //有効なCIDが選択されているものだけ送信する
                 const CanvasID=CIDLayerMap.get("CanvasID");
                 if(CanvasID>=0){//未選択状態のものは送らない
                     const Layer=CIDLayerMap.get("Layer");
-                    const data=new Map([
-                        ["OPMode",false],
-                        
-                        ["CanvasID",CanvasID],
-                        ["Layer",Layer],
-                    ]);
                     const SendingData=new Map([
-                        ["action","ChangeOPMode"],
-                        ["data",data]
+                        ["action","AreaSelectModeSwitching"],
+                        ["data",new Map([
+                            ["Activate",false],
+                            ["CanvasID",CanvasID]
+                        ])]
                     ]);
                     SendDataList.push(SendingData);
+                    //この下でレイヤー注目解除のデータを作ったりする
                 }
             }
-            //選択されているCIDそれぞれをヘッダーで指したChangeOPModeを送る
             window.SubWindowMainProcessAPI.CloseSubWindowFromSubToMainProcess(SendDataList);
         });
     }

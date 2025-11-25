@@ -96,7 +96,7 @@ class WindowingClass{
             ["CanvasID",this.id.get("CanvasID")],
             ["Layer",targetLayer],
             ["action",action],
-            ["OPMode",OPMode],
+            ["MultiUseLayerMode",MultiUseLayerMode],
         ]);
         */
        /*
@@ -386,48 +386,7 @@ class WindowingClass{
         window.SubWindowMainProcessAPI.CloseSubWindowFromMainProcessToSub((event,ReceiveData)=>{
             //このサブウィンドウでは一つのキャンバスしか参照しないのでそれに対して一応OPモードの終了を要望する
             const ClosingDataList=[];
-            //このサブウィンドウでは一つのキャンパスに対してしかデータを送信する必要はない
-            //やらせたい処理によってヘッダーに必要な情報は変わってくる
-            //サブウィンドウでは面倒なのでヘッダーを流用する<=必要な情報が含まれていればよい。ヘッダーの情報すべてを使うとは限らない
-            /*
-            const SendData=new Map([
-                ["header",this.header]
-            ]);
-            const bodyList=[];
-            const body=new Map([
-                ["action","ChangeOPMode"],
-                ["data",new Map([
-                    ["OPMode",false]
-                ])]
-            ]);
-            bodyList.push(body);
-            SendData.set("body",bodyList);
-            SendDataList.push(SendData);
-            */
-            /*
-            const ClosingData=new Map([
-                ["header",this.header]
-            ]);
-            */
-           /*
-            const body=new Map([
-                ["action","ChangeOPMode"],
-                ["data",new Map([
-                    ["OPMode",false]
-                ])]
-            ]);
-            */
-            const data=new Map([
-                ["OPMode",false],
-
-                ["CanvasID",this.TargetCanvasID],
-                ["Layer",this.TargetLayer],
-            ])
-            const ClosingData=new Map([
-                ["action","ChangeOPMode"],
-                ["data",data]
-            ])
-            ClosingDataList.push(ClosingData);
+            //特にMultiUseLayerを使っていないので空リストを返す
             window.SubWindowMainProcessAPI.CloseSubWindowFromSubToMainProcess(ClosingDataList);
         });
     }

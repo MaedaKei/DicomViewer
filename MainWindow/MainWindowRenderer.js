@@ -2213,7 +2213,7 @@ class Canvas{
         this.CanvasWidth=0;
         this.CanvasHeight=0;
         this.SliderLength=0;//スライダーの最大値決定に使用する
-        const LayerZindexKeyList=["OP","FocusedLayer","CONTOUR","DOSE","MASKDIFF","MASK","CT"];
+        const LayerZindexKeyList=["MultiUseLayer","FocusedLayer","CONTOUR","DOSE","MASKDIFF","MASK","CT"];
         this.LayerZindexMap=new Map();
         for(let i=0;i<LayerZindexKeyList.length;i++){
             this.LayerZindexMap.set(LayerZindexKeyList[i],(i+1)*(-1));//-1,-2,-3,...;
@@ -2228,23 +2228,23 @@ class Canvas{
         //SetLayer内ではsetContextMenuを呼び出す.
         this.SetLayer(DataInfoMap);
 
-        //OerationCanvasの作成＆不可視化
-        this.OperationCanvas=document.createElement("canvas");
-        this.OperationCanvas.className="Canvas";
-        this.OperationCanvas.style.zIndex=-1;//BG:-3,main:-2,op:-1
-        this.OperationCanvas.style.display="none";//有効化する時はabsoluteで
-        this.OperationModeFlag=false;//OperationCanvasが有効かどうか
+        //多用途的なキャンバス
+        //ユーザー操作の可視化など、補助的な表示に使う
+        this.MultiUseLayer=document.createElement("canvas");
+        this.MultiUseLayer.className="Canvas";
+        this.MultiUseLayer.style.zIndex=this.LayerZindexMap.get("MultiUseLayer");
+        this.MultiUseLayer.style.display="none";//有効化する時は""で
         //スライダー
         this.slider=this.setslider();//Depthがあるデータタイプの値を基に設定する優先順位CT>MASK ただし、基本的には同じ枚数のものをオーバーレイすることを想定している。
         this.slider.className="localSlider";
         //コンテキストメニューはCanvasBlockに設定する
         this.Block.appendChild(this.CanvasBlock);
         //this.CanvasBlock.appendChild(MainCanvas);
-        this.CanvasBlock.appendChild(this.OperationCanvas);
+        this.CanvasBlock.appendChild(this.MultiUseLayer);
         this.Block.appendChild(this.slider);
         //OPCanvasのサイズも同様に決めておく
-        this.OperationCanvas.width=this.CanvasWidth;
-        this.OperationCanvas.height=this.CanvasHeight;
+        this.MultiUseLayer.width=this.CanvasWidth;
+        this.MultiUseLayer.height=this.CanvasHeight;
 
         CanvasContainer.appendChild(this.Block);
         //CanvasBlockの要求サイズを決定する
@@ -2380,7 +2380,7 @@ class Canvas{
                 this.ContextMenuContainer.style.display="none";
             }
         });
-        //データの追加・変更ボタン
+        //データの追加ボタン
         //各データタイプのコンテキストメニュー設定(ボタン設置＆イベント定義)
         this.setCTContext();
         this.setMASKContext();
@@ -2388,7 +2388,7 @@ class Canvas{
         
         const DataChangeButton=document.createElement("button");
         DataChangeButton.style.display="block";
-        DataChangeButton.textContent="データ追加・変更";
+        DataChangeButton.textContent="データ追加";
         this.EventSetHelper(DataChangeButton,"click",(e)=>{
             if(e.button===0){
                 LoadAndLayoutFunctions.LoadDialogOpen(this.id.get("CanvasID"),"AllDataType");
@@ -2441,7 +2441,7 @@ class Canvas{
                 const DataID=this.LayerDataMap.get(Layer).get("DataID");
                 const DicomDataInfoMap=DicomDataClassDictionary.get(Layer).get(DataID);
                 const DicomDataClass=DicomDataInfoMap.get("Data");
-                const OPMode=false;
+                //const MultiUseLayerModeMap=false;//falseかMapか。MultiLayerModeMap={"Mode":,"Activate":true or false}
                 const windowsize=[400,300];
                 const data=new Map([
                     ["vMin",DicomDataClass.vMin],
@@ -2449,7 +2449,6 @@ class Canvas{
                     ["histgram",DicomDataClass.histgram],
 
                     ["windowsize",windowsize],
-                    ["OPMode",OPMode],
                     ["Layer",Layer],
                 ]);
                 const initializedata=new Map([
@@ -2491,7 +2490,7 @@ class Canvas{
                 const DataID=this.LayerDataMap.get(Layer).get("DataID");
                 const DicomDataInfoMap=DicomDataClassDictionary.get("MASK").get(DataID);
                 const DicomDataClass=DicomDataInfoMap.get("Data");
-                const OPMode=true;
+                //const MultiUseLayerMode="AreaSelect";//範囲選択モード
                 const windowsize=[300,400];
                 const SelectedArea=new Map([
                     //初期表示用の値を送る
@@ -2514,7 +2513,7 @@ class Canvas{
                     ["label",colormapformask.label],
 
                     ["windowsize",windowsize],
-                    ["OPMode",OPMode],
+                    //["MultiUseLayerMode",MultiUseLayerMode],
                     ["Layer",Layer],
                 ]);
                 const initializedata=new Map([
@@ -2556,7 +2555,7 @@ class Canvas{
                 const DataID=this.LayerDataMap.get(Layer).get("DataID");
                 const DicomDataInfoMap=DicomDataClassDictionary.get(Layer).get(DataID);
                 const DicomDataClass=DicomDataInfoMap.get("Data");
-                const OPMode=false;
+                //const MultiUseLayerMode=false;
                 //const windowsize=[300,400];//ROINameの最長＆ROIの個数を基に動的に変える必要がある
                 const windowsize=DicomDataClass.ROISelectWindowSize;
                 //console.log(windowsize);
@@ -2564,8 +2563,9 @@ class Canvas{
                     ["ROINameColorMap",DicomDataClass.ContourColorMap],//{ROIName:Hex} ROI名と色の表示に必要
                     ["ROISelectStatusSet",DicomDataClass.ROISelectStatusSet],//現時点で何が選ばれているかを示す
                     ["ROISelectWindowStyleMap",DicomDataClass.ROISelectWindowStyleMap],//ボタンサイズなどの諸設定
+                    
                     ["windowsize",windowsize],
-                    ["OPMode",OPMode],
+                    //["MultiUseLayerMode",MultiUseLayerMode],
                     ["Layer",Layer],
                 ]);
                 const initialAlldata=new Map([
@@ -2604,37 +2604,9 @@ class Canvas{
         slider.style.zIndex=1;
         return slider;
     }
-    ChangeOperationMode(ONOFF=false){
-        if(ONOFF){
-            //起動
-            //console.log("OPレイヤー起動");
-            this.OperationCanvas.style.display="";
-            this.OperationModeFlag=true;
-            //ZoomPan状態のリセット
-            this.DrawStatus.set("w0",0);
-            this.DrawStatus.set("h0",0);
-            this.DrawStatus.set("width",this.DrawStatus.get("originalimagewidth"));
-            this.DrawStatus.set("height",this.DrawStatus.get("originalimageheight"));
-            this.DrawStatus.set("scale",1.0);
-            this.Alldraw();
-            //可視化をONにして前回の結果を描画
-            this.SelectedAreaStatus.set("drawed",true);
-            this.SelectedAreaDraw();
-            this.SelectedAreaStatus.set("slicecropdrawed",true);
-            this.CroppedSliceFill();
-        }else{
-            this.SelectedAreaStatus.set("drawed",false);
-            this.SelectedAreaDraw();
-            this.SelectedAreaStatus.set("slicecropdrawed",false);
-            this.CroppedSliceFill();
-            //console.log("OPレイヤー終了");
-            this.OperationCanvas.style.display="none";
-            this.OperationModeFlag=false;
-        }
-        this.CroppedSliceFill();//スライダーの色を元に戻す
-        //Flagの更新
-        this.FlagManager();
-    }
+    /*
+    ここまで、MultiUseLayerModeの切り替え用関数群
+    */
     FlagManager(){
         //LocalSliceAndAlign
         //PositionStanp
@@ -2660,7 +2632,7 @@ class Canvas{
         //ズームとパンのフラグを分離することでドラッグアンドドロップの検知(マウスが押されたか離れたか)をこちらで行わせる。
         //関数本体を簡素化する目的
         //Zoomの条件がパンよりも緩いかつ、ズームパン状態の同期やリセットの条件はZoom状態の時でいいので、関数本体ではzoomフラグをチェックする
-        if(!this.OperationModeFlag&&this.mouseenter&&Controlpressed){
+        if(this.MultiUseLayerModeFlag!=="AreaSelect"&&this.mouseenter&&Controlpressed){
             this.ZoomFlag=true;
             if(this.mouseClicked.get(0)){
                 this.PanFlag=true;
@@ -2671,27 +2643,27 @@ class Canvas{
             this.ZoomFlag=false;
             this.PanFlag=false;
         }
-        //OperationMode
+        //MultiUseLayerMode
         //Ctrl押してないときのドラッグ&ドロップ⇒範囲選択
         //ズームパンとは異なり、ここでマウスが押されているかは条件としない
         //マウスが押されたポイントを始点とする必要があるため、本体の中で定義する
         //Ctrl押してないときのa＆zの押下でZ方向の始点終点の指定
-        if(this.OperationModeFlag&&this.mouseenter&&!Controlpressed){
-            this.OperationSliceCropFlag=true;
-            this.OperationPanFlag=true;
+        if(this.MultiUseLayerModeFlag==="AreaSelect"&&this.mouseenter&&!Controlpressed){
+            this.AreaSelectSliceCropFlag=true;
+            this.AreaSelectPanFlag=true;
         }else{
-            this.OperationSliceCropFlag=false;
-            this.OperationPanFlag=false;
+            this.AreaSelectSliceCropFlag=false;
+            this.AreaSelectPanFlag=false;
         }
         //Ctrl押しているときのドラッグ&ドロップ⇒選択範囲長方形のパン
         //Ctrl押しているときのホイール⇒選択範囲の拡縮
         //ドラッグ操作があるが、どちらの機能もマウスアップ時に整数に調整させるため、ここではマウス押下を条件に加えない
-        if(this.OperationModeFlag&&this.mouseenter&&Controlpressed){
-            this.OperationDrawRectangleFlag=true;
-            this.OperationZoomFlag=true;
+        if(this.MultiUseLayerModeFlag&&this.mouseenter&&Controlpressed){
+            this.AreaSelectDrawRectangleFlag=true;
+            this.AreaSelectZoomFlag=true;
         }else{
-            this.OperationDrawRectangleFlag=false;
-            this.OperationZoomFlag=false;
+            this.AreaSelectDrawRectangleFlag=false;
+            this.AreaSelectZoomFlag=false;
         }
     }
 
@@ -2785,8 +2757,8 @@ class Canvas{
             ["drawed",true],
             ["w0",0],
             ["h0",0],
-            ["originalimagewidth",this.OperationCanvas.width],//もともとの幅
-            ["originalimageheight",this.OperationCanvas.height],//もともとの高さ
+            ["originalimagewidth",this.MultiUseLayer.width],//もともとの幅
+            ["originalimageheight",this.MultiUseLayer.height],//もともとの高さ
             ["originalslidermax",parseInt(this.slider.max)],//もともとのスライダーの最大値
             ["width",0],
             ["height",0],
@@ -2804,15 +2776,62 @@ class Canvas{
         this.setLocalSliceAndAlign();
         //this.setPositionStamp();
         this.setZoomPan();
-
-        //コンテキストメニューの種類にかかわらず使う機能などはここで確実に登録する
-        //OPレイヤーのONOFF機能の公開
-        const ChangeOPModeFunctiion=(data)=>{
-            const OPMode=data.get("data").get("OPMode");
-            this.ChangeOperationMode(OPMode);
+        /*MultiUseLayerに関する機能*/
+        this.MultiUseLayerModeFlag=false;
+        /*
+        イベント発火自体はthis.CanvasBlockに設定すること
+        イベント設置要素を一つにまとめた
+        各データタイプに強く関連した機能はそのデータタイプのコンテキストメニュー設定時にSetする
+        */
+        /*
+        AreaSelectモード
+        */
+        //AreaSelectモードアクティベーター
+        const AreaSelectModeSwitchingFunction=(data)=>{
+            const ReceiveDataBody=data.get("data");
+            const Activate=ReceiveDataBody.get("Activate");//True or False
+            if(Activate){
+                this.MultiUseLayer.style.display="";
+                this.MultiUseLayerModeFlag="AreaSelect";
+                //ZoomPan状態のリセット
+                this.DrawStatus.set("w0",0);
+                this.DrawStatus.set("h0",0);
+                this.DrawStatus.set("width",this.DrawStatus.get("originalimagewidth"));
+                this.DrawStatus.set("height",this.DrawStatus.get("originalimageheight"));
+                this.DrawStatus.set("scale",1.0);
+                this.Alldraw();
+                //可視化をONにして前回の結果を描画
+                /*
+                this.SelectedAreaStatus.set("drawed",true);
+                this.SelectedAreaDraw();
+                this.SelectedAreaStatus.set("slicecropdrawed",true);
+                this.CroppedSliceFill();
+                */
+            }else{
+                /*
+                this.SelectedAreaStatus.set("drawed",false);
+                this.SelectedAreaDraw();
+                this.SelectedAreaStatus.set("slicecropdrawed",false);
+                this.CroppedSliceFill();
+                */
+                //console.log("OPレイヤー終了");
+                this.MultiUseLayer.style.display="none";
+                this.MultiUseLayerModeFlag=false;
+            }
+            this.SelectedAreaStatus.set("drawed",Activate);
+            this.SelectedAreaDraw();
+            this.SelectedAreaStatus.set("slicecropdrawed",Activate);
+            this.CroppedSliceFill();
+            //this.CroppedSliceFill();
+            this.FlagManager();
         }
-        this.FromMainProcessToMainFunctions.set("ChangeOPMode",ChangeOPModeFunctiion);
-        //エリアセレクト機能
+        this.FromMainProcessToMainFunctions.set("AreaSelectModeSwitching",AreaSelectModeSwitchingFunction);
+        //下４つはサブウィンドウに送信する関数
+        this.setAreaSelectDrawRectangle();
+        this.setAreaSelectSliceCrop();
+        this.setAreaSelectZoom();
+        this.setAreaSelectPan();
+        //サブウィンドウから受信する関数
         const ChangeSelectedAreaFunction=(data)=>{
             //SelectedAreaStatusを更新して再描画
             //w0,h0,width,heightがまとまっているものを受け取る
@@ -2835,11 +2854,6 @@ class Canvas{
             this.CroppedSliceFill();
         };
         this.FromMainProcessToMainFunctions.set("ChangeSelectedArea",ChangeSelectedAreaFunction);
-        /*OPレイヤーの機能を登録する*/
-        this.setOperationDrawRectangle();
-        this.setOperationSliceCrop();
-        this.setOperationZoom();
-        this.setOperationPan();
     }
     setLocalSliceAndAlign(){
         this.LocalSliceAndAlignFlag=false;
@@ -2996,8 +3010,8 @@ class Canvas{
             }
         })
     }
-    setOperationDrawRectangle(){
-        this.OperationDrawRectangleFlag=false;
+    setAreaSelectDrawRectangle(){
+        this.AreaSelectDrawRectangleFlag=false;
         //始点の更新
         this.EventSetHelper(this.CanvasBlock,"mousedown",(e)=>{
             //DrawRencangleがONであり、かつ左クリックされた
@@ -3009,7 +3023,7 @@ class Canvas{
             しかし、前回の選択範囲確定版は消去されていない
             あくまで視覚的な範囲選択を消すだけ←範囲選択状態が邪魔になるときもあり、これに対処した機能
             */
-            if(this.OperationDrawRectangleFlag&&this.mouseClicked.get(0)){
+            if(this.AreaSelectDrawRectangleFlag&&this.mouseClicked.get(0)){
                 const newX=this.MouseTrack.get("current").get("x");
                 const newY=this.MouseTrack.get("current").get("y");
                 const rect=this.CanvasBlock.getBoundingClientRect();
@@ -3026,7 +3040,7 @@ class Canvas{
             }
         });
         this.EventSetHelper(this.CanvasBlock,"mousemove",(e)=>{
-            if(this.OperationDrawRectangleFlag&&this.mouseClicked.get(0)){
+            if(this.AreaSelectDrawRectangleFlag&&this.mouseClicked.get(0)){
                 //mousedown時に保持した始点からの距離をwidthとheightとする
                 const newX=this.MouseTrack.get("current").get("x");
                 const newY=this.MouseTrack.get("current").get("y");
@@ -3058,8 +3072,8 @@ class Canvas{
         ドラッグ系イベントはmouseupで精査した後の値を送信する
         */
         this.EventSetHelper(this.CanvasBlock,"mouseup",()=>{
-            if(this.OperationDrawRectangleFlag){
-                //console.log("OperationDrawRectangle","mouseup");
+            if(this.AreaSelectDrawRectangleFlag){
+                //console.log("AreaSelectDrawRectangle","mouseup");
                 //ドラッグの始点をリセットする
                 this.SelectedAreaStatus.set("sw",null);
                 this.SelectedAreaStatus.set("sh",null);
@@ -3089,8 +3103,8 @@ class Canvas{
             }
         });
     }
-    setOperationSliceCrop(){
-        this.OperationSliceCropFlag=false;
+    setAreaSelectSliceCrop(){
+        this.AreaSelectSliceCropFlag=false;
         /*
         keydownイベントは長押しにも対応するために、押している間連続で発火し続けてしまう
         そのため、keydown,keyupを1回ずつで対応させるためにフラグを使用する
@@ -3099,10 +3113,10 @@ class Canvas{
         CやAなどのボタンで反応させると、スライドショーをするときにローカルスライドショーになってしまい、少し不便
         そこで、spaceに反応させることでグローバルスライスをさせつつクロップの範囲選択を行わせる
         */
-        this.OperationSliceCropKeyDownEventFlag=true;
+        this.AreaSelectSliceCropKeyDownEventFlag=true;
         this.EventSetHelper(this.CanvasBlock,"keydown",(e)=>{
-            if(this.OperationSliceCropFlag){
-                if(this.OperationSliceCropKeyDownEventFlag&&e.code==="Space"){//Spaceが押し込まれたとき
+            if(this.AreaSelectSliceCropFlag){
+                if(this.AreaSelectSliceCropKeyDownEventFlag&&e.code==="Space"){//Spaceが押し込まれたとき
                     //押されたときに可視化を解除
                     //1枚選択もあるのでtrueにしておく
                     this.SelectedAreaStatus.set("slicecropdrawed",true);
@@ -3113,13 +3127,13 @@ class Canvas{
                     this.SelectedAreaStatus.set("startslice",currentSlice);
                     this.SelectedAreaStatus.set("endslice",currentSlice);
                     //フラグを変化させる
-                    this.OperationSliceCropKeyDownEventFlag=false;
+                    this.AreaSelectSliceCropKeyDownEventFlag=false;
                 }
             }
         });
         this.EventSetHelper(this.CanvasBlock,"wheel",(e)=>{
-            if(this.OperationSliceCropFlag){
-                if(!this.OperationSliceCropKeyDownEventFlag){//keydownイベント抑制中＝長押し状態
+            if(this.AreaSelectSliceCropFlag){
+                if(!this.AreaSelectSliceCropKeyDownEventFlag){//keydownイベント抑制中＝長押し状態
                     //SliceCrop可視化
                     this.SelectedAreaStatus.set("slicecropdrawed",true);
                     const currentSlice=this.DrawStatus.get("index");
@@ -3143,7 +3157,7 @@ class Canvas{
             }
         });
         this.EventSetHelper(this.CanvasBlock,"keyup",(e)=>{
-            if(this.OperationSliceCropFlag){
+            if(this.AreaSelectSliceCropFlag){
                 if(e.code==="Space"){
                     /*
                     let startslice=this.SelectedAreaStatus.get("startslice");
@@ -3159,7 +3173,7 @@ class Canvas{
                     this.SelectedAreaStatus.set("endslice",endslice);
                     */
                     //フラグを変化させる
-                    this.OperationSliceCropKeyDownEventFlag=true;
+                    this.AreaSelectSliceCropKeyDownEventFlag=true;
                     this.CroppedSliceFill();//スライダーの背景色を変更する
                     this.SelectedAreaDraw();
                     this.SendSelectedArea();//ラッパー
@@ -3172,8 +3186,8 @@ class Canvas{
             this.SelectedAreaDraw(); 
         });
     }
-    setOperationZoom(){
-        this.OperationZoomFlag=false;
+    setAreaSelectZoom(){
+        this.AreaSelectZoomFlag=false;
         //OperatioinZoomの定義
         this.EventSetHelper(this.CanvasBlock,"wheel",(e)=>{
             e.preventDefault();
@@ -3181,7 +3195,7 @@ class Canvas{
             /*
             wheelによる拡大縮小時も送信する
             */
-            if(this.SelectedAreaStatus.get("drawed")&&this.OperationZoomFlag){
+            if(this.SelectedAreaStatus.get("drawed")&&this.AreaSelectZoomFlag){
                 //上に回すと拡大、下に回すと縮小にする
                 const sizechangevalue=(-1)*Math.sign(e.deltaY);//deltaYが正なら1、負なら-1をかえす。ちなみに下に回すと正となる
                 const w0=this.SelectedAreaStatus.get("w0");
@@ -3213,14 +3227,14 @@ class Canvas{
             }
         });
     }
-    setOperationPan(){
+    setAreaSelectPan(){
         //ZoomPanではdrawの編集は行わない
-        this.OperationPanFlag=false;
+        this.AreaSelectPanFlag=false;
         //OperatioinPanの定義
         //マウスドラッグ系イベントはmouseup時に整数にするようにしよう
         //マウスが押された状態でマウスが動くと起動する
         this.EventSetHelper(this.CanvasBlock,"mousemove",(e)=>{
-            if(this.SelectedAreaStatus.get("drawed")&&this.mouseClicked.get(0)&&this.OperationPanFlag){
+            if(this.SelectedAreaStatus.get("drawed")&&this.mouseClicked.get(0)&&this.AreaSelectPanFlag){
                 //拡大されてないとパンは実質無効
                 const oldX=this.MouseTrack.get("previous").get("x"),oldY=this.MouseTrack.get("previous").get("y");
                 const newX=this.MouseTrack.get("current").get("x"),newY=this.MouseTrack.get("current").get("y");
@@ -3245,9 +3259,9 @@ class Canvas{
         ドラッグ系イベントはmouseupで精査した後の値を送信する
         */
         this.EventSetHelper(this.CanvasBlock,"mouseup",(e)=>{
-            if(this.SelectedAreaStatus.get("drawed")&&this.OperationPanFlag){
+            if(this.SelectedAreaStatus.get("drawed")&&this.AreaSelectPanFlag){
                 //現在のSelectedAreaを精査して値を変更する
-                //console.log("OperationZoomPan","mouseup");
+                //console.log("AreaSelectZoomPan","mouseup");
                 let sw=this.SelectedAreaStatus.get("w0");
                 let sh=this.SelectedAreaStatus.get("h0");
                 //let gw=sw+this.SelectedAreaStatus.get("width");
@@ -3297,7 +3311,7 @@ class Canvas{
         }
     }
     SelectedAreaDraw(){
-        const linectx=this.OperationCanvas.getContext("2d");
+        const linectx=this.MultiUseLayer.getContext("2d");
         const dWidth=linectx.canvas.width,dHeight=linectx.canvas.height;
         linectx.clearRect(0,0,dWidth,dHeight);//初期化する
         //slider用のデータ
@@ -4267,21 +4281,14 @@ function OrderSubWindowOpen(SendingData){
     //SubWindowを開くようにMainProcessに命令する
     //CanvasID,Layer,actionをMapでまとめて渡す
     window.MainWindowRendererMainProcessAPI.OrderSubWindowOpen(SendingData);//SubWindowのRenderer側から、OPモードが必要かの返答を待つ
-    //とりあえずは、sendで作ってこちらで強制的にオペレーションモードをONにする
-    const SendingDataBody=SendingData.get("data");
-    const TargetCanvasID=SendingDataBody.get("CanvasID");
-    const TargetLayer=SendingDataBody.get("Layer");
-    const TargetCanvasClass=CanvasClassDictionary.get(TargetCanvasID);
-    //CanvasClassからDicomDataClassを特定する
-    const DataType=TargetLayer;
-    const DataID=TargetCanvasClass.LayerDataMap.get(TargetLayer).get("DataID");
-    //const currenttargetDicomDataClass=DicomDataClassDictionary.get(DataType).get(DataID);
-    //subwindowを開いたらオペレーションモードにする
-    TargetCanvasClass.ChangeOperationMode(SendingDataBody.get("OPMode"));
-    
-    window.MainWindowRendererMainProcessAPI.RemoveFMPTM();//前回のサブウィンドウからの通信用のリスナーを初期化
+    //前回のサブウィンドウからの通信用のリスナーを初期化,サブウィンドウ終了後専用のチャンネルがあるので最後の通知はそちらから
+    //このリスナーはサブウィンドウとメインウィンドウの双方向通信用であるため、一つのサブウィンドウにしか開通しない
+    window.MainWindowRendererMainProcessAPI.RemoveFMPTM();
     window.MainWindowRendererMainProcessAPI.FromMainProcessToMain((event,data)=>{
-        TargetCanvasClass.ReceiveChangesFromSubWindow(data);
+        const ReceivedDataBody=data.get("data");
+        const CanvasID=ReceivedDataBody.get("CanvasID");
+        const targetCanvasClass=CanvasClassDictionary.get(CanvasID);
+        targetCanvasClass.ReceiveChangesFromSubWindow(data);
     });
 }
 /*
@@ -4360,22 +4367,36 @@ class Evaluate{
             //OFFにする
             const OFFCIDLayerMap=ChangeTarget.get("OFF");
             const OFFCID=OFFCIDLayerMap.get("CanvasID");
-            const OFFLayer=OFFCIDLayerMap.get("Layer");
+            const OFFLayer=OFFCIDLayerMap.get("Layer");//もしかしたらLayer注目も実装されるかもしれない
             if(OFFCID>=0){//初期状態からの選択はOFFがないことがある
+                const ModeSwitchingData=new Map([
+                    ["action","AreaSelectModeSwitching"],
+                    ["data",new Map([
+                        ["CanvasID",OFFCID],
+                        ["Activate",false],
+                    ])]
+                ])
                 const OFFTargetCanvas=CanvasClassDictionary.get(OFFCID);
-                OFFTargetCanvas.ChangeOperationMode(false);//dammydataを作成してReceiveChangeを経由してもいい
+                OFFTargetCanvas.ReceiveChangesFromSubWindow(ModeSwitchingData);
             }
             
             //ONにする
-            //1. OPModeをONにする
+            //1. MultiUseLayerModeをONにする
             //2. 現在のSelectedAreaを渡して描画させる
             const ONCIDLayerMap=ChangeTarget.get("ON");
             const ONCID=ONCIDLayerMap.get("CanvasID");
             const ONLayer=ONCIDLayerMap.get("Layer");
             if(ONCID>=0){
-                const SelectedArea=ReceiveDataBody.get("SelectedArea");
+                const ModeSwitchingData=new Map([
+                    ["action","AreaSelectModeSwitching"],
+                    ["data",new Map([
+                        ["CanvasID",ONCID],
+                        ["Activate",true]
+                    ])]
+                ]);
                 const ONTargetCanvas=CanvasClassDictionary.get(ONCID);
-                ONTargetCanvas.ChangeOperationMode(true);//dammydataを作成してReceiveChangeを経由してもいい
+                ONTargetCanvas.ReceiveChangesFromSubWindow(ModeSwitchingData);//dammydataを作成してReceiveChangeを経由してもいい
+                const SelectedArea=ReceiveDataBody.get("SelectedArea");
                 const dammydata=new Map([
                     ["action","ChangeSelectedArea"],
                     ["data",new Map([
@@ -4387,7 +4408,7 @@ class Evaluate{
                 
                 //選択されたCanvasのサイズを送って、入力欄の境界判定に利用する
                 //共通のサイズの画像を比較することは前提条件だが、念のため通知しておくこととする
-                //OperationCanvasのサイズは実際の画像サイズより大きく設定されることがあるため
+                //MultiUseLayerのサイズは実際の画像サイズより大きく設定されることがあるため
                 //DrawStatusのoriginalimagewidth,heightを元々のサイズとして扱う
                 const SendingData=new Map([
                     ["action","FromMainToSubCanvasSize"],
@@ -4506,19 +4527,6 @@ const EvaluateFunctions=new Evaluate();
 //window.MainWindowRendererMainProcessAPI.FromMainProcessToMain(FromMainProcessToMainCallback);
 //SuBWindowが閉じられたときに呼ばれる
 window.MainWindowRendererMainProcessAPI.CloseSubWindowFromMainProcessToMain((event,ClosingDataList)=>{
-    //window.MainWindowRendererMainProcessAPI.RemoveFMPTM();
-    //console.log("SubWindowが閉じられたよ",header);
-    //送られてきたheaderを基に、CanvasClassのOPModeをOFFにする
-    /*
-    const CanvasID=header.get("CanvasID");
-    const targetCanvasClass=CanvasClassDictionary.get(CanvasID);
-    if(targetCanvasClass){
-        targetCanvasClass.ChangeOperationMode(false);
-    }*/
-    //メインプロセスからの通信用リスナーを初期化する
-    //window.MainWindowRendererMainProcessAPI.RemoveFMPTM();
-    //console.log("クロージング");
-    //console.log(ClosingDataList);
     for(const ClosingData of ClosingDataList){
         //headerにターゲットが書いてあるので見る
         //ヘッダーによってターゲットを指定するコンテキストメニューでも使用しているため、

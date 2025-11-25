@@ -152,7 +152,7 @@ function createSubWindow(SendingData){
     if(detach)SubWindow.webContents.openDevTools({mode: 'detach'});
     SubWindow.loadFile(path.join(__dirname,"SubWindows",actionName,HTMLfileName));
     SubWindow.setAlwaysOnTop(true);
-    //SubWindowの準備が整ったらOperationModeの可否の返答を受け取る
+    //SubWindowの準備が整ったらMultiUseLayerModeの可否の返答を受け取る
     SubWindow.webContents.once("did-finish-load",()=>{
         //初期化用の送信
         //console.log("SubWindow did-finish-load");

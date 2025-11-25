@@ -228,13 +228,13 @@ class ROISelectClass{
             
             const ClosingDataList=[];
             const data=new Map([
-                ["OPMode",false],
+                ["MultiUseLayerMode",false],
 
                 ["CanvasID",this.TargetCanvasID],
                 ["Layer",this.TargetLayer],
             ])
             const ClosingData=new Map([
-                ["action","ChangeOPMode"],
+                ["action","ChangeMultiUseLayerMode"],
                 ["data",data]
             ])
             ClosingDataList.push(ClosingData);
