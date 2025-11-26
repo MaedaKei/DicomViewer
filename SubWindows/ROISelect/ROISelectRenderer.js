@@ -61,11 +61,23 @@ class ROISelectClass{
             this.ROIButtonMap.set(ROIName,ROINameButton);//一括変更時に有効活用できる
         }
         this.ROISelectContainer.appendChild(ROISelectContainerFragment);
+        //MultiUseLayerMode申請
+        this.SendMultiUseLayerSwitching(this.TargetCanvasID,"CONTOURROIClickModeSwitchingFunction",true);//ラッパー
         //イベント設定
         this.ElementsWithEvents=new Map();
         this.setObserverEvents();
         this.setUserEvents();
         this.setSubWindowCloseEvents();
+    }
+    SendMultiUseLayerSwitching(TargetCanvasID,ModeSwitching,Activate){
+        const FromSubToMainProcessData=new Map([
+            ["action",ModeSwitching],
+            ["data",new Map([
+                ["CanvasID",TargetCanvasID],
+                ["Activate",Activate]
+            ])]
+        ]);
+        this.PassChangesToMainWindow(FromSubToMainProcessData);
     }
     CountSelectedROINum(){
         this.SelectedROINum=this.ROISelectStatusSet.size;
@@ -225,18 +237,14 @@ class ROISelectClass{
     setSubWindowCloseEvents(){
         //メインプロセスからサブウィンドウの終了連絡がきたときの処理
         window.SubWindowMainProcessAPI.CloseSubWindowFromMainProcessToSub((event,ReceiveData)=>{
-            
             const ClosingDataList=[];
-            const data=new Map([
-                ["MultiUseLayerMode",false],
-
-                ["CanvasID",this.TargetCanvasID],
-                ["Layer",this.TargetLayer],
-            ])
             const ClosingData=new Map([
-                ["action","ChangeMultiUseLayerMode"],
-                ["data",data]
-            ])
+                ["action","CONTOURROIClickModeSwitchingFunction"],
+                ["data",new Map([
+                    ["CanvasID",this.TargetCanvasID],
+                    ["Activate",false]
+                ])]
+            ]);
             ClosingDataList.push(ClosingData);
             window.SubWindowMainProcessAPI.CloseSubWindowFromSubToMainProcess(ClosingDataList);
         });

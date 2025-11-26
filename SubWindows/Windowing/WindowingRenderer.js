@@ -188,7 +188,7 @@ class WindowingClass{
         //curretnvminとcurrentvmaxの間にマウスがあればよい
         //マウスが右クリックされている間
         //押された瞬間に条件を満たしていれば話すまでは動作するものとする
-        if(this.mouseClicked.get(0)){
+        if(this.MouseDowning.get(0)){
             const currentMouseX=this.MouseTrack.get("current").get("x");
             const rect=this.CanvasContainer.getBoundingClientRect();//0~N
             const currentX=this.xmin+((this.xmax-this.xmin)*currentMouseX/rect.width);//xmin~
@@ -207,7 +207,7 @@ class WindowingClass{
         //マウスホイール、キーダウンを監視
         this.mouseenter=false;
         this.pressedkey=new Map();//押されたキーにTrueを入れる、押されなくなったらdelateする
-        this.mouseClicked=new Map();
+        this.MouseDowning=new Map();
         this.MouseTrack=new Map([
             ["previous",new Map()],
             ["current",new Map()]
@@ -229,7 +229,7 @@ class WindowingClass{
             this.mouseenter=false;
             //その他の監視変数も初期状態に戻す
             this.pressedkey.clear();
-            this.mouseClicked.clear();
+            this.MouseDowning.clear();
             this.MouseTrack.get("previous").clear();
             this.MouseTrack.get("current").clear();
             //フォーカスを外す
@@ -253,13 +253,13 @@ class WindowingClass{
         //マウスの動き監視
         //マウスが押されたときにFlagManegerを読んでCenterイベントが動けるか確かめる。
         this.EventSetHelper(this.CanvasContainer,"mousedown",(e)=>{
-            this.mouseClicked.set(e.button,true);
-            //console.log(this.mouseClicked);
+            this.MouseDowning.set(e.button,true);
+            //console.log(this.MouseDowning);
             this.FlagManager();
         });
         this.EventSetHelper(this.CanvasContainer,"mouseup",(e)=>{
-            this.mouseClicked.delete(e.button);
-            //console.log(this.mouseClicked);
+            this.MouseDowning.delete(e.button);
+            //console.log(this.MouseDowning);
             this.FlagManager();
         });
 

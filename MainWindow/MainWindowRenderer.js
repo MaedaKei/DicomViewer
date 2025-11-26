@@ -2129,8 +2129,22 @@ class CONTOURclass{
         const NewROISelectStatusSet=ReceivedDataBody.get("ROISelectStatusSet");
         this.ROISelectStatusSet=NewROISelectStatusSet;
     }
-    getClickedROISet(ctx,X,Y){
+    getClickedROISet(ctx,Z,X,Y){
+        //console.log("ClicekdXY",X,Y);
         //現在のthis.ROISelectStatusSet内にあるROIに対して判定を行う
+        const ClickedROISet=new Set();
+        for(const ROIName of this.ROISelectStatusSet){
+            const ROIContourDataMap=this.ContourDataMap.get(ROIName);
+            if(ROIContourDataMap.has(Z)){
+                const ContourPath=ROIContourDataMap.get(Z);
+                //X,YがContourPath内にあるか判定する。
+                if(ctx.isPointInPath(ContourPath,X,Y,"evenodd")){
+                    //含まれる
+                    ClickedROISet.add(ROIName);
+                }
+            }
+        }
+        return ClickedROISet;
     }
 }
 //グローバル変数としてCanvasContainerを保持・グローバルスライドショーを紐づけ
@@ -2637,7 +2651,7 @@ class Canvas{
         //Zoomの条件がパンよりも緩いかつ、ズームパン状態の同期やリセットの条件はZoom状態の時でいいので、関数本体ではzoomフラグをチェックする
         if(this.MultiUseLayerModeFlag!=="AreaSelect"&&this.mouseenter&&Controlpressed){
             this.ZoomFlag=true;
-            if(this.mouseClicked.get(0)){
+            if(this.MouseDowning.get(0)){
                 this.PanFlag=true;
             }else{
                 this.PanFlag=false;
@@ -2687,7 +2701,7 @@ class Canvas{
         //マウスホイール、キーダウンを監視
         this.mouseenter=false;
         this.pressedkey=new Map();//押されたキーにTrueを入れる、押されなくなったらdelateする
-        this.mouseClicked=new Map();
+        this.MouseDowning=new Map();
         this.MouseTrack=new Map([
             ["previous",new Map()],
             ["current",new Map()]
@@ -2709,7 +2723,7 @@ class Canvas{
             this.mouseenter=false;
             //その他の監視変数も初期状態に戻す
             this.pressedkey.clear();
-            this.mouseClicked.clear();
+            this.MouseDowning.clear();
             this.MouseTrack.get("previous").clear();
             this.MouseTrack.get("current").clear();
             //フォーカスを外す
@@ -2733,12 +2747,12 @@ class Canvas{
         });
         //マウスの動き監視
         this.EventSetHelper(this.CanvasBlock,"mousedown",(e)=>{
-            this.mouseClicked.set(e.button,true);
-            //console.log(this.mouseClicked);
+            this.MouseDowning.set(e.button,true);
+            //console.log(this.MouseDowning);
         });
         this.EventSetHelper(this.CanvasBlock,"mouseup",(e)=>{
-            this.mouseClicked.delete(e.button);
-            //console.log(this.mouseClicked);
+            this.MouseDowning.delete(e.button);
+            //console.log(this.MouseDowning);
         });
         this.EventSetHelper(this.CanvasBlock,"mousemove",(e)=>{
             //座標を更新
@@ -2868,9 +2882,11 @@ class Canvas{
             const Activate=ReceiveDataBody.get("Activate");//True or False
             if(Activate){
                 //this.MultiUseLayer.style.display="";
+                //console.log("CONTOURROIClick Activate");
                 this.MultiUseLayerModeFlag="CONTOURROIClick";
             }else{
                 //this.MultiUseLayer.style.display="none";
+                //console.log("CONTOURROIClick Deactivate");
                 this.MultiUseLayerModeFlag=false;
             }
             this.FlagManager();
@@ -3048,7 +3064,7 @@ class Canvas{
             あくまで視覚的な範囲選択を消すだけ←範囲選択状態が邪魔になるときもあり、これに対処した機能
             11/26時点でこのメソッドが起動しているときはZoomPan状態がリセットされているはず
             */
-            if(this.AreaSelectDrawRectangleFlag&&this.mouseClicked.get(0)){
+            if(this.AreaSelectDrawRectangleFlag&&this.MouseDowning.get(0)){
                 const newX=this.MouseTrack.get("current").get("x");
                 const newY=this.MouseTrack.get("current").get("y");
                 const rect=this.CanvasBlock.getBoundingClientRect();
@@ -3065,7 +3081,7 @@ class Canvas{
             }
         });
         this.EventSetHelper(this.CanvasBlock,"mousemove",(e)=>{
-            if(this.AreaSelectDrawRectangleFlag&&this.mouseClicked.get(0)){
+            if(this.AreaSelectDrawRectangleFlag&&this.MouseDowning.get(0)){
                 //mousedown時に保持した始点からの距離をwidthとheightとする
                 const newX=this.MouseTrack.get("current").get("x");
                 const newY=this.MouseTrack.get("current").get("y");
@@ -3259,7 +3275,7 @@ class Canvas{
         //マウスドラッグ系イベントはmouseup時に整数にするようにしよう
         //マウスが押された状態でマウスが動くと起動する
         this.EventSetHelper(this.CanvasBlock,"mousemove",(e)=>{
-            if(this.SelectedAreaStatus.get("drawed")&&this.mouseClicked.get(0)&&this.AreaSelectPanFlag){
+            if(this.SelectedAreaStatus.get("drawed")&&this.MouseDowning.get(0)&&this.AreaSelectPanFlag){
                 //拡大されてないとパンは実質無効
                 const oldX=this.MouseTrack.get("previous").get("x"),oldY=this.MouseTrack.get("previous").get("y");
                 const newX=this.MouseTrack.get("current").get("x"),newY=this.MouseTrack.get("current").get("y");
@@ -3371,8 +3387,8 @@ class Canvas{
     //そのうち、クリックした座標を取得する機能を分離するかも
     setCONTOURROIClick(){
         this.CONTOURROIClickFlag=false;
-        this.EventSetHelper(this.CanvasBlock,("mouseup"),(e)=>{
-            if(this.CONTOURROIClickFlag&&this.LayerDataMap.has("CONTOUR")&&this.mouseClicked.get(0)){
+        this.EventSetHelper(this.CanvasBlock,"mousedown",(e)=>{
+            if(this.CONTOURROIClickFlag&&this.LayerDataMap.has("CONTOUR")&&this.MouseDowning.get(0)){
                 //現在のZoomPan状態を考慮した画像座標を取得する
                 const newX=this.MouseTrack.get("current").get("x");
                 const newY=this.MouseTrack.get("current").get("y");
@@ -3388,7 +3404,7 @@ class Canvas{
                 //CONTOURclassに判定依頼、Setが返ってくる
                 const LayerData=this.LayerDataMap.get("CONTOUR");
                 const ctx=LayerData.get("Layer").getContext("2d");
-                const TargetDataID=TargeLayerDataMap.get("DataID");
+                const TargetDataID=LayerData.get("DataID");
                 const TargetDicomDataClass=DicomDataClassDictionary.get("CONTOUR").get(TargetDataID).get("Data");
                 const ClicedROISet=TargetDicomDataClass.getClickedROISet(ctx,currentIndex,ClickedPointX,ClickedPointY);
                 //現時点ではこの機能以外で使わないチャンネルなのでこの中から送信する。ラッパーは現時点では不要2025/11/26
@@ -3398,7 +3414,8 @@ class Canvas{
                         ["ClickedROISet",ClicedROISet]
                     ])]
                 ]);
-                this.PassChangesToSubWindow(data);
+                //this.PassChangesToSubWindow(data);
+                console.log(ClicedROISet);
             }
         })
     }
