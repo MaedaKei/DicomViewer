@@ -179,7 +179,7 @@ class ROISelectClass{
                         this.ROISelectStatusSet.delete(SelectedROIName);
                         //ClickPointsInROIAreaはSelectが解除されるタイミングで一緒に解除する
                         ClickedButton.classList.remove("ClickPointsInROIArea");
-                        this.ROIClickStatusSet.remove(SelectedROIName);
+                        this.ROIClickStatusSet.delete(SelectedROIName);
                     }else{
                         //ない場合
                         ClickedButton.classList.add("Selected");

@@ -105,6 +105,10 @@ div#ROISelectContainer>button.ROINameButton>span.ROIColorBoxSpan{
     margin-right:8px;/*すぐ隣に文字が来ないようにする*/
     margin-left:1px;
 }
+div#ROISelectContainer>button.ROINameButton.Selected>span.ROIColorBoxSpan::before{
+    content:"✔";
+    color:white;
+}
 div#ROISelectContainer>button.ROINameButton>span.ROINameSpan{
     /*ここにROINameが表示されるが、親要素のフォントスタイルがそのまま受け継がれるらしいのでbuttonで制御してしまう*/
     flex:1;
