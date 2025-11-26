@@ -64,6 +64,7 @@ class ROISelectClass{
         //MultiUseLayerMode申請
         this.SendMultiUseLayerSwitching(this.TargetCanvasID,"CONTOURROIClickModeSwitchingFunction",true);//ラッパー
         //イベント設定
+        this.FromMainProcessToSubFunctions=new Map();
         this.ElementsWithEvents=new Map();
         this.setObserverEvents();
         this.setUserEvents();
@@ -129,6 +130,37 @@ class ROISelectClass{
         this.setROISelectChange();
         this.setAllAndReset();
         this.setROISelectMemory();
+        this.ROIClickStatusSet=new Map();
+        //クリックされたROINameSetを受信する
+        const CONTOURROIClickedFunction=(data)=>{
+            //前回のクリックされたROINameをループして、ClickPointsInROIAreaクラスを消す
+            /*
+            console.log(this.ROIClickStatusSet);
+            for(const ROIName of this.ROIClickStatusSet){
+                const ROIButton=this.ROIButtonMap.get(ROIName);
+                ROIButton.classList.remove("ClickPointsInROIArea");
+            }
+            */
+            //ROIClickStatusSetを更新する
+            //ClickPointsInROIAreaこのクラスは、SelectROIが一つでも変わるタイミングですべて消す
+            this.RemoveClickPointsInROIAreaClass();//button要素からクラスを削除する関数
+            const ReceiveDataBody=data.get("data");
+            this.ROIClickStatusSet=ReceiveDataBody.get("ClickedROISet");
+            console.log(this.ROIClickStatusSet);
+            for(const ROIName of this.ROIClickStatusSet){
+                const ROIButton=this.ROIButtonMap.get(ROIName);
+                ROIButton.classList.add("ClickPointsInROIArea");
+            }
+        }
+        this.FromMainProcessToSubFunctions.set("CONTOURROIClicked",CONTOURROIClickedFunction);
+    }
+    RemoveClickPointsInROIAreaClass(){
+        //this.ROIClickStatusSetをもとに消して、this.ROIClickStatusSetをリセット
+        for(const ROIName of this.ROIClickStatusSet){
+            const ROIButton=this.ROIButtonMap.get(ROIName);
+            ROIButton.classList.remove("ClickPointsInROIArea");
+        }
+        this.ROIClickStatusSet.clear();//一応初期化する
     }
     setROISelectChange(){
         /*ROISelectContainerにイベントを付ける*/
@@ -149,6 +181,7 @@ class ROISelectClass{
                         ClickedButton.classList.add("Selected");
                         this.ROISelectStatusSet.add(SelectedROIName);
                     }
+                    this.RemoveClickPointsInROIAreaClass();
                     //要素数を更新
                     this.CountSelectedROINum();
                     //StatusSetをMainWindowに送信する
@@ -176,6 +209,8 @@ class ROISelectClass{
                         this.ROISelectStatusSet.add(ROIName);
                     }
                 }
+                //切り替わるのでClickPointsInROIAreaをすべて削除する
+                this.RemoveClickPointsInROIAreaClass();
                 this.CountSelectedROINum();
                 this.SendROISelectStatusSet();
             }
@@ -211,6 +246,7 @@ class ROISelectClass{
                         //2つの集合が同じならMemory読み込みによって選択された盤面なので、これを全消去する
                         this.ROISelectStatusSet.clear();
                     }
+                    this.RemoveClickPointsInROIAreaClass();
                     this.CountSelectedROINum();
                     this.SendROISelectStatusSet();
                 }
@@ -233,6 +269,11 @@ class ROISelectClass{
             ["data",data]
         ]);
         this.PassChangesToMainWindow(FromSubToMainProcessData);
+    }
+    ReceiveChangesFromMainWindow(data){
+        const bodyaction=data.get("action");
+        console.log(bodyaction);
+        this.FromMainProcessToSubFunctions.get(bodyaction)(data);
     }
     setSubWindowCloseEvents(){
         //メインプロセスからサブウィンドウの終了連絡がきたときの処理
@@ -277,5 +318,9 @@ class ROISelectClass{
     
 }
 window.SubWindowMainProcessAPI.initializeSubWindow((event,SendingData)=>{
-    const roiselectobj=new ROISelectClass(SendingData);
+    const ROISelectobj=new ROISelectClass(SendingData);
+    //MainWindouとの双方向通信のリスナー設置
+    window.SubWindowMainProcessAPI.FromMainProcessToSub((event,data)=>{
+        ROISelectobj.ReceiveChangesFromMainWindow(data);
+    });
 });

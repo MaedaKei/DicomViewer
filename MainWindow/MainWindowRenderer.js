@@ -2130,7 +2130,7 @@ class CONTOURclass{
         this.ROISelectStatusSet=NewROISelectStatusSet;
     }
     getClickedROISet(ctx,Z,X,Y){
-        console.log("ClicekdXY",X,Y);
+        //console.log("ClicekdXY",X,Y);
         //現在のthis.ROISelectStatusSet内にあるROIに対して判定を行う
         const ClickedROISet=new Set();
         for(const ROIName of this.ROISelectStatusSet){
@@ -2693,8 +2693,6 @@ class Canvas{
         }else{
             this.CONTOURROIClickFlag=false;
         }
-        console.log("ZoomFlag",this.ZoomFlag);
-        console.log("PanFlag",this.PanFlag);
     }
 
 
@@ -3391,7 +3389,7 @@ class Canvas{
         this.CONTOURROIClickFlag=false;
         this.EventSetHelper(this.CanvasBlock,"mouseup",(e)=>{
             if(this.CONTOURROIClickFlag&&this.LayerDataMap.has("CONTOUR")&&e.button===0){
-                console.log("ROIClicked!!");
+                //console.log("ROIClicked!!");
                 //現在のZoomPan状態を考慮した画像座標を取得する
                 const newX=this.MouseTrack.get("current").get("x");
                 const newY=this.MouseTrack.get("current").get("y");
@@ -3407,18 +3405,18 @@ class Canvas{
                 //CONTOURclassに判定依頼、Setが返ってくる
                 const LayerData=this.LayerDataMap.get("CONTOUR");
                 const ctx=LayerData.get("Layer").getContext("2d");
-                const TargetDataID=TargeLayerDataMap.get("DataID");
+                const TargetDataID=LayerData.get("DataID");
                 const TargetDicomDataClass=DicomDataClassDictionary.get("CONTOUR").get(TargetDataID).get("Data");
                 const ClicedROISet=TargetDicomDataClass.getClickedROISet(ctx,currentIndex,ClickedPointX,ClickedPointY);
                 //現時点ではこの機能以外で使わないチャンネルなのでこの中から送信する。ラッパーは現時点では不要2025/11/26
                 const data=new Map([
-                    ["action","ROICliced"],
+                    ["action","CONTOURROIClicked"],
                     ["data",new Map([
                         ["ClickedROISet",ClicedROISet]
                     ])]
                 ]);
-                //this.PassChangesToSubWindow(data);
-                console.log(ClicedROISet);
+                //console.log(ClicedROISet);
+                this.PassChangesToSubWindow(data);
             }
         })
     }

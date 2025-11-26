@@ -95,6 +95,9 @@ div#ROISelectContainer>button.ROINameButton.Selected{
     background-color: black;
     color:white;
 }
+div#ROISelectContainer>button.ROINameButton.Selected.ClickPointsInROIArea{
+    color:rgb(255, 0, 0);
+}
 div#ROISelectContainer>button.ROINameButton>span.ROIColorBoxSpan{
     width:var(--ButtonHeight);
     height:var(--ButtonHeight);

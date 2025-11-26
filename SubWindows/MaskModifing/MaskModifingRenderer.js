@@ -245,7 +245,7 @@ class MaskModifingClass{
                 this.SelectedAreaChange();
             });
         }
-        this.FromMainProcessToMainFunctios=new Map();
+        this.FromMainProcessToSubFunctions=new Map();
         const ChangeSelectedAreaFunction=(data)=>{
             const ReceiveDataBody=data.get("data");
             const SelectedAreaData=ReceiveDataBody.get("SelectedArea");
@@ -256,7 +256,7 @@ class MaskModifingClass{
             this.StartSliceInput.value=SelectedAreaData.get("startslice");
             this.EndSliceInput.value=SelectedAreaData.get("endslice");
         }
-        this.FromMainProcessToMainFunctios.set("ChangeSelectedArea",ChangeSelectedAreaFunction);
+        this.FromMainProcessToSubFunctions.set("ChangeSelectedArea",ChangeSelectedAreaFunction);
         //確定ボタンの処理
         this.EventSetHelper(this.MaskModifyConfirmButton,"mouseup",(e)=>{
             if(e.button===0){
@@ -364,7 +364,7 @@ class MaskModifingClass{
     ReceiveChangesFromMainWindow(data){
         const bodyaction=data.get("action");
         //console.log(bodyaction);
-        this.FromMainProcessToMainFunctios.get(bodyaction)(data);
+        this.FromMainProcessToSubFunctions.get(bodyaction)(data);
     }
     setSubWindowCloseEvents(){
         console.log("終了処理登録");

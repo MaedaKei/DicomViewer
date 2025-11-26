@@ -130,7 +130,7 @@ class Evaluate{
         return NewDataTypeCIDMap;
     }
     setUserEvents(){
-        this.FromMainProcessToMainFunctions=new Map();
+        this.FromMainProcessToSubFunctions=new Map();
         //評価指標選択
         this.EventSetHelper(this.EvaluationFunctionSelecter,"change",(e)=>{
             //const SelectedFunctionName=e.target.value;
@@ -202,7 +202,7 @@ class Evaluate{
             this.originalimageheight=heightmax;
             this.originalslidermax=slidermax;
         }
-        this.FromMainProcessToMainFunctions.set("FromMainToSubCanvasSize",FromMainToSubCanvasSizeFunction);
+        this.FromMainProcessToSubFunctions.set("FromMainToSubCanvasSize",FromMainToSubCanvasSizeFunction);
         //範囲選択
         for(const element of [this.LeftTopXInput,this.LeftTopYInput,this.RectangleWidthInput,this.RectangleHeightInput,this.StartSliceInput,this.EndSliceInput]){
             this.EventSetHelper(element,"keydown",(e)=>{
@@ -231,7 +231,7 @@ class Evaluate{
             //MainWindowから変更を受け取ったら、現在選択中のCanvasにも伝える
             this.SendSelectedArea();
         }
-        this.FromMainProcessToMainFunctions.set("ChangeSelectedArea",ChangeSelectedAreaFunction);
+        this.FromMainProcessToSubFunctions.set("ChangeSelectedArea",ChangeSelectedAreaFunction);
         /*評価指標計算*/
         //1.計算開始ボタン→データ要求
         this.CalculateID=0;
@@ -391,7 +391,7 @@ class Evaluate{
             //ここでのFocusでは送信を起こしたくない
             this.FocusHistoryListItem(CalculateID,false);
         }
-        this.FromMainProcessToMainFunctions.set("FromMainToSubTargetVolume",FromMainToSubTargetVolumeFunction);
+        this.FromMainProcessToSubFunctions.set("FromMainToSubTargetVolume",FromMainToSubTargetVolumeFunction);
         //ulに対してイベントを定義
         this.PreviousSelectedCalculateID=null;
         this.EventSetHelper(this.CalculateHistoryList,"click",(e)=>{
@@ -703,7 +703,7 @@ class Evaluate{
     ReceiveChangesFromMainWindow(data){
         const bodyaction=data.get("action");
         //console.log(bodyaction);
-        this.FromMainProcessToMainFunctions.get(bodyaction)(data);
+        this.FromMainProcessToSubFunctions.get(bodyaction)(data);
     }
     setSubWindowCloseEvents(){
         console.log("終了処理登録");
