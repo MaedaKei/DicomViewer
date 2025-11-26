@@ -2059,8 +2059,8 @@ class CONTOURclass{
         const ColumnsNum=Math.ceil(ROICount/20);//列数
         const Gap=2;
 
-        const SelectInfoDisplayFontSize=20;
-        const SelectInfoDisplayContainerHeight=SelectInfoDisplayFontSize+10;
+        const SelectInfoDisplayFontSize=20;//使ってない
+        const SelectInfoDisplayContainerHeight=40;
 
         const ButtonFontSize=15;//px
         const CharacterWidth=Math.ceil(ButtonFontSize*0.7);

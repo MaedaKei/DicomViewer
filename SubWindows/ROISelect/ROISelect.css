@@ -24,43 +24,70 @@ html,body{
 }
 /*SelectInfoDisplay*/
 body>div#SelectInfoDisplayContainer{
-    Width:100%;
-    Height:var(--SelectInfoDisplayContainerHeight);
+    width:100%;
+    height:var(--SelectInfoDisplayContainerHeight);
     display:flex;
     flex-direction: row;
+    background-color: white;
+    --gap:1px;
+    --AllROIDisplayContainerWidthRate:0.3;
+    --SelectedROIDisplayContainerWidthRate:0.4;
+    --MemorizedROIDisplayContainerWidthRate:0.4;
+    gap:var(--gap);
 }
-div#SelectInfoDisplayContainer>div#AllROINumDisplay{
-    width:30%;
-    height:100%;
-    padding:1px;
-    /*font-size:var(--SelectInfoDisplayFontSize);*/
-    text-align: left;
-    vertical-align: top;
+div#SelectInfoDisplayContainer>div#AllROIDisplayContainer.InfoDisplayContainer{
+    width:calc((100% - 2 * var(--gap)) * var(--AllROIDisplayContainerWidthRate));
     background-color: black;
     color:white;
-    border:1px solid white;
+
 }
-div#SelectInfoDisplayContainer>div#SelectedROINumDisplay{
-    width:35%;
-    height:100%;
-    padding:1px;
-    /*font-size:var(--SelectInfoDisplayFontSize);*/
-    text-align: left;
-    vertical-align: top;
+div#SelectInfoDisplayContainer>div#SelectedROIDisplayContainer.InfoDisplayContainer{
+    width:calc((100% - 2 * var(--gap)) * var(--SelectedROIDisplayContainerWidthRate));
     background-color: black;
     color:white;
-    border:1px solid white;
 }
-div#SelectInfoDisplayContainer>div#MemorizedROINumDisplay{
-    width:35%;
-    height:100%;
-    padding:1px;
-    /*font-size:var(--SelectInfoDisplayFontSize);*/
-    text-align: left;
-    vertical-align: top;
+div#SelectInfoDisplayContainer>div#MemorizedROIDisplayContainer.InfoDisplayContainer{
+    width:calc((100% - 2 * var(--gap)) * var(--MemorizedROIDisplayContainerWidthRate));
     background-color: black;
     color:white;
-    border:1px solid white;
+}
+/*3つに共通する部分のCSS*/
+div#SelectInfoDisplayContainer>div.InfoDisplayContainer{
+    /*width*/
+    height:100%;
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid white;
+
+}
+div#SelectInfoDisplayContainer>div.InfoDisplayContainer>div.ROIKindInfoDisplay{
+    width:100%;
+    height:40%;
+    text-align: center;
+    font-size:10px;
+}
+div#SelectInfoDisplayContainer>div.InfoDisplayContainer>div.ROINumDisplayContainer{
+    width: 100%;
+    height: 60%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+div#SelectInfoDisplayContainer>div.InfoDisplayContainer>div.ROINumDisplayContainer>span.VariableText{
+    width: 60%;
+    height: 100%;
+    font-size: 15px;
+    display:flex;
+    align-items: center;
+    justify-content: center;
+}
+div#SelectInfoDisplayContainer>div.InfoDisplayContainer>div.ROINumDisplayContainer>span.NormalText{
+    width: 40%;
+    height: 100%;
+    font-size:10px;
+    display:flex;
+    align-items: center;
+    justify-content: center;
 }
 /*ROISelectContainer*/
 body>div#ROISelectContainer{
@@ -71,7 +98,7 @@ body>div#ROISelectContainer{
     grid-template-rows: repeat(var(--GridRowsNum),1fr);
     grid-auto-flow: column;/*縦に並べてから横に動く*/
     gap:var(--GridGap);
-    background-color: gray;
+    background-color: rgb(255, 255, 255);
 }
 /*ボタンの設定*/
 div#ROISelectContainer>button.ROINameButton{
@@ -81,8 +108,8 @@ div#ROISelectContainer>button.ROINameButton{
     align-items: center;/*垂直方向を中央揃え*/
     flex-direction: row;
     /*border:1px solid black;*/
-    background-color: white;
-    color:black;
+    background-color: rgb(210, 210, 210);
+    color:rgb(0, 0, 0);
     font-weight: bold;
 }
 div#ROISelectContainer>button.ROINameButton:focus{/*フォーカスがあるときのオレンジの枠を、ボタンに対しては禁止する*/
@@ -99,18 +126,35 @@ div#ROISelectContainer>button.ROINameButton.Selected.ClickPointsInROIArea{
     color:rgb(255, 0, 0);
 }
 div#ROISelectContainer>button.ROINameButton>span.ROIColorBoxSpan{
+    display: inline-block;
     width:var(--ButtonHeight);
     height:var(--ButtonHeight);
+    line-height: var(--ButtonHeight);
+    text-align: center;
     flex-shrink: 0;/*縮まないようにする*/
     margin-right:8px;/*すぐ隣に文字が来ないようにする*/
-    margin-left:1px;
 }
 div#ROISelectContainer>button.ROINameButton.Selected>span.ROIColorBoxSpan::before{
     content:"✔";
-    color:white;
+    color:black;
 }
 div#ROISelectContainer>button.ROINameButton>span.ROINameSpan{
     /*ここにROINameが表示されるが、親要素のフォントスタイルがそのまま受け継がれるらしいのでbuttonで制御してしまう*/
+    display:inline-block;
     flex:1;
+    height:var(--ButtonHeight);
+    line-height: var(--ButtonHeight);
     text-align: left;
+}
+div#ROISelectContainer>button.ROINameButton>span.ROIMemorySpan{
+    display: inline-block;
+    width:var(--ButtonHeight);
+    height:var(--ButtonHeight);
+    line-height: var(--ButtonHeight);
+    text-align: center;
+    flex-shrink: 0;
+    margin-left:8px;
+}
+div#ROISelectContainer>button.ROINameButton.Memorized>span.ROIMemorySpan::before{
+    content:"M";
 }

@@ -8,9 +8,27 @@
     </head>
     <body>
         <div id="SelectInfoDisplayContainer">
-            <div id="AllROINumDisplay"></div>
-            <div id="SelectedROINumDisplay"></div>
-            <div id="MemorizedROINumDisplay"></div>
+            <div id="AllROIDisplayContainer" class="InfoDisplayContainer">
+                <div class="ROIKindInfoDisplay">All</div>
+                <div class="ROINumDisplayContainer">
+                    <span class="VariableText" id="AllROINumDisplay"></span>
+                    <span class="NormalText">ROIs</span>
+                </div>
+            </div>
+            <div id="SelectedROIDisplayContainer" class="InfoDisplayContainer">
+                <div class="ROIKindInfoDisplay">Selected ( ✔ )</div>
+                <div class="ROINumDisplayContainer">
+                    <span class="VariableText" id="SelectedROINumDisplay"></span>
+                    <span class="NormalText">ROIs</span>
+                </div>
+            </div>
+            <div id="MemorizedROIDisplayContainer" class="InfoDisplayContainer">
+                <div class="ROIKindInfoDisplay">Memorized ( M )</div>
+                <div class="ROINumDisplayContainer">
+                    <span class="VariableText" id="MemorizedROINumDisplay"></span>
+                    <span class="NormalText">ROIs</span>
+                </div>
+            </div>
         </div>
         <div id="ROISelectContainer">
             

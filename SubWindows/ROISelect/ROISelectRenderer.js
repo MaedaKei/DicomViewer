@@ -29,7 +29,7 @@ class ROISelectClass{
             document.documentElement.style.setProperty(PropertyName,SetValue);
         }
         this.AllROINum=ROINameColorMap.size;
-        this.AllROINumDisplay.textContent=`All ${this.AllROINum}`;
+        this.AllROINumDisplay.textContent=this.AllROINum;
         this.ROISelectStatusSet=ROISelectStatusSet;
         this.SelectedROINum=this.CountSelectedROINum();//Displayも更新
         this.ROIMemoryStatusSet=new Set(ROISelectStatusSet);//デフォルトではウィンドウオープン時の選択状態が記憶される
@@ -50,12 +50,18 @@ class ROISelectClass{
             const ROINameSpan=document.createElement("span");
             ROINameSpan.className="ROINameSpan";
             ROINameSpan.textContent=ROIName;
+            const ROIMemorySpan=document.createElement("span");
+            ROIMemorySpan.className="ROIMemorySpan";
 
             ButtonFragment.appendChild(ROIColorBoxSpan);
             ButtonFragment.appendChild(ROINameSpan);
+            ButtonFragment.appendChild(ROIMemorySpan);
             ROINameButton.appendChild(ButtonFragment);
             if(this.ROISelectStatusSet.has(ROIName)){
                 ROINameButton.classList.add("Selected");
+            }
+            if(this.ROIMemoryStatusSet.has(ROIName)){
+                ROINameButton.classList.add("Memorized");
             }
             ROISelectContainerFragment.appendChild(ROINameButton);
             this.ROIButtonMap.set(ROIName,ROINameButton);//一括変更時に有効活用できる
@@ -83,11 +89,11 @@ class ROISelectClass{
     CountSelectedROINum(){
         this.SelectedROINum=this.ROISelectStatusSet.size;
         //InfoDisplayも更新する
-        this.SelectedROINumDisplay.textContent=`S ${this.SelectedROINum}`;
+        this.SelectedROINumDisplay.textContent=this.SelectedROINum;
     }
     CountMemorizedROINum(){
         this.MemorizedROINum=this.ROIMemoryStatusSet.size;
-        this.MemorizedROINumDisplay.textContent=`M ${this.MemorizedROINum}`;
+        this.MemorizedROINumDisplay.textContent=this.MemorizedROINum;
     }
     FlagManager(){
         const Controlpressed=(this.pressedkey.get("ControlLeft")||this.pressedkey.get("ControlRight"));
@@ -224,8 +230,17 @@ class ROISelectClass{
         this.EventSetHelper(document,"keydown",(e)=>{
             if(e.code==="KeyM"){
                 if(this.MemoryWriteFlag){
+                    //もともとあったROIMemoryStatusSetをもとにMemorizedクラスを消す
+                    for(const MemorizedROIName of this.ROIMemoryStatusSet){
+                        const MemorizedROIButton=this.ROIButtonMap.get(MemorizedROIName);
+                        MemorizedROIButton.classList.remove("Memorized");
+                    }
                     //現在のROISelectStatusSetに保存
                     this.ROIMemoryStatusSet=new Set(this.ROISelectStatusSet);//参照独立
+                    for(const MemorizedROIName of this.ROIMemoryStatusSet){
+                        const MemorizedROIButton=this.ROIButtonMap.get(MemorizedROIName);
+                        MemorizedROIButton.classList.add("Memorized");
+                    }
                     this.CountMemorizedROINum();
                 }else{
                     //ROISelectStatusとROIMemoryStatusを比較する
