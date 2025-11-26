@@ -2129,6 +2129,9 @@ class CONTOURclass{
         const NewROISelectStatusSet=ReceivedDataBody.get("ROISelectStatusSet");
         this.ROISelectStatusSet=NewROISelectStatusSet;
     }
+    getClickedROISet(ctx,X,Y){
+        //現在のthis.ROISelectStatusSet内にあるROIに対して判定を行う
+    }
 }
 //グローバル変数としてCanvasContainerを保持・グローバルスライドショーを紐づけ
 const CanvasContainer = document.getElementById("CanvasContainer");
@@ -2643,7 +2646,11 @@ class Canvas{
             this.ZoomFlag=false;
             this.PanFlag=false;
         }
-        //MultiUseLayerMode
+        /*
+        MultiUseLayerMode関連イベント判定
+        常にON状態にある画像のズームパンとの兼ね合いだけ考慮して設定すればOK
+        */
+        //AreaSelect
         //Ctrl押してないときのドラッグ&ドロップ⇒範囲選択
         //ズームパンとは異なり、ここでマウスが押されているかは条件としない
         //マウスが押されたポイントを始点とする必要があるため、本体の中で定義する
@@ -2658,12 +2665,19 @@ class Canvas{
         //Ctrl押しているときのドラッグ&ドロップ⇒選択範囲長方形のパン
         //Ctrl押しているときのホイール⇒選択範囲の拡縮
         //ドラッグ操作があるが、どちらの機能もマウスアップ時に整数に調整させるため、ここではマウス押下を条件に加えない
-        if(this.MultiUseLayerModeFlag&&this.mouseenter&&Controlpressed){
+        if(this.MultiUseLayerModeFlag==="AreaSelect"&&this.mouseenter&&Controlpressed){
             this.AreaSelectDrawRectangleFlag=true;
             this.AreaSelectZoomFlag=true;
         }else{
             this.AreaSelectDrawRectangleFlag=false;
             this.AreaSelectZoomFlag=false;
+        }
+        //CONTOURROIClick
+        //Ctrl押していないときのクリックでROI内にあるか判定して送信する
+        if(this.MultiUseLayerModeFlag==="CONTOURROIClick"&&this.mouseenter&&!Controlpressed){
+            this.CONTOURROIClickFlag=true;
+        }else{
+            this.CONTOURROIClickFlag=false;
         }
     }
 
@@ -2782,6 +2796,7 @@ class Canvas{
         イベント発火自体はthis.CanvasBlockに設定すること
         イベント設置要素を一つにまとめた
         各データタイプに強く関連した機能はそのデータタイプのコンテキストメニュー設定時にSetする
+        やっぱり、ここで定義する。コンテキストメニューもデータタイプ読み込まれてなくても設定だけしているし、ここでまとめたほうがみやすい
         */
         /*
         AreaSelectモード
@@ -2800,24 +2815,12 @@ class Canvas{
                 this.DrawStatus.set("height",this.DrawStatus.get("originalimageheight"));
                 this.DrawStatus.set("scale",1.0);
                 this.Alldraw();
-                //可視化をONにして前回の結果を描画
-                /*
-                this.SelectedAreaStatus.set("drawed",true);
-                this.SelectedAreaDraw();
-                this.SelectedAreaStatus.set("slicecropdrawed",true);
-                this.CroppedSliceFill();
-                */
             }else{
-                /*
-                this.SelectedAreaStatus.set("drawed",false);
-                this.SelectedAreaDraw();
-                this.SelectedAreaStatus.set("slicecropdrawed",false);
-                this.CroppedSliceFill();
-                */
                 //console.log("OPレイヤー終了");
                 this.MultiUseLayer.style.display="none";
                 this.MultiUseLayerModeFlag=false;
             }
+            //描画状態とActivateは連動する
             this.SelectedAreaStatus.set("drawed",Activate);
             this.SelectedAreaDraw();
             this.SelectedAreaStatus.set("slicecropdrawed",Activate);
@@ -2854,6 +2857,26 @@ class Canvas{
             this.CroppedSliceFill();
         };
         this.FromMainProcessToMainFunctions.set("ChangeSelectedArea",ChangeSelectedAreaFunction);
+        /*
+        CONTOURROIClickモード
+        輪郭内をクリックしたときに、そのピクセル位置が含まれているROIのSetをサブウィンドウに送る
+        */
+        //CONTOURROIClickモードアクティベーター
+        //MultiUseLayerは使わなくてもいいのでここでは操作しないかも
+        const CONTOURROIClickModeSwitchingFunction=(data)=>{
+            const ReceiveDataBody=data.get("data");
+            const Activate=ReceiveDataBody.get("Activate");//True or False
+            if(Activate){
+                //this.MultiUseLayer.style.display="";
+                this.MultiUseLayerModeFlag="CONTOURROIClick";
+            }else{
+                //this.MultiUseLayer.style.display="none";
+                this.MultiUseLayerModeFlag=false;
+            }
+            this.FlagManager();
+        }
+        this.FromMainProcessToMainFunctions.set("CONTOURROIClickModeSwitchingFunction",CONTOURROIClickModeSwitchingFunction);
+        this.setCONTOURROIClick();
     }
     setLocalSliceAndAlign(){
         this.LocalSliceAndAlignFlag=false;
@@ -3010,6 +3033,7 @@ class Canvas{
             }
         })
     }
+    /*AreaSelectイベント登録*/
     setAreaSelectDrawRectangle(){
         this.AreaSelectDrawRectangleFlag=false;
         //始点の更新
@@ -3022,6 +3046,7 @@ class Canvas{
             そのため、マウスを押すだけ＝選択範囲の描画消去となる
             しかし、前回の選択範囲確定版は消去されていない
             あくまで視覚的な範囲選択を消すだけ←範囲選択状態が邪魔になるときもあり、これに対処した機能
+            11/26時点でこのメソッドが起動しているときはZoomPan状態がリセットされているはず
             */
             if(this.AreaSelectDrawRectangleFlag&&this.mouseClicked.get(0)){
                 const newX=this.MouseTrack.get("current").get("x");
@@ -3341,6 +3366,42 @@ class Canvas{
         linectx.font="15px sans-serif";
         linectx.fillText("Area Select Mode",5,15);
     }
+    /*CONTOURROIClickイベント登録*/
+    //11/26時点ではCONTOUR専用機能
+    //そのうち、クリックした座標を取得する機能を分離するかも
+    setCONTOURROIClick(){
+        this.CONTOURROIClickFlag=false;
+        this.EventSetHelper(this.CanvasBlock,("mouseup"),(e)=>{
+            if(this.CONTOURROIClickFlag&&this.LayerDataMap.has("CONTOUR")&&this.mouseClicked.get(0)){
+                //現在のZoomPan状態を考慮した画像座標を取得する
+                const newX=this.MouseTrack.get("current").get("x");
+                const newY=this.MouseTrack.get("current").get("y");
+                const rect=this.CanvasBlock.getBoundingClientRect();
+                const currentw0=this.DrawStatus.get("w0");
+                const currenth0=this.DrawStatus.get("h0");
+                const currentwidth=this.DrawStatus.get("width");
+                const currentheight=this.DrawStatus.get("height");
+                const currentIndex=this.DrawStatus.get("index");
+                //現在描画領域を考慮した座標を計算
+                const ClickedPointX=currentwidth*(newX/rect.width)+currentw0;
+                const ClickedPointY=currentheight*(newY/rect.height)+currenth0;
+                //CONTOURclassに判定依頼、Setが返ってくる
+                const LayerData=this.LayerDataMap.get("CONTOUR");
+                const ctx=LayerData.get("Layer").getContext("2d");
+                const TargetDataID=TargeLayerDataMap.get("DataID");
+                const TargetDicomDataClass=DicomDataClassDictionary.get("CONTOUR").get(TargetDataID).get("Data");
+                const ClicedROISet=TargetDicomDataClass.getClickedROISet(ctx,currentIndex,ClickedPointX,ClickedPointY);
+                //現時点ではこの機能以外で使わないチャンネルなのでこの中から送信する。ラッパーは現時点では不要2025/11/26
+                const data=new Map([
+                    ["action","ROICliced"],
+                    ["data",new Map([
+                        ["ClickedROISet",ClicedROISet]
+                    ])]
+                ]);
+                this.PassChangesToSubWindow(data);
+            }
+        })
+    }
     //本当は作る必要ないが、複数で全く同じ処理をするのでここに関数として記録しておく
     //確定した選択範囲を様式に沿って構成し、PassChangesToSubを使って送信する
     SendSelectedArea(){
@@ -3356,6 +3417,7 @@ class Canvas{
         ]);
         this.PassChangesToSubWindow(data);
     }
+
     /*サブウィンドウ関連*/
     openSubWindow(initializedata){//一応ラッパー
         initializedata.get("data").set("CanvasID",this.id.get("CanvasID"));//CanvasIDを追加
