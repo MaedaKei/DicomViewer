@@ -164,6 +164,7 @@ class ROISelectClass{
     }
     setROISelectChange(){
         /*ROISelectContainerにイベントを付ける*/
+        /*ユーザーが一つずつROIを選ぶときに限り、ROIのSelected解除に合わせてClickPointsROIAreaを解除する*/
         this.EventSetHelper(this.ROISelectContainer,"mouseup",(e)=>{
             if(e.button===0){
                 const ClickedButton=e.target.closest("button.ROINameButton");
@@ -176,12 +177,14 @@ class ROISelectClass{
                         ClickedButton.classList.remove("Selected");
                         //StatusSetからも要素を除外
                         this.ROISelectStatusSet.delete(SelectedROIName);
+                        //ClickPointsInROIAreaはSelectが解除されるタイミングで一緒に解除する
+                        ClickedButton.classList.remove("ClickPointsInROIArea");
+                        this.ROIClickStatusSet.remove(SelectedROIName);
                     }else{
                         //ない場合
                         ClickedButton.classList.add("Selected");
                         this.ROISelectStatusSet.add(SelectedROIName);
                     }
-                    this.RemoveClickPointsInROIAreaClass();
                     //要素数を更新
                     this.CountSelectedROINum();
                     //StatusSetをMainWindowに送信する
