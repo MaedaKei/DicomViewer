@@ -10,4 +10,4 @@ files:
   - SubWindows/**
 win:
   target: zip
-  
+  signAndEditExecutable: false
