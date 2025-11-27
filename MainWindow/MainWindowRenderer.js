@@ -2062,16 +2062,26 @@ class CONTOURclass{
             }
         }
         //ROINameごとの色を決定する
+        //一緒にボタンの幅を決める
         const ROINameList=Array.from(this.ContourDataMap.keys());
         const ROINum=ROINameList.length;
         this.ContourColorMap=new Map();//{ROIName:"#RRBBGGAA"}
         this.LineAlpha=Math.round(255*0.8).toString(16).padStart(2,"0");
         this.FillAlpha=Math.round(255*0.2).toString(16).padStart(2,"0");
+        const TextWidthMesureCanvas=document.createElement("canvas");
+        const TextWidthMesureCanvasWidthCTX=TextWidthMesureCanvas.getContext("2d");
+        const ButtonFontSize=15;
+        const ButtonROINameTextFontStyle=`bold ${ButtonFontSize}px sans-serif`
+        TextWidthMesureCanvasWidthCTX.font=ButtonROINameTextFontStyle;
+        let ButtonTextMaxWidth=0;
         for(const [n,ROIName] of ROINameList.entries()){
             //色相hを決定
             const h=360*(n/ROINum);
             const HexText=CONTOURclass.hsv2rgb(h);
             this.ContourColorMap.set(ROIName,HexText);
+            //幅を計測
+            const ButtonTextWidth=TextWidthMesureCanvasWidthCTX.measureText(ROIName).width;
+            ButtonTextMaxWidth=Math.max(ButtonTextMaxWidth,ButtonTextWidth);
         }
         //ROISelectStatusSet集合内にあるROINameは描画する輪郭
         this.ROISelectStatusSet=new Set(ROINameList);//初期状態では全表示とする
@@ -2083,6 +2093,7 @@ class CONTOURclass{
         fontは15pxとする。一文字あたり横9pxとして計算する
         */
         const ROINameLengthArray=ROINameList.map(ROIName=>ROIName.length);
+        /*
         let MaxROINameLength=0;
         //最大値を求める。メモリ増加を恐れて古典的な方法で
         for(const ROINameLength of ROINameLengthArray){
@@ -2090,6 +2101,7 @@ class CONTOURclass{
                 MaxROINameLength=ROINameLength;
             }
         }
+        */
         const ROICount=ROINameList.length;
         const RowsNum=Math.min(20,ROICount);//行数
         const ColumnsNum=Math.ceil(ROICount/20);//列数
@@ -2098,15 +2110,20 @@ class CONTOURclass{
         const SelectInfoDisplayFontSize=20;//使ってない
         const SelectInfoDisplayContainerHeight=40;
 
-        const ButtonFontSize=15;//px
-        const CharacterWidth=Math.ceil(ButtonFontSize*0.7);
+        //const ButtonFontSize=15;//px
+        //const CharacterWidth=Math.ceil(ButtonFontSize*0.8);
         /*
         SelectWidthが240px以上になるようにボタンの幅を調整する
         これくらいの幅がないと、サブウィンドウの上部の余白がコントロールで埋まってしまい、ウィンドウの移動が不便になるため
         */
         const MinButtonWidth=Math.ceil((240-Gap*(ColumnsNum-1))/ColumnsNum);//240pxぴったりのときのボタンの幅を計算し、小数点を切り上げしている。
-        const ButtonWidth=Math.max(CharacterWidth*MaxROINameLength,MinButtonWidth);//px
-        const ButtonHeight=ButtonFontSize+5;//px
+        const ButtonHeight=ButtonFontSize+7;//px
+        /*
+        ROISelectのボタンは左端にカラーボックス、右端にMテキストエリアが必要。
+        どちらもボタンの高さと同じ辺の正方形となるのでButtonHeight*2を加算
+        両幅のマージン2×8pxを加算
+        */
+        const ButtonWidth=Math.max(2*(ButtonHeight+8)+Math.ceil(ButtonTextMaxWidth),MinButtonWidth);//px 
         const ROISelectContainerHeight=(ButtonHeight+Gap)*RowsNum-Gap;
 
         const SelectWidth=(ButtonWidth+Gap)*ColumnsNum-Gap;
@@ -2122,7 +2139,7 @@ class CONTOURclass{
             ["SelectInfoDisplayFontSize",`${SelectInfoDisplayFontSize}px`],
             /*ROINameのボタンを配置するContainer*/
             ["ROISelectContainerHeight",`${ROISelectContainerHeight}px`],
-            ["ButtonFontSize",`${ButtonFontSize}px`],
+            ["ButtonROINameTextFontStyle",ButtonROINameTextFontStyle],
             ["ButtonWidth",`${ButtonWidth}px`],
             ["ButtonHeight",`${ButtonHeight}px`],
             /*Gridに関する情報*/
@@ -3964,109 +3981,19 @@ class LoadAndLayout{
                 this.ChangeAndLoadDialog.showModal();
             }
         });
+        this.EventSetHelper(this.ChangeAndLoadConfirmButton,"keydown",async (e)=>{
+            if(e.code==="Enter"){
+                await this.ChangeAndLoad();
+            }
+        });
         this.EventSetHelper(this.ChangeAndLoadConfirmButton,"mouseup",async (e)=>{
             if(e.button===0){
-                const ConfirmConduct=false;
-                let ConfirmResult=true;
-                if(ConfirmConduct){
-                    ConfirmResult=window.confirm("一括変更では処理結果にかかわらず画面がリセットされます。\n不正なパス変更がされた場合、画面がリセットされるのみとなりますがよろしいですか？");
-                }
-                if(!ConfirmResult){
-                    console.alert("一括変更がキャンセルられました。");
-                }else{
-                    this.ChangeAndLoadDialog.close();
-                    /*
-                    ChangeAndLoadが確定したら、その後ロードが正常に終了するか否かに関わらず、Canvasの状態を保存した後に盤上をリセットする。
-                    */
-                    /*
-                    Step 1
-                    DicomDataDictionaryを参照してパス一覧だけ抽出する。
-                    Canvasごとの情報を保持する。CanvasIDごとに、レイヤーの情報(DataType,DataID)と盤上の位置情報を記録する
-                    その後盤上をリセットする
-                    */
-                    /*DicomDataClassDictionaryからDataType,DataID,FilePathを退避させる*/
-                    const DicomDataPathMap=new Map();
-                    for(const [DataType,DataIDDicomDataMap] of DicomDataClassDictionary){
-                        if(DataIDDicomDataMap.size>0){
-                            const DataIDPathMap=new Map();//CanvasID,Path
-                            for(const [DataID,DicomDataMap] of DataIDDicomDataMap){
-                                //DicomDataMap={"Data":,"RefCount":}
-                                const Path=DicomDataMap.get("Data").Path;
-                                DataIDPathMap.set(DataID,Path);
-                            }
-                            DicomDataPathMap.set(DataType,DataIDPathMap);//{DataType:{DataID:Path}}
-                        }
-                    }
-                    /*盤上の状態を保存*/
-                    const CanvasDataMap=new Map();
-                    for(const [CanvasID,CanvasClass] of CanvasClassDictionary.entries()){
-                        //DataInfoMapを作成
-                        const DataInfoMap=new Map();
-                        for(const [DataType,LayerData] of CanvasClass.LayerDataMap.entries()){
-                            const DataID=LayerData.get("DataID");
-                            DataInfoMap.set(DataType,DataID);
-                        }
-                        const CanvasLP=this.CanvasID2LP.get(CanvasID);
-                        const CanvasIDDataMap=new Map([
-                            ["DataInfoMap",DataInfoMap],
-                            ["LP",CanvasLP]
-                        ]);
-                        CanvasDataMap.set(CanvasID,CanvasIDDataMap);
-                    }
-                    //パスと画面配置を記憶したので消す。ただし、LayoutGridはそのままにする
-                    this.ResetCanvas(false);
-                    /*
-                    パスを変更して新しいDicomDataDictionaryを作成し、新旧DataIDの変換Mapを作成する。
-                    変換MapはMASKDIFFやCONTOURの読み込みでも使用する。
-                    */
-                    const PathChangeTargetMap=new Map([
-                        ["Before",this.ChangeAndLoadTargetInput1.value],
-                        ["After",this.ChangeAndLoadTargetInput2.value]
-                    ]);
-                    //console.log(PathChangeTargetMap);
-                    const Old2NewDataIDMap=new Map();//{DataType:{OldDataID:NewID}}
-                    for(const [DataType,DataTypeDataPathMap] of DicomDataPathMap.entries()){
-                        const DataTypeClass=this.DataClassMap.get(DataType);
-                        //パス変換はDataTypeClassに担当させる
-                        const OldDataIDArray=Array.from(DataTypeDataPathMap.keys());
-                        const OldPathArray=Array.from(DataTypeDataPathMap.values());
-                        const NewPathArray=DataTypeClass.ChangePath(OldPathArray,PathChangeTargetMap,Old2NewDataIDMap);
-                        const NewDataIDArray=await DataTypeClass.Loading(NewPathArray);
-                        //OldDataID=>NewDataIDのMapを作成
-                        const Old2NewDataIDPareArray=[];
-                        for(let i=0;i<Math.min(OldDataIDArray.length,NewPathArray.length);i++){
-                            Old2NewDataIDPareArray.push([OldDataIDArray[i],NewDataIDArray[i]]);
-                        }
-                        const DataTypeOld2NewDataIDMap=new Map(Old2NewDataIDPareArray);
-                        Old2NewDataIDMap.set(DataType,DataTypeOld2NewDataIDMap);
-                    }
-                    /*CanvasDataMapに対して、DataIDの変換⇒DataInfoMapの作成、Canvasの作成を行う*/
-                    const NewCanvasIDLPMap=new Map();
-                    for(const [CanvasID,LPDataInfoMap] of CanvasDataMap.entries()){
-                        const LP=LPDataInfoMap.get("LP");
-                        const OldDataInfoMap=LPDataInfoMap.get("DataInfoMap");//{DataType:DataID}
-                        const NewDataInfoMap=new Map(
-                            Array.from(OldDataInfoMap.entries()).map(([DataType,OldDataID])=>{
-                                const NewDataID=Old2NewDataIDMap.get(DataType).get(OldDataID);
-                                return [DataType,NewDataID];
-                            })
-                        );
-                        const NewCanvasID=this.CreateNewCanvasBlock(NewDataInfoMap);
-                        NewCanvasIDLPMap.set(NewCanvasID,LP);
-                    }
-                    /*
-                    すべて画面に配置し終わったら正しい位置に再配置する
-                    そのためにはCanvasIDとLPの紐づけが必要
-                    */
-                    this.ResetLayoutStatus(false)//CanvasID2LPとLP2CanvasIDを初期化する
-                    for(const [NewCanvasID,LP] of NewCanvasIDLPMap.entries()){
-                        this.CanvasID2LP.set(NewCanvasID,LP);
-                        this.LP2CanvasID[LP]=NewCanvasID;
-                    }
-                    this.UpdateStyle();//CanvasのDOMTreeのスタイルを書き換えて位置交換を反映する
-                    this.Resize();
-                }
-                alert("読み込み＆再配置が完了しました。");
+                await this.ChangeAndLoad();
+            }
+        });
+        this.EventSetHelper(this.ChangeAndLoadCancelButton,"keydown",async (e)=>{
+            if(e.code==="Enter"){
+                this.ChangeAndLoadDialog.close();
             }
         });
         this.EventSetHelper(this.ChangeAndLoadCancelButton,"mouseup",(e)=>{
@@ -4167,6 +4094,109 @@ class LoadAndLayout{
                 this.CreateNewCanvasBlock(DataInfoMap);
             }
         }
+    }
+    async ChangeAndLoad(){
+        const ConfirmConduct=false;
+        let ConfirmResult=true;
+        if(ConfirmConduct){
+            ConfirmResult=window.confirm("一括変更では処理結果にかかわらず画面がリセットされます。\n不正なパス変更がされた場合、画面がリセットされるのみとなりますがよろしいですか？");
+        }
+        if(!ConfirmResult){
+            console.alert("一括変更がキャンセルられました。");
+        }else{
+            this.ChangeAndLoadDialog.close();
+            /*
+            ChangeAndLoadが確定したら、その後ロードが正常に終了するか否かに関わらず、Canvasの状態を保存した後に盤上をリセットする。
+            */
+            /*
+            Step 1
+            DicomDataDictionaryを参照してパス一覧だけ抽出する。
+            Canvasごとの情報を保持する。CanvasIDごとに、レイヤーの情報(DataType,DataID)と盤上の位置情報を記録する
+            その後盤上をリセットする
+            */
+            /*DicomDataClassDictionaryからDataType,DataID,FilePathを退避させる*/
+            const DicomDataPathMap=new Map();
+            for(const [DataType,DataIDDicomDataMap] of DicomDataClassDictionary){
+                if(DataIDDicomDataMap.size>0){
+                    const DataIDPathMap=new Map();//CanvasID,Path
+                    for(const [DataID,DicomDataMap] of DataIDDicomDataMap){
+                        //DicomDataMap={"Data":,"RefCount":}
+                        const Path=DicomDataMap.get("Data").Path;
+                        DataIDPathMap.set(DataID,Path);
+                    }
+                    DicomDataPathMap.set(DataType,DataIDPathMap);//{DataType:{DataID:Path}}
+                }
+            }
+            /*盤上の状態を保存*/
+            const CanvasDataMap=new Map();
+            for(const [CanvasID,CanvasClass] of CanvasClassDictionary.entries()){
+                //DataInfoMapを作成
+                const DataInfoMap=new Map();
+                for(const [DataType,LayerData] of CanvasClass.LayerDataMap.entries()){
+                    const DataID=LayerData.get("DataID");
+                    DataInfoMap.set(DataType,DataID);
+                }
+                const CanvasLP=this.CanvasID2LP.get(CanvasID);
+                const CanvasIDDataMap=new Map([
+                    ["DataInfoMap",DataInfoMap],
+                    ["LP",CanvasLP]
+                ]);
+                CanvasDataMap.set(CanvasID,CanvasIDDataMap);
+            }
+            //パスと画面配置を記憶したので消す。ただし、LayoutGridはそのままにする
+            this.ResetCanvas(false);
+            /*
+            パスを変更して新しいDicomDataDictionaryを作成し、新旧DataIDの変換Mapを作成する。
+            変換MapはMASKDIFFやCONTOURの読み込みでも使用する。
+            */
+            const PathChangeTargetMap=new Map([
+                ["Before",this.ChangeAndLoadTargetInput1.value],
+                ["After",this.ChangeAndLoadTargetInput2.value]
+            ]);
+            //console.log(PathChangeTargetMap);
+            const Old2NewDataIDMap=new Map();//{DataType:{OldDataID:NewID}}
+            for(const [DataType,DataTypeDataPathMap] of DicomDataPathMap.entries()){
+                const DataTypeClass=this.DataClassMap.get(DataType);
+                //パス変換はDataTypeClassに担当させる
+                const OldDataIDArray=Array.from(DataTypeDataPathMap.keys());
+                const OldPathArray=Array.from(DataTypeDataPathMap.values());
+                const NewPathArray=DataTypeClass.ChangePath(OldPathArray,PathChangeTargetMap,Old2NewDataIDMap);
+                const NewDataIDArray=await DataTypeClass.Loading(NewPathArray);
+                //OldDataID=>NewDataIDのMapを作成
+                const Old2NewDataIDPareArray=[];
+                for(let i=0;i<Math.min(OldDataIDArray.length,NewPathArray.length);i++){
+                    Old2NewDataIDPareArray.push([OldDataIDArray[i],NewDataIDArray[i]]);
+                }
+                const DataTypeOld2NewDataIDMap=new Map(Old2NewDataIDPareArray);
+                Old2NewDataIDMap.set(DataType,DataTypeOld2NewDataIDMap);
+            }
+            /*CanvasDataMapに対して、DataIDの変換⇒DataInfoMapの作成、Canvasの作成を行う*/
+            const NewCanvasIDLPMap=new Map();
+            for(const [CanvasID,LPDataInfoMap] of CanvasDataMap.entries()){
+                const LP=LPDataInfoMap.get("LP");
+                const OldDataInfoMap=LPDataInfoMap.get("DataInfoMap");//{DataType:DataID}
+                const NewDataInfoMap=new Map(
+                    Array.from(OldDataInfoMap.entries()).map(([DataType,OldDataID])=>{
+                        const NewDataID=Old2NewDataIDMap.get(DataType).get(OldDataID);
+                        return [DataType,NewDataID];
+                    })
+                );
+                const NewCanvasID=this.CreateNewCanvasBlock(NewDataInfoMap);
+                NewCanvasIDLPMap.set(NewCanvasID,LP);
+            }
+            /*
+            すべて画面に配置し終わったら正しい位置に再配置する
+            そのためにはCanvasIDとLPの紐づけが必要
+            */
+            this.ResetLayoutStatus(false)//CanvasID2LPとLP2CanvasIDを初期化する
+            for(const [NewCanvasID,LP] of NewCanvasIDLPMap.entries()){
+                this.CanvasID2LP.set(NewCanvasID,LP);
+                this.LP2CanvasID[LP]=NewCanvasID;
+            }
+            this.UpdateStyle();//CanvasのDOMTreeのスタイルを書き換えて位置交換を反映する
+            this.Resize();
+        }
+        //alert("読み込み＆再配置が完了しました。");
     }
     //各キャンバスの位置情報を更新する
     //すでに配置されているキャンバスたちに対して、新しい格子での位置を与える

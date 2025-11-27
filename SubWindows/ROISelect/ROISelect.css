@@ -15,7 +15,7 @@ html,body{
     --SelectInfoDisplayFontSize:10px;
     --SelectInfoDisplayContainerHeight:30px;
     --ROISelectContainerHeight:10px;
-    --ButtonFontSize:5px;
+    --ButtonROINameTextFontStyle:bold 10px sans-serif;
     --ButtonWidth:10px;
     --ButtonHeight:10px;
     --GridRowsNum:5;
@@ -64,7 +64,7 @@ div#SelectInfoDisplayContainer>div.InfoDisplayContainer>div.ROIKindInfoDisplay{
     width:100%;
     height:40%;
     text-align: center;
-    font-size:10px;
+    font: bold 10px sans-serif;
 }
 div#SelectInfoDisplayContainer>div.InfoDisplayContainer>div.ROINumDisplayContainer{
     width: 100%;
@@ -76,7 +76,7 @@ div#SelectInfoDisplayContainer>div.InfoDisplayContainer>div.ROINumDisplayContain
 div#SelectInfoDisplayContainer>div.InfoDisplayContainer>div.ROINumDisplayContainer>span.VariableText{
     width: 60%;
     height: 100%;
-    font-size: 15px;
+    font: bold 15px sans-serif;
     display:flex;
     align-items: center;
     justify-content: center;
@@ -84,7 +84,7 @@ div#SelectInfoDisplayContainer>div.InfoDisplayContainer>div.ROINumDisplayContain
 div#SelectInfoDisplayContainer>div.InfoDisplayContainer>div.ROINumDisplayContainer>span.NormalText{
     width: 40%;
     height: 100%;
-    font-size:10px;
+    font: bold 10px sans-serif;
     display:flex;
     align-items: center;
     justify-content: center;
@@ -110,7 +110,7 @@ div#ROISelectContainer>button.ROINameButton{
     /*border:1px solid black;*/
     background-color: rgb(210, 210, 210);
     color:rgb(0, 0, 0);
-    font-weight: bold;
+    font:var(--ButtonROINameTextFontStyle);
 }
 div#ROISelectContainer>button.ROINameButton:focus{/*フォーカスがあるときのオレンジの枠を、ボタンに対しては禁止する*/
     outline:none;
