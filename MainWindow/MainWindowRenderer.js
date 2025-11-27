@@ -418,7 +418,8 @@ class CTclass{
 
             const pixelElement=dataset.elements.x7fe00010;
             const pixelBuffer=new DataView(dataset.byteArray.buffer,pixelElement.dataOffset,pixelElement.length);
-            let getHUvalue=null;
+            let getHUvalueFunction=null;
+            /*
             if(bitsAllocated===16){
                 if(isSigned){
                     getHUvalue=(pixelBuffer,i)=>{return pixelBuffer.getInt16(i*2,true)};
@@ -428,9 +429,32 @@ class CTclass{
             }else{
                 getHUvalue=(pixelBuffer,i)=>{return pixelBuffer.getUint8(i)};
             }
+            */
+            //console.log(bitsAllocated);
+            if(bitsAllocated===8){
+                if(isSigned){
+                    getHUvalueFunction=(pixelBuffer,byte)=>pixelBuffer.getInt8(byte,true);
+                }else{
+                    getHUvalueFunction=(pixelBuffer,byte)=>pixelBuffer.getUint8(byte,true);
+                }
+            }else if(bitsAllocated===16){
+                if(isSigned){
+                    getHUvalueFunction=(pixelBuffer,byte)=>pixelBuffer.getInt16(2*byte,true);
+                }else{
+                    getHUvalueFunction=(pixelBuffer,byte)=>pixelBuffer.getUint16(2*byte,true);
+                }
+            }else if(bitsAllocated===32){
+                if(isSigned){
+                    getHUvalueFunction=(pixelBuffer,byte)=>pixelBuffer.getInt32(4*byte,true);
+                }else{
+                    getHUvalueFunction=(pixelBuffer,byte)=>pixelBuffer.getUint32(4*byte,true);
+                }
+            }else{
+                getHUvalueFunction=(pixelBuffer,byte)=>pixelBuffer.getUint8(byte,true)
+            }
             //画素値を平坦配列に入れていく。このとき、一緒に出現画素の集計を行う
             for(let i=0;i<sizePerSlice;i++){
-                const pixel=getHUvalue(pixelBuffer,i);//undifined
+                const pixel=getHUvalueFunction(pixelBuffer,i);//undifined
                 /*
                 let pixel;
                 if(bitsAllocated===16){
@@ -921,19 +945,31 @@ class MASKclass{
 
             const pixelElement=dataset.elements.x7fe00010;
             const pixelBuffer=new DataView(dataset.byteArray.buffer,pixelElement.dataOffset,pixelElement.length);
-            let getHUvalue=null;
-            if(bitsAllocated===16){
+            let getHUvalueFunction=null;
+            if(bitsAllocated===8){
                 if(isSigned){
-                    getHUvalue=(pixelBuffer,i)=>{return pixelBuffer.getInt16(i*2,true)};
+                    getHUvalueFunction=(pixelBuffer,byte)=>pixelBuffer.getInt8(byte,true);
                 }else{
-                    getHUvalue=(pixelBuffer,i)=>{return pixelBuffer.getUint16(i*2,true)};
+                    getHUvalueFunction=(pixelBuffer,byte)=>pixelBuffer.getUint8(byte,true);
+                }
+            }else if(bitsAllocated===16){
+                if(isSigned){
+                    getHUvalueFunction=(pixelBuffer,byte)=>pixelBuffer.getInt16(2*byte,true);
+                }else{
+                    getHUvalueFunction=(pixelBuffer,byte)=>pixelBuffer.getUint16(2*byte,true);
+                }
+            }else if(bitsAllocated===32){
+                if(isSigned){
+                    getHUvalueFunction=(pixelBuffer,byte)=>pixelBuffer.getInt32(4*byte,true);
+                }else{
+                    getHUvalueFunction=(pixelBuffer,byte)=>pixelBuffer.getUint32(4*byte,true);
                 }
             }else{
-                getHUvalue=(pixelBuffer,i)=>{return pixelBuffer.getUint8(i)};
+                getHUvalueFunction=(pixelBuffer,byte)=>pixelBuffer.getUint8(byte,true)
             }
             //画素値を平坦配列に入れていく。このとき、一緒に出現画素の集計を行う
             for(let i=0;i<sizePerSlice;i++){
-                const pixel=getHUvalue(pixelBuffer,i);//undifined
+                const pixel=getHUvalueFunction(pixelBuffer,i);//undifined
                 /*
                 let pixel;
                 if(bitsAllocated===16){
