@@ -1,7 +1,7 @@
 const {app,BrowserWindow,dialog,ipcMain,screen} = require('electron');
 const path = require('path');
 const fs = require('fs');
-const detach=true;
+const detach=false;
 const WindowManager=new Map();
 //メインウィンドウの作成
 function createMainWindow(){
