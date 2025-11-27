@@ -22,18 +22,18 @@ class ROISelectClass{
         this.TargetLayer=ReceivedDataBody.get("Layer");
         const ROINameColorMap=ReceivedDataBody.get("ROINameColorMap");
         const ROISelectStatusSet=ReceivedDataBody.get("ROISelectStatusSet");
-        const ROISelectWindowStyleMap=ReceivedDataBody.get("ROISelectWindowStyleMap");
-        for(const [PropertyNameParts,value] of ROISelectWindowStyleMap.entries()){
-            const PropertyName="--"+PropertyNameParts;
-            const SetValue=value;
-            document.documentElement.style.setProperty(PropertyName,SetValue);
-        }
         this.AllROINum=ROINameColorMap.size;
         this.AllROINumDisplay.textContent=this.AllROINum;
         this.ROISelectStatusSet=ROISelectStatusSet;
         this.SelectedROINum=this.CountSelectedROINum();//Displayも更新
         this.ROIMemoryStatusSet=new Set(ROISelectStatusSet);//デフォルトではウィンドウオープン時の選択状態が記憶される
         this.MemorizedROINum=this.CountMemorizedROINum();//Displayも更新
+        
+        let MaxROINameTextWidth=0;
+        const ButtonFontSize=15;
+        const ButtonROINameTextFontStyle=`bold ${ButtonFontSize}px sans-serif`
+        const TextWidthMesureCTX=document.createElement("canvas").getContext("2d");
+        TextWidthMesureCTX.font=ButtonROINameTextFontStyle;
         /*ROISelectを構成する*/
         const ROISelectContainerFragment=document.createDocumentFragment();
         this.ROIButtonMap=new Map();
@@ -65,7 +65,59 @@ class ROISelectClass{
             }
             ROISelectContainerFragment.appendChild(ROINameButton);
             this.ROIButtonMap.set(ROIName,ROINameButton);//一括変更時に有効活用できる
+            /*ついでに最長ROINameを探索*/
+            const ROINameTextWidth=TextWidthMesureCTX.measureText(ROIName).width;
+            MaxROINameTextWidth=Math.max(MaxROINameTextWidth,ROINameTextWidth);
         }
+        //DOMTreeに追加して描画される前にCSSを設定してしまおう
+        /*
+        ROIの個数を基にこのサブウィンドウのサイズを再調整
+        ROISelectContainerのButtonのFontを決定
+        最長のROINameをもとにButtonのWidthを決定
+        FontをもとにButtonの高さを決定
+        ROISelectContainerの高さ、幅
+        */
+        const RowsNum=Math.min(20,this.AllROINum);
+        const ColumnsNum=Math.ceil(this.AllROINum/20);
+        const GridGap=2;
+        const ROIKindInfoDisplayHeight=15;//px
+        const ROIKindInfoDisplayFontSize=12;//px
+        const ROIKindInfoDisplayFontStyle=`bold ${ROIKindInfoDisplayFontSize}px sans-serif`;
+        const ROINumDisplayHeight=25;//px
+        const ROINumDisplayFontSize=15;//px
+        const ROINumDisplayFontStyle=`bold ${ROINumDisplayFontSize}px sans-serif`;
+        const SelectInfoDisplayContainerHeight=ROIKindInfoDisplayHeight+ROINumDisplayHeight;
+
+        const MinButtonWidth=Math.ceil((240-GridGap*(ColumnsNum-1))/ColumnsNum);
+        const ButtonHeight=ButtonFontSize+7;//px
+        const ROINameTextSideMargin=8;
+        const ButtonWidth=Math.max(2*(ButtonHeight+ROINameTextSideMargin)+Math.ceil(MaxROINameTextWidth),MinButtonWidth);
+        const ROISelectContainerHeight=(ButtonHeight+GridGap)*RowsNum-GridGap;
+        const WindowContentWidth=(ButtonWidth+GridGap)*ColumnsNum-GridGap;
+        const WindowContentHeight=SelectInfoDisplayContainerHeight+ROISelectContainerHeight;
+        /*CSSのプロパティを変更し、WindowSizeを調整する*/
+        document.documentElement.style.setProperty("--ROIKindInfoDisplayHeight",`${ROIKindInfoDisplayHeight}px`);
+        document.documentElement.style.setProperty("--ROIKindInfoDisplayFontStyle",`${ROIKindInfoDisplayFontStyle}`);
+        document.documentElement.style.setProperty("--ROINumDisplayHeight",`${ROINumDisplayHeight}px`);
+        document.documentElement.style.setProperty("--ROINumDisplayFontStyle",`${ROINumDisplayFontStyle}px`);
+        document.documentElement.style.setProperty("--SelectInfoDisplayContainerHeight",`${SelectInfoDisplayContainerHeight}px`);
+        
+        document.documentElement.style.setProperty("--ROISelectContainerHeight",`${ROISelectContainerHeight}px`);
+        document.documentElement.style.setProperty("--ButtonROINameTextFontStyle",`${ButtonROINameTextFontStyle}`);
+        document.documentElement.style.setProperty("--ROINameTextSideMargin",`${ROINameTextSideMargin}px`);
+        document.documentElement.style.setProperty("--ButtonWidth",`${ButtonWidth}px`);
+        document.documentElement.style.setProperty("--ButtonHeight",`${ButtonHeight}px`);
+        document.documentElement.style.setProperty("--GridRowsNum",`${RowsNum}`);
+        document.documentElement.style.setProperty("--GridColumnsNum",`${ColumnsNum}`);
+        document.documentElement.style.setProperty("--GridGap",`${GridGap}px`);
+        /*TestPrint*/
+        console.log(ROISelectContainerHeight);
+        console.log(ButtonWidth,ButtonHeight);
+        console.log(RowsNum,ColumnsNum);
+        console.log(WindowContentWidth,WindowContentHeight);
+        //console.log(MaxROINameTextWidth);
+        window.SubWindowResizeAPI(WindowContentWidth,WindowContentHeight);
+
         this.ROISelectContainer.appendChild(ROISelectContainerFragment);
         //MultiUseLayerMode申請
         this.SendMultiUseLayerSwitching(this.TargetCanvasID,"CONTOURROIClickModeSwitchingFunction",true);//ラッパー

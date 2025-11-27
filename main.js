@@ -109,9 +109,9 @@ ipcMain.handle("loadDicom", async (event,SelectedPath)=>{
     return items;
 });
 
-ipcMain.on("MainWindowResize",(event,width,height)=>{
+ipcMain.on("WindowResize",(event,TargetWindow,width,height)=>{
     //console.log("Check",width,height)
-    const targetWindow=WindowManager.get("MainWindow");
+    const targetWindow=WindowManager.get(TargetWindow);
     try{
         targetWindow.setContentSize(width,height);
         //リサイズが完了したら、現在のウィンドウサイズを取得して画面中央に移動させる

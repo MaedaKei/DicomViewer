@@ -2069,84 +2069,22 @@ class CONTOURclass{
         this.LineAlpha=Math.round(255*0.8).toString(16).padStart(2,"0");
         this.FillAlpha=Math.round(255*0.2).toString(16).padStart(2,"0");
         const TextWidthMesureCanvas=document.createElement("canvas");
+        /*
         const TextWidthMesureCanvasWidthCTX=TextWidthMesureCanvas.getContext("2d");
         const ButtonFontSize=15;
         const ButtonROINameTextFontStyle=`bold ${ButtonFontSize}px sans-serif`
         TextWidthMesureCanvasWidthCTX.font=ButtonROINameTextFontStyle;
         let ButtonTextMaxWidth=0;
+        */
         for(const [n,ROIName] of ROINameList.entries()){
             //色相hを決定
             const h=360*(n/ROINum);
             const HexText=CONTOURclass.hsv2rgb(h);
             this.ContourColorMap.set(ROIName,HexText);
-            //幅を計測
-            const ButtonTextWidth=TextWidthMesureCanvasWidthCTX.measureText(ROIName).width;
-            ButtonTextMaxWidth=Math.max(ButtonTextMaxWidth,ButtonTextWidth);
         }
         //ROISelectStatusSet集合内にあるROINameは描画する輪郭
         this.ROISelectStatusSet=new Set(ROINameList);//初期状態では全表示とする
-        /*
-        コンテキストメニューのコンテンツサイズを計算する
-        画面情報のディスプレイエリアは高さ30px、幅100％とする
-        セレクトボタンは高さ20px,幅は7px×最大文字数とする。また、girdで配置し、gapは2pxとする
-        一列に20個ずつ配置する。カラー部分は幅10px、高さ100％とする。
-        fontは15pxとする。一文字あたり横9pxとして計算する
-        */
-        const ROINameLengthArray=ROINameList.map(ROIName=>ROIName.length);
-        /*
-        let MaxROINameLength=0;
-        //最大値を求める。メモリ増加を恐れて古典的な方法で
-        for(const ROINameLength of ROINameLengthArray){
-            if(MaxROINameLength<ROINameLength){
-                MaxROINameLength=ROINameLength;
-            }
-        }
-        */
-        const ROICount=ROINameList.length;
-        const RowsNum=Math.min(20,ROICount);//行数
-        const ColumnsNum=Math.ceil(ROICount/20);//列数
-        const Gap=2;
-
-        const SelectInfoDisplayFontSize=20;//使ってない
-        const SelectInfoDisplayContainerHeight=40;
-
-        //const ButtonFontSize=15;//px
-        //const CharacterWidth=Math.ceil(ButtonFontSize*0.8);
-        /*
-        SelectWidthが240px以上になるようにボタンの幅を調整する
-        これくらいの幅がないと、サブウィンドウの上部の余白がコントロールで埋まってしまい、ウィンドウの移動が不便になるため
-        */
-        const MinButtonWidth=Math.ceil((240-Gap*(ColumnsNum-1))/ColumnsNum);//240pxぴったりのときのボタンの幅を計算し、小数点を切り上げしている。
-        const ButtonHeight=ButtonFontSize+7;//px
-        /*
-        ROISelectのボタンは左端にカラーボックス、右端にMテキストエリアが必要。
-        どちらもボタンの高さと同じ辺の正方形となるのでButtonHeight*2を加算
-        両幅のマージン2×8pxを加算
-        */
-        const ButtonWidth=Math.max(2*(ButtonHeight+8)+Math.ceil(ButtonTextMaxWidth),MinButtonWidth);//px 
-        const ROISelectContainerHeight=(ButtonHeight+Gap)*RowsNum-Gap;
-
-        const SelectWidth=(ButtonWidth+Gap)*ColumnsNum-Gap;
-        const SelectHeight=SelectInfoDisplayContainerHeight+ROISelectContainerHeight;//上部のディスプレイ分も加算
-        //Windowの幅が200px以上になるように調整し、そこからボタンwidthを調整したい
-        this.ROISelectWindowSize=[SelectWidth,SelectHeight];
-        this.ROISelectWindowStyleMap=new Map([
-            /*
-            ここのKeyはROISelect.cssのカスタム変数名に直結するので変更は厳重に注意すること
-            */
-            /*ページ上部の選択数などの情報を表示するContainer*/
-            ["SelectInfoDisplayContainerHeight",`${SelectInfoDisplayContainerHeight}px`],
-            ["SelectInfoDisplayFontSize",`${SelectInfoDisplayFontSize}px`],
-            /*ROINameのボタンを配置するContainer*/
-            ["ROISelectContainerHeight",`${ROISelectContainerHeight}px`],
-            ["ButtonROINameTextFontStyle",ButtonROINameTextFontStyle],
-            ["ButtonWidth",`${ButtonWidth}px`],
-            ["ButtonHeight",`${ButtonHeight}px`],
-            /*Gridに関する情報*/
-            ["GridRowsNum",RowsNum],//ここは行数と列数を示すだけなのでpxは付けない
-            ["GridColumnsNum",ColumnsNum],
-            ["GridGap",`${Gap}px`],
-        ]);
+        
         //console.log(this.ContourColorMap);
         //console.log(this.ContourDataMap);
     }
@@ -2627,12 +2565,12 @@ class Canvas{
                 const DicomDataClass=DicomDataInfoMap.get("Data");
                 //const MultiUseLayerMode=false;
                 //const windowsize=[300,400];//ROINameの最長＆ROIの個数を基に動的に変える必要がある
-                const windowsize=DicomDataClass.ROISelectWindowSize;
+                const windowsize=[300,400];//とりあえずのサイズ
                 //console.log(windowsize);
                 const data=new Map([
                     ["ROINameColorMap",DicomDataClass.ContourColorMap],//{ROIName:Hex} ROI名と色の表示に必要
                     ["ROISelectStatusSet",DicomDataClass.ROISelectStatusSet],//現時点で何が選ばれているかを示す
-                    ["ROISelectWindowStyleMap",DicomDataClass.ROISelectWindowStyleMap],//ボタンサイズなどの諸設定
+                    /*["ROISelectWindowStyleMap",DicomDataClass.ROISelectWindowStyleMap],*/ //ボタンサイズなどの諸設定
                     
                     ["windowsize",windowsize],
                     //["MultiUseLayerMode",MultiUseLayerMode],
