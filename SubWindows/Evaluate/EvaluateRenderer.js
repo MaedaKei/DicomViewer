@@ -21,6 +21,7 @@ class Evaluate{
         this.InputBlockSelecterMap=new Map(
             Array.from(InputBlockSelecterList).map(InputBlockSelecter=>[InputBlockSelecter.id,InputBlockSelecter])
         );
+        this.InputBlockLabelList=Array.from(document.getElementsByClassName("InputBlockLabel"));//Selecter無効時に文字の色を変える
         //領域選択入力欄
         this.LeftTopXInput=document.getElementById("LeftTopXInput");
         this.LeftTopYInput=document.getElementById("LeftTopYInput");
@@ -60,7 +61,7 @@ class Evaluate{
             [dammyFunction.EvaluateName,new dammyFunction()],
         ]);
         //一応一つ前の評価関数名を保持しておく
-        this.PreviousSelectedFunctionName=null;
+        this.PreviousSelectedFunctionName=false;
         //関数セレクト周辺への反映
         this.EvaluationFunctionSelecter.innerHTML="";
         this.TargetDataTypeDisplay.innerHTML="";
@@ -477,126 +478,148 @@ class Evaluate{
         targetListItem.dispatchEvent(clickEvent);
     }
     ChangeFunctionSelect(){
-        const SelectedFunctionName=this.EvaluationFunctionSelecter.value;
         //関数に関する情報と入力候補を変更する
-        const selectedFunction=this.EvaluationFunctionMap.get(SelectedFunctionName);
-        const TargetDataType=selectedFunction.TargetDataType;
-        this.TargetDataTypeDisplay.textContent=`Target : ${TargetDataType}`;
-        this.InputNumDisplay.textContent=`Input x ${selectedFunction.InputNum}`;
+        const NewSelectedFunctionName=this.EvaluationFunctionSelecter.value;
+        const NewSelectedFunction=this.EvaluationFunctionMap.get(NewSelectedFunctionName);
+        const NewTargetDataType=NewSelectedFunction.TargetDataType;
+        const NewInputNum=NewSelectedFunction.InputNum;
 
-        //入力セレクターの初期化
-        //これはデフォルトでは選択なし状態とする
-        //ここに表示される選択肢は選択状態にある評価関数が受け付けるタイプによって変わる
-        const TargetCIDMap=this.DataTypeCIDMap.get(TargetDataType);//{CanvasID:DataID,...,}
-        for(const InputBlockSelecter of this.InputBlockSelecterMap.values()){
-            InputBlockSelecter.innerHTML="";
-            const initialoption=document.createElement("option");
-            initialoption.text="--";
-            initialoption.value=this.InvalidCanvasID;
-            //initialoption.disabled=true;
-            //initialoption.hidden=true;
-            initialoption.selected=true;
-            InputBlockSelecter.appendChild(initialoption);
-            for(const [CanvasID,DataID] of TargetCIDMap.entries()){
-                const option=document.createElement("option");
-                option.text=`CID: ${CanvasID}`;
-                //この時点で各選択肢のCID,DataType,がわかるのでDataIDも特定可能
-                //よって、選択肢のvalueはDataType：DataIDとする
-                option.value=CanvasID;//Select時にもろもろの情報をまとめることにする
-                InputBlockSelecter.appendChild(option);
-            }
+        this.TargetDataTypeDisplay.textContent=`Target : ${NewTargetDataType}`;
+        this.InputNumDisplay.textContent=`Input x ${NewSelectedFunction.InputNum}`;
+        //古い情報を保持(初回実行時などはないときもある)
+        let OldSelectedFunctionName=this.PreviousSelectedFunctionName;
+        let OldSelectedFunction=false;
+        let OldTargetDataType=false
+        let OldInputNum=false;
+        if(OldSelectedFunctionName&&this.EvaluationFunctionMap.has(OldSelectedFunctionName)){
+            OldSelectedFunction=this.EvaluationFunctionMap.get(OldSelectedFunctionName);
+            OldTargetDataType=OldSelectedFunction.TargetDataType;
+            OldInputNum=OldSelectedFunction.InputNum;
         }
-        //CIDの選択が初期状態に戻るので範囲選択もどうように
-        //初期値は全て0とする
-        //初期データから値をセット
-        this.LeftTopXInput.value=0;
-        this.LeftTopYInput.value=0;
-        this.RectangleWidthInput.value=0;
-        this.RectangleHeightInput.value=0;
-        this.StartSliceInput.value=0;
-        this.EndSliceInput.value=0;
-        //各入力欄に最大値最小値を設定する
-        this.originalimagewidth=99999;
-        this.originalimageheight=99999;
-        this.originalslidermax=99999;
-        this.LeftTopXInput.min=0;
-        this.LeftTopXInput.max=this.originalimagewidth;
-        this.LeftTopXInput.step=1;
-        this.LeftTopYInput.min=0;
-        this.LeftTopYInput.max=this.originalimageheight;
-        this.LeftTopYInput.step=1;
-        this.RectangleWidthInput.min=0;
-        this.RectangleWidthInput.max=this.originalimagewidth;
-        this.RectangleHeightInput.step=1;
-        this.RectangleHeightInput.min=0;
-        this.RectangleHeightInput.max=this.originalimageheight;
-        this.RectangleHeightInput.step=1;
-        this.StartSliceInput.min=0;
-        this.StartSliceInput.max=this.originalslidermax;
-        this.StartSliceInput.step=1;
-        this.EndSliceInput.min=0;
-        this.EndSliceInput.max=this.originalslidermax;
-        this.EndSliceInput.step=1;
-        //必要に応じてOPモードのOFFを依頼する
+
+        const TargetDataTypeChangedFlag=(OldTargetDataType!==NewTargetDataType);
+        /*入力セレクターの初期化*/
+        //選択状態の解除(MainWindow側への送信が発生する)
+        //選択候補の初期化を行う
         /*
-        for(const cid of this.PreviousSelectedCID.values()){
-            if(cid>=0){
-                //CIDに対してOPモード無効化を送信
-                const SendingData=new Map([
-                    ["header",null]
-                ]);
-                const action="ChangeTargetCanvas";
-                const TargetCID=new Map([
-                    ["ON",-99999],//無効のCID
-                    ["OFF",cid]
-                ]);
-                const body=new Map([
-                    ["action",action],
-                    ["data",new Map([
-                        ["TargetCID",TargetCID],
-                        ["SelectedArea",null]
-                    ])]
-                ]);
-                SendingData.set("body",body);
-                this.PassChangesToMainWindow(SendingData);
-            }
-        }
+        処理の仕様
+        データタイプが変わる場合または入力数から漏れた場合、オプションの初期化及び選択状態の解除が行われる
         */
-        //const PreviousTargetDataType=this.EvaluationFunctionMap.get(this.PreviousSelectedFunctionName).TargetDataType;
-        for(const [key,CIDLayerMap] of this.PreviousSelectedCID.entries()){
-            //CIDLayerMapは{"CanvasID":,"Layer":,"DataID":}の情報を持っている。
-            const SelectedCanvasID=CIDLayerMap.get("CanvasID");
-            if(SelectedCanvasID>=0){//そのセレクターは何かが選択されていた。
-                //CIDに対してOPモード無効化を送信
-                //{"CanvasID":,"Layer":,}
-                const ONCIDLayerMap=new Map([
-                    ["CanvasID",this.InvalidCanvasID],
-                    ["Layer",this.InvalidDataType],
-                    ["DataID",this.InvalidDataID],
-                ]);
-                const OFFCIDLayerMap=CIDLayerMap;
-                const TargetCID=new Map([
-                    ["ON",ONCIDLayerMap],//無効のCID
-                    ["OFF",OFFCIDLayerMap]//OFFにする対象となるCID、Layer,DataID
-                ]);
-                const SendingData=new Map([
-                    ["action","ChangeTargetCanvas"],
-                    ["data",new Map([
-                        ["TargetCID",TargetCID],
-                        ["SelectedArea",null]
-                    ])]
-                ]);
-                this.PassChangesToMainWindow(SendingData);
-                //PreviousSelectedCIDを更新する
-                this.PreviousSelectedCID.set(key,new Map([
-                    ["CanvasID",this.InvalidCanvasID],
-                    ["Layer",this.InvalidDataType],
-                    ["DataID",this.InvalidDataID],
-                ]));//未選択を表す値
+        const InputBlockSelecterArray=Array.from(this.InputBlockSelecterMap.entries());//SelecterElementのArray
+        const PreviousSelectedCIDMapArray=Array.from(this.PreviousSelectedCID.entries());//[{"CanvasID":,"Layer":,"DataID":},...]
+        //SelecterElementの個数とPreviousSelectedCIDMapの個数は一致するはずent
+        const SelecterNum=InputBlockSelecterArray.length;
+        if(SelecterNum!==PreviousSelectedCIDMapArray.length){
+            throw new Error("(評価関数変更)InputSelecterとPreviousSelectedCIDMapの個数が違う");
+        }
+        const TargetCIDMap=this.DataTypeCIDMap.get(NewTargetDataType);//新しく選択された関数の入力対象となるCanasID:DataIDのマップ{CanvasID:DataID,...,}
+        for(let SelecterIndex=0;SelecterIndex<SelecterNum;SelecterIndex++){
+            const [InputBlockSelecterKey,InputBlockSelecter]=InputBlockSelecterArray[SelecterIndex];
+            /*データタイプが変わっているならOptionを更新*/
+            let OptionChangedFlag=false;
+            if(TargetDataTypeChangedFlag){
+                /*Selecterのoptionの初期化*/
+                InputBlockSelecter.innerHTML="";
+                const initialoption=document.createElement("option");
+                initialoption.text="--";
+                initialoption.value=this.InvalidCanvasID;
+                //initialoption.disabled=true;
+                //initialoption.hidden=true;
+                initialoption.selected=true;
+                InputBlockSelecter.appendChild(initialoption);
+                for(const [CanvasID,DataID] of TargetCIDMap.entries()){
+                    const option=document.createElement("option");
+                    option.text=`CID: ${CanvasID}`;
+                    //この時点で各選択肢のCID,DataType,がわかるのでDataIDも特定可能
+                    //よって、選択肢のvalueはDataType：DataIDとする
+                    option.value=CanvasID;//Select時にもろもろの情報をまとめることにする
+                    InputBlockSelecter.appendChild(option);
+                }
+                OptionChangedFlag=true;
+            }
+            /*評価関数の入力数に含まれるか*/
+            /*
+            const InputDisabledFlag=!(SelecterIndex<NewInputNum);
+            InputBlockSelecter.disabled=InputDisabledFlag;
+            */
+            let InputDisabledFlag=null;
+            const InputBlockLabel=this.InputBlockLabelList[SelecterIndex];
+            if(SelecterIndex<NewInputNum){
+                InputBlockSelecter.disabled=false;
+                InputBlockLabel.classList.remove("DisabledLabel");
+                InputDisabledFlag=false;
+            }else{
+                InputBlockSelecter.disabled=true;
+                InputBlockLabel.classList.add("DisabledLabel");
+                InputDisabledFlag=true;
+            }
+            /*オプションの初期化、またはセレクタの無効化が行われたとき、このInputBlockSelecterがさしていたCanvasIDに対してMultiUseLayerModeをfalseにするよう送信する*/
+            //OFF⇒それまでのCanvasID、ON⇒無効CanvasID
+            if(OptionChangedFlag||InputDisabledFlag){
+                const [PreviouseSelectedCIDMapKey,PreviousSelectedCIDMap]=PreviousSelectedCIDMapArray[SelecterIndex];//このセレクターの、それまでの選択状態{"CanvasID":,"Layer":,"DataID":}
+                const PreviousCanvasID=PreviousSelectedCIDMap.get("CanvasID");
+                if(PreviousCanvasID>=0){//有効なCanvasIDが選択されていたら送信する
+                    const DammyONCIDLayerMap=new Map([
+                        ["CanvasID",this.InvalidCanvasID],
+                        ["Layer",this.InvalidDataType],
+                        ["DataID",this.InvalidDataID]
+                    ]);
+                    const OFFCIDLayerMap=PreviousSelectedCIDMap;//名前の命名規則がずれている
+                    const TargetCID=new Map([
+                        ["ON",DammyONCIDLayerMap],
+                        ["OFF",OFFCIDLayerMap]
+                    ]);
+                    const SendingData=new Map([
+                        ["action","ChangeTargetCanvas"],
+                        ["data",new Map([
+                            ["TargetCID",TargetCID],
+                            ["SelectedArea",null]
+                        ])]
+                    ]);
+                    //MainWindowに送信
+                    this.PassChangesToMainWindow(SendingData);
+                    //PreviousSelectedCIDを更新
+                    this.PreviousSelectedCID.set(PreviouseSelectedCIDMapKey,DammyONCIDLayerMap);//参照型だから元のほうにも変更反映されるはず
+                }
             }
         }
-        //保持しておく
-        this.PreviousSelectedFunctionName=SelectedFunctionName;
+
+        //CIDの選択が初期状態に戻るので範囲選択も同様に初期値は全て0とする
+        //データタイプが変わった場合のみ選択範囲の初期化を行う
+        //初期データから値をセット
+        if(TargetDataTypeChangedFlag){//データタイプが変わっているので選択範囲も初期化
+            this.LeftTopXInput.value=0;
+            this.LeftTopYInput.value=0;
+            this.RectangleWidthInput.value=0;
+            this.RectangleHeightInput.value=0;
+            this.StartSliceInput.value=0;
+            this.EndSliceInput.value=0;
+            //各入力欄に最大値最小値を設定する
+            this.originalimagewidth=99999;
+            this.originalimageheight=99999;
+            this.originalslidermax=99999;
+            this.LeftTopXInput.min=0;
+            this.LeftTopXInput.max=this.originalimagewidth;
+            this.LeftTopXInput.step=1;
+            this.LeftTopYInput.min=0;
+            this.LeftTopYInput.max=this.originalimageheight;
+            this.LeftTopYInput.step=1;
+            this.RectangleWidthInput.min=0;
+            this.RectangleWidthInput.max=this.originalimagewidth;
+            this.RectangleHeightInput.step=1;
+            this.RectangleHeightInput.min=0;
+            this.RectangleHeightInput.max=this.originalimageheight;
+            this.RectangleHeightInput.step=1;
+            this.StartSliceInput.min=0;
+            this.StartSliceInput.max=this.originalslidermax;
+            this.StartSliceInput.step=1;
+            this.EndSliceInput.min=0;
+            this.EndSliceInput.max=this.originalslidermax;
+            this.EndSliceInput.step=1;
+        }
+        
+        //新しく選択された保持しておく
+        this.PreviousSelectedFunctionName=NewSelectedFunctionName;
     }
 
     SelectedAreaChange(){

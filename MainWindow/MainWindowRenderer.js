@@ -4066,6 +4066,7 @@ class LoadAndLayout{
                     this.UpdateStyle();//CanvasのDOMTreeのスタイルを書き換えて位置交換を反映する
                     this.Resize();
                 }
+                alert("読み込み＆再配置が完了しました。");
             }
         });
         this.EventSetHelper(this.ChangeAndLoadCancelButton,"mouseup",(e)=>{

@@ -100,7 +100,11 @@ div#EvaluationIndexSettingContainer>div#FunctionInputContainer>div.InputBlock>la
     font-weight: bold;
     text-align: center;
     vertical-align: top;
+    color:black;
 
+}
+div#EvaluationIndexSettingContainer>div#FunctionInputContainer>div.InputBlock>label.DisabledLabel{
+    color:gray;
 }
 div#EvaluationIndexSettingContainer>div#FunctionInputContainer>div.InputBlock>select{
     width:50%;
