@@ -153,12 +153,12 @@ function createSubWindow(SendingData){
     SubWindow.loadFile(path.join(__dirname,"SubWindows",actionName,HTMLfileName));
     SubWindow.setAlwaysOnTop(true);
     //SubWindowの準備が整ったらMultiUseLayerModeの可否の返答を受け取る
-    SubWindow.webContents.once("did-finish-load",()=>{
+    SubWindow.webContents.once("did-finish-load",()=>{//HTMLなどの読み込みが終わったらサブウィンドウの初期化データを送る
         //初期化用の送信
         //console.log("SubWindow did-finish-load");
         SubWindow.webContents.send("initializeSubWindow",SendingData);
     });
-    /*双方通信の構築*/
+    /*双方向通信経路の構築*/
     //sub→main
     //console.log("######################## main.js Event Create");
     //console.log(header);
@@ -197,6 +197,10 @@ function createSubWindow(SendingData){
         event.preventDefault();
         console.log("### Send SubWindow Closing this Window");
         //サブウィンドウに要求を送る前に、サブウィンドウからデータが送信された際の動きを登録することで検知漏れを防止する
+        /*
+        サブウィンドウに終了通告をすると、サブウィンドウからメインウィンドウに最後にやってほしい処理の連絡をする
+        それを受け取ってメインウィンドウに連絡をしたのち、SubWindowを完全に閉じる
+        */
         ipcMain.once("CloseSubWindowFromSubToMainProcess",(event,data)=>{
             //メインウィンドウに最後のデータを送り、OPモードのOFFなどの処理を行わせる
             const MainWindow=WindowManager.get("MainWindow");
@@ -213,7 +217,6 @@ function createSubWindow(SendingData){
             SubWindow.destroy();
             //SubWindowをMapから削除
             WindowManager.delete("SubWindow");
-            
         });
         //サブウィンドウに最終通知
         const dammydata=true;
@@ -241,4 +244,17 @@ ipcMain.on("OrderSubWindowOpen",async (event,SendingData)=>{
     //新しくSubwindowを開く
     //ついでにSendingDataも送ってしまう
     createSubWindow(SendingData);
+});
+//MainWindowに、何かしらのSubWindowが開かれている状態か教える。
+//SubWindowが開かれるとWindowManegerにSubWindowが登録され、消えるときにdeleteされることを利用してチェックしている。
+ipcMain.handle("CheckSubWindowOpened",()=>{
+    console.log("SubWindowCheck");
+    const SubWindowOpenedFlag=WindowManager.has("SubWindow");
+    if(SubWindowOpenedFlag){
+        console.log("SubWindow Opend",SubWindowOpenedFlag);
+        console.log(Array.from(WindowManager.keys()));
+    }else{
+        console.log("SubWindow Nothing",SubWindowOpenedFlag);
+    }
+    return SubWindowOpenedFlag;
 });

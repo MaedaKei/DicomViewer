@@ -25,6 +25,7 @@ SubWindowに変更を送る関数,
 */
 contextBridge.exposeInMainWorld("MainWindowRendererMainProcessAPI",
     {
+        CheckSubWindowOpened:()=>ipcRenderer.invoke("CheckSubWindowOpened"),//何かSubWindowが開かれているか確かめる
         OrderSubWindowOpen:(SendingData)=>ipcRenderer.send("OrderSubWindowOpen",SendingData),//SubWindowを開く
         //subwindowが閉じられたこと、そのサブウィンドウをひらくためにおくったheaderを受け取る。
         //useCallbackの引数は、(event,header)。usedCallbackは通知が来た時の処理をまとめた関数

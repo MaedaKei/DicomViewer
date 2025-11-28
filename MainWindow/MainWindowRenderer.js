@@ -3544,7 +3544,7 @@ class Canvas{
 データの読み込み関係もLayoutクラスにまとめることにした
 データ読み込み時にレイアウトの情報を参照する必要があること、まとめてデータを読み込む際にLayout関連との連携が必要だと予想したため
 */
-class LoadAndLayout{ 
+class LoadAndLayout{//静的メソッドだけでいい気がする。わざわざコンストラクタを作る必要ないかも
     /*静的メソッドとしてファイルパス読み込み関数を提供する*/
     static async SelectPathes(PathType="openDirectory",MultiTypeLoad=""){
         const LoadingPathList=await window.DicomLoadAPI.selectFiles([PathType,MultiTypeLoad]);
@@ -3573,6 +3573,24 @@ class LoadAndLayout{
             //console.log("データ削除",DataType,DataID);
             DataTypeMap.delete(DataID);
             //console.log(DicomDataClassDictionary);
+        }
+    }
+    static async CheckSubWindowOpened(){
+        /*SubWindowが開かれている状態か確認する*/
+        //現時点では、サブウィンドウが開かれている状態ではDicomDataの増減に関わる処理はさせないようにしたい
+        //ファイルの読み込み、Canvasの
+        const CheckResult= await window.MainWindowRendererMainProcessAPI.CheckSubWindowOpened();
+        //console.log(CheckResult);
+        return CheckResult
+    }
+    static async CheckPossibilityLoadORDelete(){
+        const SubWindowOpendResult=await this.CheckSubWindowOpened();
+        //console.log(SubWindowOpendResult);
+        if(SubWindowOpendResult){
+            alert("サブウィンドウが開かれているため、データの追加・削除はできません");
+            return false;
+        }else{
+            return true;
         }
     }
     constructor(){
@@ -3903,8 +3921,9 @@ class LoadAndLayout{
         this.ChangeAndLoadTargetInput2=document.getElementById("ChangeAndLoadTargetInput2");
         this.ChangeAndLoadConfirmButton=document.getElementById("ChangeAndLoadConfirmButton");
         this.ChangeAndLoadCancelButton=document.getElementById("ChangeAndLoadCancelButton");
-        this.EventSetHelper(this.ChangeAndLoadButton,"mouseup",(e)=>{
-            if(e.button===0){
+        this.EventSetHelper(this.ChangeAndLoadButton,"mouseup",async (e)=>{
+            //DialogOpenラッパーにサブウィンドウチェックを入れるが、ChangeAndLoadダイアログはこのボタンからしか開かれることがないのでここでついでにチェックしてしまう
+            if(e.button===0&&await LoadAndLayout.CheckPossibilityLoadORDelete()){//ダイアログが開かなければ読み込みができないのでここでサブウィンドウが開かれているか確認する
                 this.ChangeAndLoadPathContainer.innerHTML="";
                 //Canvasをチェックしてパス名の一覧を作成
                 const ChangeAndLoadPathContainerFragment=document.createDocumentFragment();
@@ -3999,14 +4018,14 @@ class LoadAndLayout{
         this.LoadDialog.close();
     }
     //LoadDialogをオープンする時に、Canvasの新設か既存キャンバスへの処理か指定させる
-    LoadDialogOpen(_TargetCanvasID=99999,LoadTarget="AllDataType"){//どのキャンバスを対象にしているか
+    async LoadDialogOpen(_TargetCanvasID=99999,LoadTarget="AllDataType"){//どのキャンバスを対象にしているか
         /*ターゲット判定ステップ
         1．TargetCanvasIDをキーとするCanvasが存在するか→既存のCanvasを対象としている
         2．TargetCanvasID>=0→Canvasの新設
         3. 無効←ここはこの段階で弾く
         */
         const TargetCanvasID=parseInt(_TargetCanvasID);
-        if(TargetCanvasID>=0){
+        if(await LoadAndLayout.CheckPossibilityLoadORDelete()&&TargetCanvasID>=0){
             if(this.DataClassMap.has(LoadTarget)){
                 //特定のDOMTreeだけ追加する
                 const TargetDataClass=this.DataClassMap.get(LoadTarget);
@@ -4264,47 +4283,51 @@ class LoadAndLayout{
         this.Resize();
         return NewCanvasID;//とりあえず新しいCanvasIDを返す
     }
-    delateCanvas(CanvasID){
-        const CanvasClass=CanvasClassDictionary.get(CanvasID);
-        //削除対象で参照されているデータを消そうとしてみる
-        /*
-        for(const [DataType,LayerData] of CanvasClass.LayerDataMap.entries()){
-            const DataID=LayerData.get("DataID");
-            const DicomDataInfoMap=DicomDataClassDictionary.get(DataType).get(DataID);
-            const RefCount=DicomDataInfoMap.get("RefCount");
-            DicomDataInfoMap.set("RefCount",RefCount-1);
-            this.TryDeleteDicomData(DataType,DataID);
-            if(DataType==="MASK"){
-                colormapformask.update();
+    async delateCanvas(CanvasID){
+        if(await LoadAndLayout.CheckPossibilityLoadORDelete()){
+            const CanvasClass=CanvasClassDictionary.get(CanvasID);
+            //削除対象で参照されているデータを消そうとしてみる
+            /*
+            for(const [DataType,LayerData] of CanvasClass.LayerDataMap.entries()){
+                const DataID=LayerData.get("DataID");
+                const DicomDataInfoMap=DicomDataClassDictionary.get(DataType).get(DataID);
+                const RefCount=DicomDataInfoMap.get("RefCount");
+                DicomDataInfoMap.set("RefCount",RefCount-1);
+                this.TryDeleteDicomData(DataType,DataID);
+                if(DataType==="MASK"){
+                    colormapformask.update();
+                }
             }
+            */
+            //キャンバスクラスを削除する
+            //内部でイベント解除、参照しているデータの削除、DOMツリー切り離しが行われる。
+            CanvasClass.dispose();
+            CanvasClassDictionary.delete(CanvasID);//Mapから削除。これでガーベージコレクションが動くはず
+            colormapformask.update();//変化がなければ何も起こらないので気軽に呼び出してOK
+            //削除によるRowとColumnの変更はしないものとする。
+            const delateLP=this.CanvasID2LP.get(CanvasID);
+            this.LP2CanvasID[delateLP]=-1;
+            this.CanvasID2LP.delete(CanvasID);
         }
-        */
-        //キャンバスクラスを削除する
-        //内部でイベント解除、参照しているデータの削除、DOMツリー切り離しが行われる。
-        CanvasClass.dispose();
-        CanvasClassDictionary.delete(CanvasID);//Mapから削除。これでガーベージコレクションが動くはず
-        colormapformask.update();//変化がなければ何も起こらないので気軽に呼び出してOK
-        //削除によるRowとColumnの変更はしないものとする。
-        const delateLP=this.CanvasID2LP.get(CanvasID);
-        this.LP2CanvasID[delateLP]=-1;
-        this.CanvasID2LP.delete(CanvasID);
     }
-    ResetCanvas(LayoutGridReset=false){
-        //Canvasを消す
-        for(const cid of CanvasClassDictionary.keys()){
-            this.delateCanvas(cid);
+    async ResetCanvas(LayoutGridReset=false){
+        if(await LoadAndLayout.CheckPossibilityLoadORDelete()){
+            //Canvasを消す
+            for(const cid of CanvasClassDictionary.keys()){
+                this.delateCanvas(cid);
+            }
+            //DicomDataClassもリセットする
+            //ここでBGCTもリセットされる
+            //console.log("次はBGCTも消すぞ")
+            for(const [key,DataTypeClassMap] of DicomDataClassDictionary.entries()){
+                //console.log(key);
+                DataTypeClassMap.clear();
+            }
+            //一応CanvasClassもリセットする
+            CanvasClassDictionary.clear();
+            //Layoutでは、画像を削除してもgridは変更しないようにしているため、それを初期化する
+            this.ResetLayoutStatus(LayoutGridReset);
         }
-        //DicomDataClassもリセットする
-        //ここでBGCTもリセットされる
-        //console.log("次はBGCTも消すぞ")
-        for(const [key,DataTypeClassMap] of DicomDataClassDictionary.entries()){
-            //console.log(key);
-            DataTypeClassMap.clear();
-        }
-        //一応CanvasClassもリセットする
-        CanvasClassDictionary.clear();
-        //Layoutでは、画像を削除してもgridは変更しないようにしているため、それを初期化する
-        this.ResetLayoutStatus(LayoutGridReset);
     }
     //余裕を持たせるためにディスプレイサイズから少しだけ小さい値をデフォルトにする。
     //現在の実装方法では、bodyサイズは指定できるがウィンドウの上らへんにあるOS依存ぽいスペースまで正確に制御できていない状況もあいまって余裕を持たせるようにしている
