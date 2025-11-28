@@ -1874,7 +1874,6 @@ class CONTOURclass{
             }
             return DataInfoList;
         }
-        
     }
     //LoadAndLayoutからデータの読み込みが命令された。データの差し替えや一括読み込みからの経路
     static async LoadingFromDialog(){
@@ -2084,7 +2083,7 @@ class CONTOURclass{
         }
         //ROISelectStatusSet集合内にあるROINameは描画する輪郭
         this.ROISelectStatusSet=new Set(ROINameList);//初期状態では全表示とする
-        
+        this.ROIMemoryStatusSet=new Set();//ROISelectSubWindowが閉じたときの状態をこちらで保持しておくためのもの
         //console.log(this.ContourColorMap);
         //console.log(this.ContourDataMap);
     }
@@ -2114,11 +2113,16 @@ class CONTOURclass{
         }
         ctx.restore();
     }
-    ChangeROISelectStatus(data){
+    ChangeROIStatusSet(data){
         /*this.ROISelectedStatusSetを更新する*/
         const ReceivedDataBody=data.get("data");
-        const NewROISelectStatusSet=ReceivedDataBody.get("ROISelectStatusSet");
-        this.ROISelectStatusSet=NewROISelectStatusSet;
+        const Mode=ReceivedDataBody.get("Mode");//冗長かもしれないが、ほかのデータタイプなどの引数の形式に合わせたかったからここでもう一度Modeを取得する
+        const NewROIStatusSet=ReceivedDataBody.get("ROIStatusSet");
+        if(Mode==="Select"){
+            this.ROISelectStatusSet=NewROIStatusSet;
+        }else if(Mode==="Memory"){
+            this.ROIMemoryStatusSet=NewROIStatusSet;
+        }
     }
     getClickedROISet(ctx,Z,X,Y){
         //console.log("ClicekdXY",X,Y);
@@ -2570,6 +2574,7 @@ class Canvas{
                 const data=new Map([
                     ["ROINameColorMap",DicomDataClass.ContourColorMap],//{ROIName:Hex} ROI名と色の表示に必要
                     ["ROISelectStatusSet",DicomDataClass.ROISelectStatusSet],//現時点で何が選ばれているかを示す
+                    ["ROIMemoryStatusSet",DicomDataClass.ROIMemoryStatusSet],//現時点で何が記憶されていたかを示す
                     /*["ROISelectWindowStyleMap",DicomDataClass.ROISelectWindowStyleMap],*/ //ボタンサイズなどの諸設定
                     
                     ["windowsize",windowsize],
@@ -2586,19 +2591,26 @@ class Canvas{
         RoiSelectButton.style.display="none";
         this.ContextMenuButtonContainer.appendChild(RoiSelectButton);
          /*サブウィンドウからの更新用の関数を定義する*/
-        const ChangeROISelectStatusFunction=(data)=>{
+        const ChangeROIStatusSetFunction=(data)=>{
+            //ROISelectStatusもROIMemoryStatusSetも全く同じ形式のデータなので、わざわざ関数を分ける必要もないと感じた。
+            //しかも、現時点ではMemoryはサブウィンドウ終了時の一回のみなので、なおさら関数を専用に作る必要がないと感じた。
             const ReceivedDataBody=data.get("data");
             const targetLayer=ReceivedDataBody.get("Layer");
             const DataType=targetLayer;
             const DataID=this.LayerDataMap.get(targetLayer).get("DataID");
             const DicomDataInfoMap=DicomDataClassDictionary.get(DataType).get(DataID);
             const DicomDataClass=DicomDataInfoMap.get("Data");
+            //ROISelectStatusSetか、ROIMemoryStatusSetか
+            const Mode=ReceivedDataBody.get("Mode");//"Select" or "Memory"
             //console.log(ReceivedDataBody.get("data").get("ROISelectStatusSet"));
-            DicomDataClass.ChangeROISelectStatus(data);
-            this.DrawStatus.set("regenerate",true);
-            this.Layerdraw(targetLayer);
+            DicomDataClass.ChangeROIStatusSet(data);
+            if(Mode==="Select"){
+                //SelectStatusの変更だったら再描画必要
+                this.DrawStatus.set("regenerate",true);
+                this.Layerdraw(targetLayer);
+            }
         }
-        this.FromMainProcessToMainFunctions.set("ChangeROISelectStatus",ChangeROISelectStatusFunction);
+        this.FromMainProcessToMainFunctions.set("ChangeROIStatusSet",ChangeROIStatusSetFunction);
     }
     setslider(){
         //MainlayerとBGの有無から、スライダーを設定する

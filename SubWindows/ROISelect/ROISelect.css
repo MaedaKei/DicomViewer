@@ -34,9 +34,9 @@ body>div#SelectInfoDisplayContainer{
     flex-direction: row;
     background-color: white;
     --gap:1px;
-    --AllROIDisplayContainerWidthRate:0.3;
-    --SelectedROIDisplayContainerWidthRate:0.4;
-    --MemorizedROIDisplayContainerWidthRate:0.4;
+    --AllROIDisplayContainerWidthRate:0.32;
+    --SelectedROIDisplayContainerWidthRate:0.34;
+    --MemorizedROIDisplayContainerWidthRate:0.34;
     gap:var(--gap);
 }
 div#SelectInfoDisplayContainer>div#AllROIDisplayContainer.InfoDisplayContainer{

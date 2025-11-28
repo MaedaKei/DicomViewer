@@ -22,11 +22,12 @@ class ROISelectClass{
         this.TargetLayer=ReceivedDataBody.get("Layer");
         const ROINameColorMap=ReceivedDataBody.get("ROINameColorMap");
         const ROISelectStatusSet=ReceivedDataBody.get("ROISelectStatusSet");
+        const ROIMemoryStatusSet=ReceivedDataBody.get("ROIMemoryStatusSet");
         this.AllROINum=ROINameColorMap.size;
         this.AllROINumDisplay.textContent=this.AllROINum;
         this.ROISelectStatusSet=ROISelectStatusSet;
         this.SelectedROINum=this.CountSelectedROINum();//Displayも更新
-        this.ROIMemoryStatusSet=new Set(ROISelectStatusSet);//デフォルトではウィンドウオープン時の選択状態が記憶される
+        this.ROIMemoryStatusSet=ROIMemoryStatusSet;//デフォルトではウィンドウオープン時の選択状態が記憶される
         this.MemorizedROINum=this.CountMemorizedROINum();//Displayも更新
         
         let MaxROINameTextWidth=0;
@@ -88,7 +89,7 @@ class ROISelectClass{
         const ROINumDisplayFontStyle=`bold ${ROINumDisplayFontSize}px sans-serif`;
         const SelectInfoDisplayContainerHeight=ROIKindInfoDisplayHeight+ROINumDisplayHeight;
 
-        const MinButtonWidth=Math.ceil((240-GridGap*(ColumnsNum-1))/ColumnsNum);
+        const MinButtonWidth=Math.ceil((300-GridGap*(ColumnsNum-1))/ColumnsNum);
         const ButtonHeight=ButtonFontSize+7;//px
         const ROINameTextSideMargin=8;
         const ButtonWidth=Math.max(2*(ButtonHeight+ROINameTextSideMargin)+Math.ceil(MaxROINameTextWidth),MinButtonWidth);
@@ -328,15 +329,14 @@ class ROISelectClass{
     }
     SendROISelectStatusSet(){
         //データを作成して送信する
-        const data=new Map([
-            ["ROISelectStatusSet",this.ROISelectStatusSet],
-
-            ["CanvasID",this.TargetCanvasID],
-            ["Layer",this.TargetLayer]
-        ]);
         const FromSubToMainProcessData=new Map([
-            ["action","ChangeROISelectStatus"],
-            ["data",data]
+            ["action","ChangeROIStatusSet"],
+            ["data",new Map([
+                ["Mode","Select"],
+                ["ROIStatusSet",this.ROISelectStatusSet],
+                ["CanvasID",this.TargetCanvasID],
+                ["Layer",this.TargetLayer],
+            ])]
         ]);
         this.PassChangesToMainWindow(FromSubToMainProcessData);
     }
@@ -349,14 +349,24 @@ class ROISelectClass{
         //メインプロセスからサブウィンドウの終了連絡がきたときの処理
         window.SubWindowMainProcessAPI.CloseSubWindowFromMainProcessToSub((event,ReceiveData)=>{
             const ClosingDataList=[];
-            const ClosingData=new Map([
+            const CONTOURROIClickModeSwitchingFunctionData=new Map([
                 ["action","CONTOURROIClickModeSwitchingFunction"],
                 ["data",new Map([
                     ["CanvasID",this.TargetCanvasID],
                     ["Activate",false]
                 ])]
             ]);
-            ClosingDataList.push(ClosingData);
+            ClosingDataList.push(CONTOURROIClickModeSwitchingFunctionData);
+            const ChangeROIStatusSetData=new Map([
+                ["action","ChangeROIStatusSet"],
+                ["data",new Map([
+                    ["Mode","Memory"],
+                    ["ROIStatusSet",this.ROIMemoryStatusSet],
+                    ["CanvasID",this.TargetCanvasID],
+                    ["Layer",this.TargetLayer],
+                ])]
+            ]);
+            ClosingDataList.push(ChangeROIStatusSetData);
             window.SubWindowMainProcessAPI.CloseSubWindowFromSubToMainProcess(ClosingDataList);
         });
     }
