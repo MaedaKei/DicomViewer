@@ -144,6 +144,10 @@ class CTclass{
         this.NewPathInputText=NewPathInputText;
         this.ExistingPathInputSelecter=ExistingPathInputSelecter;
         this.PathSelectDOMTree=PathSelectDOMTree;
+        /*tabIndexを無効を設定する*/
+        //Focus可能な要素をまとめる
+        const TabIndexTargetArray=[NewModeButton,ExistingModeButton,NewPathInputText,OpenFileDialogButton,ExistingPathInputSelecter];
+        TabIndexTargetArray.forEach((element)=>element.tabIndex="-1");
         //console.dir(this.PathSelectDOMTree);
         /*OpenFileDialogButtonにイベントを設定する*/
         this.OpenFileDialogButton.addEventListener("mouseup",async (e)=>{
@@ -670,6 +674,10 @@ class MASKclass{
         this.NewPathInputText=NewPathInputText;
         this.ExistingPathInputSelecter=ExistingPathInputSelecter;
         this.PathSelectDOMTree=PathSelectDOMTree;
+        /*tabIndexを無効を設定する*/
+        //Focus可能な要素をまとめる
+        const TabIndexTargetArray=[NewModeButton,ExistingModeButton,NewPathInputText,OpenFileDialogButton,ExistingPathInputSelecter];
+        TabIndexTargetArray.forEach((element)=>element.tabIndex="-1");
         //console.dir(this.PathSelectDOMTree);
         /*OpenFileDialogButtonにイベントを設定する*/
         this.OpenFileDialogButton.addEventListener("mouseup",async (e)=>{
@@ -1166,6 +1174,10 @@ class MASKDIFFclass{
         PathInputContainer.appendChild(ExistingPathContainer);
         PathSettingContainer.appendChild(PathInputContainer);
         PathSelectDOMTree.appendChild(PathSettingContainer);
+        /*tabIndexを無効を設定する*/
+        //Focus可能な要素をまとめる
+        const TabIndexTargetArray=[NewModeButton,ExistingModeButton,Input1Selecter,Input2Selecter,ExistingPathInputSelecter];
+        TabIndexTargetArray.forEach((element)=>element.tabIndex="-1");
         //これはLoadAndLayoutなどから要請されて外部に渡したりする。
         //そのとき、ExistingPathInputSelecterのOptionを再構成して渡す
         this.ModeSelectContainer=ModeSelectContainer;//Selectedクラスの有無を確かめる必要があるから
@@ -1649,6 +1661,8 @@ class CONTOURclass{
         this.ReferOriginalPathInputSelecter=ReferOriginalPathInputSelecter;
         this.ExistingPathInputSelecter=ExistingPathInputSelecter;
         this.PathSelectDOMTree=PathSelectDOMTree;
+        const TabIndexTargetArray=[NewModeButton,ExistingModeButton,NewPathInputText,OpenFileDialogButton,ReferOriginalPathInputSelecter,ExistingPathInputSelecter];
+        TabIndexTargetArray.forEach((element)=>element.tabIndex="-1");
         //console.dir(this.PathSelectDOMTree);
         /*OpenFileDialogButtonにイベントを設定する*/
         this.OpenFileDialogButton.addEventListener("mouseup",async (e)=>{
@@ -1747,14 +1761,14 @@ class CONTOURclass{
         //ReferOriginalPathInputSelecterを更新し、CT画像を持つCanvasIDとパスを表示する
         this.ReferOriginalPathInputSelecter.innerHTML="";
         const ReferOriginalPathInputSelecterInitialOption=document.createElement("option");
-        ReferOriginalPathInputSelecterInitialOption.text="元のCTとなるCanvasIDを選択";
+        ReferOriginalPathInputSelecterInitialOption.text="元のCTを選択";
         ReferOriginalPathInputSelecterInitialOption.value=(-99999);
         ReferOriginalPathInputSelecterInitialOption.disabled=true;
         ReferOriginalPathInputSelecterInitialOption.hidden=true;
         ReferOriginalPathInputSelecterInitialOption.selected=true;
         const ReferOriginalPathInputSelecterFragment=document.createDocumentFragment();
         ReferOriginalPathInputSelecterFragment.appendChild(ReferOriginalPathInputSelecterInitialOption);
-        const ReferOriginalPathInputSelecterCanvasIDDataIDMap=new Map();//{CanvasID:DataID}
+        const ReferOriginalPathInputSelecterDataIDCanvasIDListMap=new Map();//{CanvasID:DataID}
         //Path入力欄の初期化
         this.NewPathInputText.value="";
         //ExistingPathInputSelecterのOptionを更新する
@@ -1788,7 +1802,11 @@ class CONTOURclass{
             }
             if(Canvas.LayerDataMap.has(CTDataType)){
                 const DataID=Canvas.LayerDataMap.get(CTDataType).get("DataID");
-                ReferOriginalPathInputSelecterCanvasIDDataIDMap.set(CanvasID,DataID);
+                if(ReferOriginalPathInputSelecterDataIDCanvasIDListMap.has(DataID)){
+                    ReferOriginalPathInputSelecterDataIDCanvasIDListMap.get(DataID).push(CanvasID);
+                }else{
+                    ReferOriginalPathInputSelecterDataIDCanvasIDListMap.set(DataID,[CanvasID]);
+                }
             }
         }
         //既存セレクタの再構成
@@ -1800,6 +1818,13 @@ class CONTOURclass{
         }
         this.ExistingPathInputSelecter.appendChild(ExistingPathInputSelecterFragment);
         //オリジナルとなるCTセレクタの再構成
+        for(const [DataID,CanvasIDList] of ReferOriginalPathInputSelecterDataIDCanvasIDListMap.entries()){
+            const option=document.createElement("option");
+            const Path=DicomDataClassDictionary.get(CTclass.DataType).get(DataID).get("Data").Path;
+            option.text=`DataID:${DataID} ${Path} ( CanvasID= ${CanvasIDList.join(", ")} )`;
+            ReferOriginalPathInputSelecterFragment.appendChild(option);
+        }
+        /*
         for(const [CanvasID,DataID] of ReferOriginalPathInputSelecterCanvasIDDataIDMap.entries()){
             const option=document.createElement("option");
             const Path=DicomDataClassDictionary.get(CTclass.DataType).get(DataID).get("Data").Path;
@@ -1807,6 +1832,7 @@ class CONTOURclass{
             option.value=DataID;
             ReferOriginalPathInputSelecterFragment.appendChild(option);
         }
+        */
         this.ReferOriginalPathInputSelecter.appendChild(ReferOriginalPathInputSelecterFragment);
         //ModeSelectButtonを初期化する
         this.ModeSelectContainer.setAttribute("data-SelectMode","");
@@ -3623,9 +3649,20 @@ class LoadAndLayout{
                 this.LoadDialogClose();
             }
         });
+        LoadDialogCancelButton.addEventListener("keydown",(e)=>{
+            if(e.code==="Enter"){
+                this.LoadDialogClose();
+            }
+        });
         LoadDialogConfirmButton.addEventListener("mouseup",(e)=>{
             if(e.button===0){
                 //読み込み開始する
+                this.LoadDialogClose();
+                this.DialogLoadingStart();
+            }
+        });
+        LoadDialogConfirmButton.addEventListener("keydown",(e)=>{
+            if(e.code==="Enter"){
                 this.LoadDialogClose();
                 this.DialogLoadingStart();
             }
@@ -3981,6 +4018,7 @@ class LoadAndLayout{
                 this.LoadDialogConfirmButton.setAttribute("data-TargetCanvasID",TargetCanvasID);
                 this.LoadDialog.showModal();
             }else if(LoadTarget==="AllDataType"){
+                this.LoadDialogDOMTreeContainer.innerHTML="";//初期化
                 //すべてのDOMTreeを追加する
                 const LoadDialogDOMTreeContainerFragment=document.createDocumentFragment();
                 for(const TargetDataClass of this.DataClassMap.values()){
