@@ -9,239 +9,327 @@ html, body {
   width: 100%;
   padding: 0;
   margin: 0;
-  background-color: rgb(180, 176, 176);
-  --TubButtonContainerHeight:30px;
-  --ScreenContainerHeight:calc(100% - var(--TubButtonHeight));
 }
-div#TubButtonContainer{
-    width: 100%;
-    --margin-bottom:5px;
-    margin-bottom: var(--margin-bottom);
-    height: calc(var(--TubButtonContainerHeight) - var(--margin-bottom));
+body{
+    position: relative;/*ドラッグ中のボタンはbodyのrelativeを基に自由配置状態になる。このとき、buttonのz-indexは高めに設定して最前面に表示されるようにする*/
+}
+:root{
+    /*MainWindowからの初期化データを基に可変部のサイズを計算してwindowサイズを変更するための変数群*/
+    /*
+    必要な情報
+    ボタンのサイズ、ボタンのフォント
+    グリッドの行数、列数、ギャップ
+    ボタンコンテナの高さ
+    */
+    /*MaskButton用*/
+    --MaskButtonWidth:10px;
+    --MaskButtonHeight:10px;
+    --MaskButtonFontStyle:bold 10px sans-serif;
+    --MaskLabelTextSideMargin:8px;
+    /*ButtonContainer用*/
+    --MaskButtonContainerGridGap:3px;/*legend, ModifyButtonContainer間のギャップ*/
+    --MaskButtonContainerWidth:200px;/*JS側で計算する*/
+    --MaskbuttonContainerHeight:200px;/*JS側で計算する*/
+    /*legend用*/
+    --LegendContainerTitleHeight:15px;
+    --LegendContainerTitleFontStyle:bold 10px sans-serif;
+    --LegendContainerGridRowsNum:5;
+    --LegendContainerGridColumnsNum:2;
+    --LegendContainerGridGap:2px;
+    --LegendContainerPadding:1px;
+    /*
+    --LegendContainerWidth:100px;
+    --LegendContainerHeight:100px;
+    */
+    /*ModifyButtonContainer用*//*After Beforeは共通*/
+    --ModifyContainerTitleHeight:15px;
+    --ModifyContainerTitleFontStyle:bold 10px sans-serif;
+    --ModifyContainerGridRowsNum:5;
+    --ModifyContainerGridColumnsNum:5;
+    --ModifyContainerGridGap:2px;
+    --ModifyContainerPadding:1px;
+    /*
+    --ModifyContainerWidth:100px;
+    --ModifyContainerHeight:100px;
+    */
+    /*右半分用*/
+    --MaskModifyControlContainerWidth:200px;
+    --MaskModifyControlContainerHeight:300px;
+    /*左半分と右半分のgap*/
+    --BodyGap:5px;
+}
+body{
     display: flex;
     flex-direction: row;
-    --TubButtonNum:2;
+    position:relative;
+    gap: var(--BodyGap);
+    background-color: rgb(207, 207, 207);
 }
-div#TubButtonContainer>button.TubButton{
-    width: calc(100% / var(--TubButtonNum));
-    height: 100%;
-    background-color: rgba(58, 58, 58, 0.733);
-    color: white;
-    text-align: center;
-    border:black solid 1px;
-}
-div#TubButtonContainer>button.TubButton:hover{
-    background-color: #838383;
-    cursor: pointer;
-}
-div#TubButtonContainer>button.TubButton.active{
-    background-color: #8d0202;
-    cursor: pointer;
-    font-weight: bold;
-}
-div#ScreenContainer{
-    width: 100%;
-    height: var(--ScreenContainerHeight);
-    display: relative;
-}
-/*MaskModifyScreen*/
-div#MaskModifyScreen{
-    width: 100%;
-    --MaskModifyContainerHeight:90px;
-    --AreaSelectContainerHeight:210px;
-    --ModifyButtonContainerHeight:30px;
-    height:calc(var(--MaskModifyContainerHeight) + var(--AreaSelectContainerHeight) + var(--ModifyButtonContainerHeight));
-    /*TubButtonContainerの真下に配置したい*/
-};
-div#MaskModifyContainer{
-    width:100%;
-    /*height:90px;*/
-    height:var(--MaskModifyContainerHeight);
-    display: flex;
-    flex-direction: column;
-    background-color: #000000;
-}
-div#MaskModifyContainer>div.label{
-    width: 100%;
-    height:30px;
-    background-color: blueviolet;
-    font-weight: bold;
-}
-div#MaskModifyContainer>div{
-    width: 100%;
-    height:60px;
-    display: flex;
+/*MaskButton*/
+button.MaskButton{
+    width:var(--MaskButtonWidth);
+    height:var(--MaskButtonHeight);
+    display:flex;
+    align-items:center;
     flex-direction: row;
-    padding:2px;
-    --selectwidth:40%;
+    background-color: rgb(210,210,210);
+    color:black;
+    font:var(--MaskButtonFontStyle);
 }
-div#MaskModifyContainer>div>div.MaskSelecterContainer{
-    width:var(--selectwidth);
+button.MaskButton:hover{
+    background-color: rgb(131, 131, 131);
+}
+button.MaskButton:focus{
+    outline:none;
+}
+button.MaskButton.MaskClicked{
+    color:red;
+}
+button.MaskButton>span.MaskColorBoxSpan{
+    display:inline-block;
+    /*width:var(--MaskButtonHeight);*/
     height:100%;
-    display: flex;
-    flex-direction: column;
-}
-div#MaskModifyContainer>div>div.MaskSelecterContainer>select{
-    width:100%;
-    height:50%;
+    aspect-ratio: 1 / 1;
+    line-height: var(--MaskButtonHeight);
     text-align: center;
+    flex-shrink: 0;
+    margin-right:var(--MaskLabelTextSideMargin);
 }
-div#MaskModifyContainer>div>div.MaskSelecterContainer>div.MaskLabel{
-    width:100%;
-    height:50%;
-    border:1px solid #FFFFFF;
+button.MaskButton>span.MaskLabelSpan{
+    display:inline-block;
+    flex:1;
+    height:var(--MaskButtonHeight);
+    line-height: var(--MaskButtonHeight);
+    text-align: left;
 }
-div#MaskModifyContainer>div>div.SwapContainer{
-    width:calc(100% - 2 * var(--selectwidth));
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-}
-div#MaskModifyContainer>div>div.SwapContainer>div#AllowText{
-    width:100%;
-    height: 50%;
+button.MaskButton>span.MaskSelectedSpan{
+    display:inline-block;
+    /*width:var(--MaskButtonHeight);*/
+    height:100%;
+    aspect-ratio: 1 / 1;
+    line-height: var(--MaskButtonHeight);
     text-align: center;
-    color:#FF0000;
+    flex-shrink: 0;
+    margin-left:var(--MaskLabelTextSideMargin);
 }
-div#MaskModifyContainer>div>div.SwapContainer>Button#SwapButton{
+button.MaskButton.Selected>span.MaskSelectedSpan::before{
+    content:"✔";
+    color:black;
+}
+/*左半分にあるMaskButtonContainerのスタイル*/
+body>div#MaskButtonContainer{
+    display:grid;
+    grid-template-rows: repeat(2,1fr);
+    grid-template-columns: repeat(2,1fr);
+    gap:var(--MaskButtonContainerGridGap);
+    width:var(--MaskButtonContainerWidth);
+    height:100%;
+}
+/*Legend部分のスタイル*/
+div#MaskButtonContainer>div#MaskLegendContainer{
+    display:flex;
+    flex-direction: column;
+    grid-row:1/3;/*１行目２行目をまたぐ*/
+    grid-column:1;
     width:100%;
-    height: 50%;
-    background-color: rgba(0, 128, 53, 0.733);
+    height:100%;
+}
+div#MaskLegendContainer>div#MaskLegendTitle{
+    width:100%;
+    height:var(--LegendContainerTitleHeight);
+    text-align: center;
+    background-color: rgb(0, 4, 255);
     color: white;
-    font-weight: bold;
-    text-align: center;
+    font: var(--LegendContainerTitleFontStyle);
 }
-div#MaskModifyContainer>div>div.SwapContainer>Button#SwapButton:hover{
-    background-color: #02f768;
-    cursor: pointer;
-}
-div#MaskModifyContainer>div>div.SwapContainer>Button#SwapButton:active{
-    background-color: #c20000;
-    cursor: pointer;
-}
-div#AreaSelectContainer{
+div#MaskLegendContainer>div#MaskLegendButtonContainer{
     width:100%;
-    /*height:210px;*/
-    height:var(--AreaSelectContainerHeight);
+    height:calc(100% - var(--LegendContainerTitleHeight));
+    display:grid;
+    grid-template-rows: repeat(var(--LegendContainerGridRowsNum),1fr);
+    grid-template-columns: repeat(var(--LegendContainerGridColumnsNum),1fr);
+    gap:var(--LegendContainerGridGap);
+    padding: var(--LegendContainerPadding);
+    background-color: white;
 }
-div#AreaSelectContainer>div.Containerlabel{
+div#MaskLegendContainer>div#MaskLegendButtonContainer>button{
     width: 100%;
-    height:30px;
-    padding: 2px;
-    background-color: aquamarine;
-    font-weight: bold;
+    height: 100%;
+    background-color: rgb(54, 54, 54);
+    color:white;
+    font:var(--MaskButtonFontStyle);
 }
-div#AreaSelectContainer>div.SubContainer{
+div#MaskLegendContainer>div#MaskLegendButtonContainer>button:hover{
+    background-color: rgb(100, 100, 100);
+}
+/*MaskModifyBefore部分のスタイル*/
+div#MaskButtonContainer>div#MaskModifyBeforeContainer{
+    display:flex;
+    flex-direction: column;
+    grid-row:1;
+    grid-column:2;
     width:100%;
-    height:60px;
+    height:100%;
+}
+div#MaskModifyBeforeContainer>div#MaskModifyBeforeTitle{
+    width: 100%;
+    height: var(--ModifyContainerTitleHeight);
+    text-align: center;
+    background-color: rgb(148, 148, 255);
+    color: black;
+    font: var(--ModifyContainerTitleFontStyle);
+}
+div#MaskButtonContainer>div#MaskModifyAfterContainer{
+    display:flex;
+    flex-direction: column;
+    grid-row:2;
+    grid-column:2;
+    width:100%;
+    height:100%;
+}
+div#MaskModifyAfterContainer>div#MaskModifyAfterTitle{
+    width: 100%;
+    height: var(--ModifyContainerTitleHeight);
+    text-align: center;
+    background-color: rgb(255, 148, 148);
+    color: black;
+    font: var(--ModifyContainerTitleFontStyle);
+}
+/*ModifyButtonContainerの共通スタイル*/
+div.MaskModifyContainer>div.MaskModifyButtonContainer{
+    width:100%;
+    height:calc(100% - var(--ModifyContainerTitleHeight));
+    display:grid;
+    grid-template-rows: repeat(var(--ModifyContainerGridRowsNum),1fr);
+    grid-template-columns: repeat(var(--ModifyContainerGridColumnsNum),1fr);
+    gap:var(--ModifyContainerGridGap);
+    padding: var(--ModifyContainerPadding);
+    background-color: white;
+}
+/*
+div.MaskModifyContainer>div.MaskModifyButtonContainer>button{
+    width: 100%;
+    height: 100%;
+    background-color: rgb(54, 54, 54);
+    color:white;
+    font:var(--MaskButtonFontStyle);
+}
+div.MaskModifyContainer>div.MaskModifyButtonContainer>button:hover{
+    background-color: rgb(100, 100, 100);
+}
+*/
+body>div#MaskModifyControlContainer{
+    display:flex;
+    flex-direction: column;
+    width:var(--MaskModifyControlContainerWidth);
+    height:var(--MaskModifyControlContainerHeight);
+    gap:1px;
+}
+div#MaskModifyControlContainer>div#LabelNameChangeContainer{
+    width:100%;
+    height:30px;
+    display: flex;
+    flex-direction: row;
+}
+div#LabelNameChangeContainer>button#LabelNameChangeDialogOpenButton{
+    width:100%;
+    height:100%;
+    font: bold 10px sans-serif;
+    text-align: center;
+    border:1px solid black;
+    background-color: rgb(0, 48, 0);
+    color:white;
+}
+div#LabelNameChangeContainer>button#LabelNameChangeDialogOpenButton:hover{
+    background-color: rgb(0, 96, 0);
+}
+div#LabelNameChangeContainer>button#LabelNameChangeDialogOpenButton:active{
+    color:black;
+}
+div#MaskModifyControlContainer>div#AreaSelectContainer{
+    --AreaSelectTitleHeight:25px;/*エリア選択タイトルの高さ x1*/
+    --SelectStatusInfoLabelHeight:25px;/*選択状態表示ラベルの高さ x 3*/
+    --AreaSelectInputBlockHeight:30px;/*入力ブロック1つあたりの高さ x 3*/
+    width:100%;
+    height:calc(var(--AreaSelectTitleHeight) + 3 * var(--SelectStatusInfoLabelHeight) + 3 * var(--AreaSelectInputBlockHeight));
+    display:flex;
+    flex-direction: column;
+}
+div#AreaSelectContainer>div#AreaSelectTitle{
+    display:block;
+    width:100%;
+    height:var(--AreaSelectTitleHeight);
+    text-align: center;
+    background-color: rgb(0, 2, 97);
+    color: white;
+    font: bold calc(var(--AreaSelectTitleHeight) - 5px) sans-serif;
+}
+div#AreaSelectContainer>div.SelectStatusInfoContainer{
+    width:100%;
+    height:calc(var(--SelectStatusInfoLabelHeight) + var(--AreaSelectInputBlockHeight));
     display: flex;
     flex-direction: column;
-    border: 1px solid black;
 }
-div#AreaSelectContainer>div.SubContainer>div.SubContainerLabel{
-    width: 100%;
-    height: 50%;
-    text-align: center;
-}
-div#AreaSelectContainer>div.SubContainer>div.AreaSelectInputBlock{
+div#AreaSelectContainer>div.SelectStatusInfoContainer>div.SelectStatusInfoLabel{
     width:100%;
-    height:50%;
-    display: flex;
-    flex-direction: row;
-    padding: 2px;
+    height:var(--SelectStatusInfoLabelHeight);
+    font: bold calc(var(--SelectStatusInfoLabelHeight) - 8px) sans-serif;
+    text-align: center;
+    vertical-align: top;
+    background-color: rgb(77, 77, 245);
+    color: white;
 }
-div#AreaSelectContainer>div.SubContainer>div.AreaSelectInputBlock>div{
-    width: 50%;
-    height: 100%;
-    display: flex;
+div#AreaSelectContainer>div.SelectStatusInfoContainer>div.AreaSelectInputBlock{
+    width:100%;
+    height:var(--AreaSelectInputBlockHeight);
+    display:flex;
     flex-direction: row;
+    /*padding:2px;*/
 }
-div#AreaSelectContainer>div>div.AreaSelectInputBlock>div>label{
+div#AreaSelectContainer>div.SelectStatusInfoContainer>div.AreaSelectInputBlock>div{
     width:50%;
     height:100%;
-    font-weight: bold;
-    text-align: center;
+    display: flex;
+    flex-direction: row;
 }
-div#AreaSelectContainer>div>div.AreaSelectInputBlock>div>input{
+div#AreaSelectContainer>div.SelectStatusInfoContainer>div.AreaSelectInputBlock>div>label{
     width:50%;
     height:100%;
+    font: calc(var(--AreaSelectInputBlockHeight) - 13px) sans-serif;
     text-align: center;
+    vertical-align: top;
+    background-color: black;
+    color: white;
+    padding:1px;
+}
+div#AreaSelectContainer>div.SelectStatusInfoContainer>div.AreaSelectInputBlock>div>input{
+    width:50%;
+    height:100%;
+    font: bold calc(var(--AreaSelectInputBlockHeight) - 13px) sans-serif;
+    text-align: center;
+    padding:1px;
 }
 
 div#MaskModifyButtonContainer{
     width:100%;
-    /*height:30px;*/
-    height:var(--ModifyButtonContainerHeight);
+    height:30px;
     display: flex;
-    flex-direction: row-reverse;
+    flex-direction: row;
     padding: 2px;
 }
 div#MaskModifyButtonContainer>button{
-    width: 30%;
+    width: 50%;
     height: 100%;
     background-color: rgba(0, 0, 128, 0.733);
     color: white;
     font-weight: bold;
     text-align: center;
     vertical-align: top;
+    border:1px solid black;
 }
 div#MaskModifyButtonContainer>button:hover{
-    background-color: #0000FF;
-    cursor: pointer;
+    background-color: rgb(0, 0, 255);
 }
 div#MaskModifyButtonContainer>button:active{
-    background-color: #FF0000;
-    cursor: pointer;
-}
-
-div#MaskLabelingScreen{
-    width: 100%;
-    --MaskLabelingInputContainerHeight:300px;
-    --MaskLabelingButtonContainerHeight:30px;
-    height:calc(var(--MaskLabelingInputContainerHeight) + var(--MaskLabelingButtonContainerHeight));
-    display: none;
-    /*TubButtonContainerの真下に配置したい*/
-};
-div#MaskLabelingInputContainer{
-    width:100%;
-    height:var(--MaskLabelingInputContainerHeight);
-    display:flex;
-    flex-direction: column;
-}
-div#MaskLabelingInputContainer>div.label{
-    width:100%;
-    height:30px;
-    background-color: black;
-    color:white;
-    text-align: center;
-}
-div#MaskLabelingInputContainer>textarea{
-    width:100%;
-    height:calc(var(--MaskLabelingInputContainerHeight) - 30px - 2 * 2px);
-    resize:none;
-    padding:5px;
-    margin-top:2px;
-    margin-bottom:2px;
-}
-div#MaskLabelingButtonContainer{
-    width:100%;
-    height:var(--MaskLabelingButtonContainerHeight);
-    display: flex;
-    flex-direction: row-reverse;
-    padding:2px;
-}
-div#MaskLabelingButtonContainer>button{
-    width:30%;
-    height:100%;
-    text-align: center;
-    background-color: #01019b;
-    color:white;
-    vertical-align: top;
-    font-weight: bold;
-}
-div#MaskLabelingButtonContainer>button:hover{
-    background-color: #0000FF;
-}
-div#MaskLabelingButtonContainer>button:active{
-    background-color: #FF0000;
+    color:black;
 }

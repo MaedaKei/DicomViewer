@@ -1,31 +1,33 @@
 console.log("MaskModifingRenderer.js loaded");
 class MaskModifingClass{
     constructor(SendingData){
-        //タブボタン
-        this.TubButtons=document.getElementsByClassName("TubButton")
-        //変更対象入力欄
-        //MaskA
-        this.MaskASelecterContainer=document.getElementById("MaskASelecterContainer");
-        this.MaskASelecter=document.getElementById("MaskASelecter");
-        this.MaskALabel=document.getElementById("MaskALabel");
-        //MaskB
-        this.MaskBSelecterContainer=document.getElementById("MaskBSelecterContainer");
-        this.MaskBSelecter=document.getElementById("MaskBSelecter");
-        this.MaskBLabel=document.getElementById("MaskBLabel");
-        //Swapボタン
-        this.SwapButton=document.getElementById("SwapButton");
-        //範囲選択入力欄
+        /*画面構成要素の取得*/
+        /*
+        this.MaskLegendButtonContainer=document.getElementById("MaskLegendButtonContainer");//マスク凡例表示ボタンコンテナ
+        this.MaskModifyBeforeButtonContainer=document.getElementById("MaskModifyBeforeButtonContainer");//マスク変更前表示ボタンコンテナ
+        this.MaskModifyAfterButtonContainer=document.getElementById("MaskModifyAfterButtonContainer");//マスク変更後表示ボタンコンテナ
+        */
+        const ButtonContainerIDArray=[
+            "MaskLegendButtonContainer",
+            "MaskModifyBeforeButtonContainer",
+            "MaskModifyAfterButtonContainer"
+        ];
+        this.ButtonContainerMap=new Map(ButtonContainerIDArray.map((ButtonContainerID)=>[ButtonContainerID,document.getElementById(ButtonContainerID)]));
+        this.LabelNameChangeDialogOpenButton=document.getElementById("LabelNameChangeDialogOpenButton");//ラベル名変更ダイアログオープンボタン
+        //エリアセレクト用インプット欄
         this.LeftTopXInput=document.getElementById("LeftTopXInput");
         this.LeftTopYInput=document.getElementById("LeftTopYInput");
         this.RectangleWidthInput=document.getElementById("RectangleWidthInput");
         this.RectangleHeightInput=document.getElementById("RectangleHeightInput");
         this.StartSliceInput=document.getElementById("StartSliceInput");
         this.EndSliceInput=document.getElementById("EndSliceInput");
+
+        this.MaskSelectTradeButton=document.getElementById("MaskSelectTradeButton");
+        this.MaskModifyConfirmButton=document.getElementById("MaskModifyConfirmButton");
+        /*送られてきたデータの解析*/
         const ReceivedDataBody=SendingData.get("data");
         this.TargetCanvasID=ReceivedDataBody.get("CanvasID");
         this.TargetLayer=ReceivedDataBody.get("Layer");
-        //確定ボタン
-        this.MaskModifyConfirmButton=document.getElementById("MaskModifyConfirmButton");
         //初期データから値をセット
         const SelectedArea=ReceivedDataBody.get("SelectedArea");
         this.LeftTopXInput.value=SelectedArea.get("w0");
@@ -36,13 +38,109 @@ class MaskModifingClass{
         this.EndSliceInput.value=SelectedArea.get("endslice");
         //その他の情報の保持
         this.MaskValues=Array.from(ReceivedDataBody.get("histgram").keys());//ヒストグラムの最初の値をマスク値とする
-        this.SelecterLength=this.MaskValues.length;
-        this.colormap=ReceivedDataBody.get("colormap");
+        const colormap=ReceivedDataBody.get("colormap");//ボタンに色情報を付与したらあとは使わない
+        this.label=ReceivedDataBody.get("label");//ラベル情報のArray
         this.originalimagewidth=ReceivedDataBody.get("originalimagewidth");
         this.originalimageheight=ReceivedDataBody.get("originalimageheight");
         this.originalslidermax=ReceivedDataBody.get("originalslidermax");//スライダーの最小値は0、最大値はこれ
         
-        //各入力欄に最大値最小値を設定する
+        /*MaskLegendButtonContainerにマスクボタンを配置*/
+        /*送られてきたマスクの個数を基に画面のサイズを再計算する*/
+        this.MaskButtonMap=new Map();//{maskvalue:{"label":labelName,"ButtonElement":ButtonElement}}
+        this.MaskKindNum=this.MaskValues.length;//マスクの種類数、実際のデータに出現しているマスク値の種類。飛んでいる値もあるかもしれない。colormapとlabelはArrayとなっていて、インデックスがマスク値に対応している。
+        const MaskLegendButtonContainerFragment=document.createDocumentFragment();
+        for(let i=0;i<this.MaskKindNum;i++){
+            const MaskValue=this.MaskValues[i];
+            const colormapbaseindex=MaskValue*4;//RGBAなので4倍
+            const LabelName=this.label[MaskValue];
+            const MaskButton=document.createElement("button");
+            MaskButton.className="MaskButton";
+            const ColorBoxSpan=document.createElement("span");
+            ColorBoxSpan.className="MaskColorBoxSpan";
+            //console.log(MaskValue,colormap[MaskValue+0],colormap[MaskValue+1],colormap[MaskValue+2]);
+            ColorBoxSpan.style.backgroundColor=`rgb(${colormap[colormapbaseindex+0]},${colormap[colormapbaseindex+1]},${colormap[colormapbaseindex+2]})`;
+            const MaskLabelSpan=document.createElement("span");
+            MaskLabelSpan.className="MaskLabelSpan";
+            MaskLabelSpan.textContent=LabelName;
+            const MaskSelectedSpan=document.createElement("span");
+            MaskSelectedSpan.className="MaskSelectedSpan";
+            MaskSelectedSpan.textContent="";
+            const MaskButtonFragment=document.createDocumentFragment();
+            MaskButtonFragment.appendChild(ColorBoxSpan);
+            MaskButtonFragment.appendChild(MaskLabelSpan);
+            MaskButtonFragment.appendChild(MaskSelectedSpan);
+            MaskButton.appendChild(MaskButtonFragment);
+            MaskLegendButtonContainerFragment.appendChild(MaskButton);
+            this.MaskButtonMap.set(MaskValue,new Map([
+                ["Label",LabelName],
+                ["ButtonElement",MaskButton]
+            ]));
+        }
+        console.log("button生成終了");
+        this.MaskLegendButtonContainer.appendChild(MaskLegendButtonContainerFragment);
+        const ButtonFontSize=15;
+        const ButtonHeight=ButtonFontSize+7;//px
+        const MaskLabelTextSideMargin=5;//px
+        const ButtonWidth=2*(ButtonHeight+MaskLabelTextSideMargin)+150;//px
+        const ButtonFontStyle=`bold ${ButtonFontSize}px sans-serif`;
+        document.documentElement.style.setProperty("--MaskButtonWidth",`${ButtonWidth}px`);
+        document.documentElement.style.setProperty("--MaskButtonHeight",`${ButtonHeight}px`);
+        document.documentElement.style.setProperty("--MaskButtonFontStyle",ButtonFontStyle);
+        document.documentElement.style.setProperty("--MaskLabelTextSideMargin",`${MaskLabelTextSideMargin}px`);
+        //legendContainerの設定
+        const LegendContainerTitleHeight=20;
+        const LegndContainerTitleFontStyle=`bold ${LegendContainerTitleHeight-5}px sans-serif`;
+        const LegendContainerGridRowsNum=20;//かならず20行にする
+        const LegendContainerGridColumnsNum=Math.ceil(this.MaskKindNum/20);//20行に収まるように列数を決定
+        const LegendContainerGridGap=2;
+        const LegendContainerPadding=1;
+        const LegendContainerWidth=2*LegendContainerPadding+((ButtonWidth+LegendContainerGridGap)*LegendContainerGridColumnsNum-LegendContainerGridGap);
+        const LegendContainerHeight=2*LegendContainerPadding+LegendContainerTitleHeight+((ButtonHeight+LegendContainerGridGap)*LegendContainerGridRowsNum-LegendContainerGridGap);
+        document.documentElement.style.setProperty("--LegendContainerTitleHeight",`${LegendContainerTitleHeight}px`);
+        document.documentElement.style.setProperty("--LegendContainerTitleFontStyle",LegndContainerTitleFontStyle);
+        document.documentElement.style.setProperty("--LegendContainerGridRowsNum",`${LegendContainerGridRowsNum}`);
+        document.documentElement.style.setProperty("--LegendContainerGridColumnsNum",`${LegendContainerGridColumnsNum}`);
+        document.documentElement.style.setProperty("--LegendContainerGridGap",`${LegendContainerGridGap}px`);
+        document.documentElement.style.setProperty("--LegendContainerPadding",`${LegendContainerPadding}px`);
+        //document.documentElement.style.setProperty("--LegendContainerWidth",`${LegendContainerWidth}px`);
+        //document.documentElement.style.setProperty("--LegendContainerHeight",`${LegendContainerHeight}px`);
+        //ModifyContainerの設定
+        const ModifyContainerTitleHeight=20;
+        const ModifyContainerTitleFontStyle=`bold ${ModifyContainerTitleHeight-5}px sans-serif`;
+        const ModifyContainerGridRowsNum=LegendContainerGridRowsNum/2;//Legendの半分の行数にする
+        const ModifyContainerGridColumnsNum=LegendContainerGridColumnsNum;
+        const ModifyContainerGridGap=2;
+        const ModifyContainerPadding=1;
+        const ModifyContainerWidth=2*ModifyContainerPadding+((ButtonWidth+ModifyContainerGridGap)*ModifyContainerGridColumnsNum-ModifyContainerGridGap);
+        const ModifyContainerHeight=2*ModifyContainerPadding+ModifyContainerTitleHeight+((ButtonHeight+ModifyContainerGridGap)*ModifyContainerGridRowsNum-ModifyContainerGridGap);
+        document.documentElement.style.setProperty("--ModifyContainerTitleHeight",`${ModifyContainerTitleHeight}px`);
+        document.documentElement.style.setProperty("--ModifyContainerTitleFontStyle",ModifyContainerTitleFontStyle);
+        document.documentElement.style.setProperty("--ModifyContainerGridRowsNum",`${ModifyContainerGridRowsNum}`);
+        document.documentElement.style.setProperty("--ModifyContainerGridColumnsNum",`${ModifyContainerGridColumnsNum}`);
+        document.documentElement.style.setProperty("--ModifyContainerGridGap",`${ModifyContainerGridGap}px`);
+        document.documentElement.style.setProperty("--ModifyContainerPadding",`${ModifyContainerPadding}px`);
+        //document.documentElement.style.setProperty("--ModifyContainerWidth",`${ModifyContainerWidth}px`);
+        //document.documentElement.style.setProperty("--ModifyContainerHeight",`${ModifyContainerHeight}px`);
+        //ButtonContainerの最終的なサイズを決定する
+        const MaskButtonContainerGridGap=3;
+        const MaskButtonContaineWidth=LegendContainerWidth+ModifyContainerWidth+MaskButtonContainerGridGap;
+        const MaskButtonContainerHeight=Math.max(LegendContainerHeight,ModifyContainerHeight*2+MaskButtonContainerGridGap);
+        console.log("MaskButtonContainerSize",MaskButtonContaineWidth,MaskButtonContainerHeight);
+        document.documentElement.style.setProperty("--MaskButtonContainerGridGap",`${MaskButtonContainerGridGap}px`);
+        document.documentElement.style.setProperty("--MaskButtonContainerWidth",`${MaskButtonContaineWidth}px`);
+        document.documentElement.style.setProperty("--MaskButtonContainerHeight",`${MaskButtonContainerHeight}px`);
+        //MaskModifyControlContainerのサイズを決定する
+        const MaskModifyControlContainerWidth=250;
+        const MaskModifyControlContainerHeight=300;
+        document.documentElement.style.setProperty("--MaskModifyControlContainerWidth",`${MaskModifyControlContainerWidth}px`);
+        document.documentElement.style.setProperty("--MaskModifyControlContainerHeight",`${MaskModifyControlContainerHeight}px`);
+        const BodyGap=5;
+        document.documentElement.style.setProperty("--BodyGap",`${BodyGap}px`);
+        //最終的なコンテンツサイズを決定
+        const WindowContentWidth=MaskButtonContaineWidth+MaskModifyControlContainerWidth+BodyGap;
+        const WindowContentHeight=Math.max(MaskButtonContainerHeight,MaskModifyControlContainerHeight);
+        window.SubWindowResizeAPI(WindowContentWidth,WindowContentHeight);
+        //各入力欄のmin,max,stepの設定
         this.LeftTopXInput.min=0;
         this.LeftTopXInput.max=this.originalimagewidth-1;
         this.LeftTopXInput.step=1;
@@ -61,22 +159,114 @@ class MaskModifingClass{
         this.EndSliceInput.min=0;
         this.EndSliceInput.max=this.originalslidermax;
         this.EndSliceInput.step=1;
-        //ラベリングの入力欄とボタン
-        this.MaskLabelingTextArea=document.getElementById("MaskLabelingTextArea");
-        this.MaskLabelingUpdateButton=document.getElementById("MaskLabelingUpdateButton");
-        this.label=ReceivedDataBody.get("label");
-        //labelarrayの内容をテキストエリアに表示する
-        //console.log(this.label);
-        this.MaskLabelingTextArea.value=this.label.join("\n");
-        this.colornum=this.MaskValues.length;
-        //ラベルの保持が終わってからセレクタ設定する
-        this.setMaskSelecters();
         //メインウィンドウにMultiUseLayerの使用を申請
         this.SendMultiUseLayerSwitching(this.TargetCanvasID,"AreaSelectModeSwitching",true);//ラッパー
         //イベントの登録
         this.ElementsWithEvents=new Map();
+        this.setObserverEvents();
         this.setUserEvents();
         this.setSubWindowCloseEvents();
+    }
+    setObserverEvents(){
+        /*
+        マウスの挙動を監視する
+        監視対象
+        マウスダウン、マウスアップ、マウスムーブ
+        監視範囲
+        body全体
+        マウスダウン時とマウスアップ時に、どのButtonContainer内で発生したか記録する
+        各ButtonContainerに対してマウスが入ったかどうかの監視を行う
+        */
+        this.MouseDowned=false;//マウスがダウンしているかどうか
+        this.DowningMouseButton=false;//マウスダウンしているボタン
+        this.MouseDownAndMoved=false;//マウスがダウンしている状態でマウスを動かしたときにtrueとなる。mausedownでリセット
+        //マウスのbody内の位置情報を保存するMap
+        this.MouseTrack=new Map([
+            ["previouse",new Map()],
+            ["current",new Map()]
+        ]);
+        //これは各ButtonContainerにマウスが入ったかどうかを監視するためのものであり、ButtonContainerにイベントを設定する
+        this.EnteredButtonContainerID=false;//現在マウスが入っているButtonContainerのIDButtonContainer以外はfalseとする
+        const ButtonContainerMouseEnterFunction=(e)=>{
+            this.EnteredButtonContainerID=e.target.id;
+        };
+        const ButtonContainerMouseLeaveFunction=(e)=>{
+            this.EnteredButtonContainerID=false;
+        }
+        for(const [ButtonContainerID,ButtonContainerElement] of this.ButtonContainerMap.entries()){
+            this.EventSetHelper(ButtonContainerElement,"mouseenter",ButtonContainerMouseEnterFunction);
+            this.EventSetHelper(ButtonContainerElement,"mouseleave",ButtonContainerMouseLeaveFunction);
+        }
+        //マウスダウンとマウスアップ時にどのButtonContainerにいたかを記録する
+        this.MouseClickEventInButtonContainer=new Map([
+            ["mousedown",false],
+            ["mouseup",false]
+        ]);
+        this.EventSetHelper(document.body,"mousedown",(e)=>{
+            this.MouseDowned=true;
+            this.DowningMouseButton=e.button;
+            this.MouseClickEventInButtonContainer.set("mousedown",this.EnteredButtonContainerID);
+            this.MouseDownAndMoved=false;
+        });
+        this.EventSetHelper(document.body,"mouseup",(e)=>{
+            this.MouseDowned=false;
+            //this.DowningMouseButton=false;
+            this.MouseClickEventInButtonContainer.set("mouseup",this.EnteredButtonContainerID);
+        });
+        this.EventSetHelper(document.body,"mousemove",(e)=>{
+            //座標を更新
+            const oldpoints=this.MouseTrack.get("previous");
+            const newpoints=this.MouseTrack.get("current");
+            oldpoints.set("x",newpoints.get("x"));
+            oldpoints.set("y",newpoints.get("y"));
+            newpoints.set("x",e.offsetX);//body内の座標
+            newpoints.set("y",e.offsetY);//body内の座標
+            //MouseMovedを更新する
+            if(this.MouseDowned){
+                this.MouseDownAndMoved=true;
+            }
+        });
+    }
+    FlagManager(){
+        
+    }
+    setUserEvents(){
+        /*
+        MaskButton関連のイベント定義
+        */
+        /*
+        mausedown,mausemove,mauseupはbodyに定義する
+        mausedownのときに、e.targetがMaskButtonであればHoldクラスを付与する
+        mauseup時に、e.targetがMaskButtonであればHoldクラスを解除し、現在侵入しているButtonContainerの子要素としてButtonを挿入する
+        mausemove時に、mauseが押下状態、
+        */
+        //各入力欄にイベントを登録する
+        for(const element of [this.LeftTopXInput,this.LeftTopYInput,this.RectangleWidthInput,this.RectangleHeightInput,this.StartSliceInput,this.EndSliceInput]){
+            this.EventSetHelper(element,"keydown",(e)=>{
+                if(e.code==="Enter"){
+                    this.SelectedAreaChange();
+                    //セレクトエリアの変更を通知
+                }
+            });
+            this.EventSetHelper(element,"focus",()=>{
+                element.select();
+            });
+            this.EventSetHelper(element,"blur",()=>{
+                this.SelectedAreaChange();
+            });
+        }
+        this.FromMainProcessToSubFunctions=new Map();
+        const ChangeSelectedAreaFunction=(data)=>{
+            const ReceiveDataBody=data.get("data");
+            const SelectedAreaData=ReceiveDataBody.get("SelectedArea");
+            this.LeftTopXInput.value=SelectedAreaData.get("w0");
+            this.LeftTopYInput.value=SelectedAreaData.get("h0");
+            this.RectangleWidthInput.value=SelectedAreaData.get("width");
+            this.RectangleHeightInput.value=SelectedAreaData.get("height");
+            this.StartSliceInput.value=SelectedAreaData.get("startslice");
+            this.EndSliceInput.value=SelectedAreaData.get("endslice");
+        }
+        this.FromMainProcessToSubFunctions.set("ChangeSelectedArea",ChangeSelectedAreaFunction);
     }
     SendMultiUseLayerSwitching(TargetCanvasID,ModeSwitching,Activate){
         const FromSubToMainProcessData=new Map([
@@ -88,21 +278,7 @@ class MaskModifingClass{
         ]);
         this.PassChangesToMainWindow(FromSubToMainProcessData);
     }
-    setMaskSelecters(){
-        //マスクセレクタを設定する
-        this.MaskASelecter.innerHTML="";
-        this.MaskBSelecter.innerHTML="";
-        for(let i=0;i<this.colornum;i++){
-            const maskvalue=this.MaskValues[i];
-            const label=this.label[i];
-            const optionA=document.createElement("option");
-            optionA.text=`${maskvalue} : ${label}`;
-            optionA.value=maskvalue;
-            const optionB=optionA.cloneNode(true);
-            this.MaskASelecter.appendChild(optionA);
-            this.MaskBSelecter.appendChild(optionB);
-        }
-    }
+    
     SelectedAreaChange(){
         //範囲選択が画像の範囲を超えていないかチェックする
         //チェック順
@@ -141,150 +317,6 @@ class MaskModifingClass{
         //値を確定後、メインウィンドウに通知
         this.SendSelectedArea();
     }
-    
-    setUserEvents(){
-        /*タブボタンの処理*/
-        for(const button of this.TubButtons){
-            this.EventSetHelper(button,"mouseup",(e)=>{
-                if(e.button===0){
-                    //まずは全てのタブボタンからactiveを外す
-                    for(const btn of this.TubButtons){
-                        btn.classList.remove("active");
-                    }
-                    //クリックされたボタンにactiveを付与する
-                    button.classList.add("active");
-                    //クリックされたボタンのdata-target属性を取得する
-                    const targetscreen=button.getAttribute("data-targetscreen");
-                    //全てのScreenから一度displayをnoneにする
-                    const screens=document.getElementsByClassName("Screen");
-                    for(const screen of screens){
-                        screen.style.display="none";
-                    }
-                    //targetscreenと同じidを持つScreenにactiveを付与する
-                    const targetelement=document.getElementById(targetscreen);
-                    if(targetelement){
-                        targetelement.style.display="block";
-                    }
-                }
-            });
-        }
-        this.EventSetHelper(this.MaskASelecterContainer,"wheel",(e)=>{
-            e.preventDefault();
-            e.stopPropagation();
-            const changevalue=Math.sign(e.deltaY);
-            const currentValue=parseInt(this.MaskASelecter.value);
-            const newvalue=(currentValue+changevalue+this.SelecterLength)%this.SelecterLength;
-            this.MaskASelecter.value=newvalue;
-            const changeevent=new Event("change");
-            this.MaskASelecter.dispatchEvent(changeevent);
-        });
-        this.EventSetHelper(this.MaskBSelecterContainer,"wheel",(e)=>{
-            e.preventDefault();
-            e.stopPropagation();
-            const changevalue=Math.sign(e.deltaY);
-            const currentValue=parseInt(this.MaskBSelecter.value);
-            const newvalue=(currentValue+changevalue+this.SelecterLength)%this.SelecterLength;
-            this.MaskBSelecter.value=newvalue;
-            const changeevent=new Event("change");
-            this.MaskBSelecter.dispatchEvent(changeevent);
-        });
-        /*セレクター変化時に色を変更する*/
-        this.EventSetHelper(this.MaskASelecter,"change",(e)=>{
-            if(e.target.value!==""){
-                const selectedValue=parseInt(e.target.value);
-                const r=this.colormap[4*selectedValue+0];
-                const g=this.colormap[4*selectedValue+1];
-                const b=this.colormap[4*selectedValue+2];
-                //const a=this.colormap[4*selectedValue+3]/255;
-                //console.log(selectedValue,r,g,b);
-                this.MaskALabel.style.backgroundColor=`rgba(${r},${g},${b},1.0)`;
-            }
-        });
-        this.EventSetHelper(this.MaskBSelecter,"change",(e)=>{
-            if(e.target.value!==""){
-                const selectedValue=parseInt(e.target.value);
-                const r=this.colormap[4*selectedValue+0];
-                const g=this.colormap[4*selectedValue+1];
-                const b=this.colormap[4*selectedValue+2];
-                //const a=this.colormap[4*selectedValue+3]/255;
-                //console.log(selectedValue,r,g,b,a);
-                this.MaskBLabel.style.backgroundColor=`rgba(${r},${g},${b},1.0)`;
-            }
-        });
-        /*セレクターの初期値を設定する*/
-        this.MaskASelecter.value=this.MaskValues[0];
-        this.MaskBSelecter.value=this.MaskValues[0];
-        //changeイベントを発火させる
-        let changeevent=new Event("change");
-        this.MaskASelecter.dispatchEvent(changeevent);
-        this.MaskBSelecter.dispatchEvent(changeevent);
-
-        this.EventSetHelper(this.SwapButton,"mouseup",(e)=>{
-            if(e.button===0){
-                //左クリックのとき
-                const temp=this.MaskASelecter.value;
-                this.MaskASelecter.value=this.MaskBSelecter.value;
-                this.MaskBSelecter.value=temp;
-                //changeイベントを発火させる
-                const changeevent=new Event("change");
-                this.MaskASelecter.dispatchEvent(changeevent);
-                this.MaskBSelecter.dispatchEvent(changeevent);
-            }
-        });
-        for(const element of [this.LeftTopXInput,this.LeftTopYInput,this.RectangleWidthInput,this.RectangleHeightInput,this.StartSliceInput,this.EndSliceInput]){
-            this.EventSetHelper(element,"keydown",(e)=>{
-                if(e.code==="Enter"){
-                    this.SelectedAreaChange();
-                    //セレクトエリアの変更を通知
-                }
-            });
-            this.EventSetHelper(element,"focus",()=>{
-                element.select();
-            });
-            this.EventSetHelper(element,"blur",()=>{
-                this.SelectedAreaChange();
-            });
-        }
-        this.FromMainProcessToSubFunctions=new Map();
-        const ChangeSelectedAreaFunction=(data)=>{
-            const ReceiveDataBody=data.get("data");
-            const SelectedAreaData=ReceiveDataBody.get("SelectedArea");
-            this.LeftTopXInput.value=SelectedAreaData.get("w0");
-            this.LeftTopYInput.value=SelectedAreaData.get("h0");
-            this.RectangleWidthInput.value=SelectedAreaData.get("width");
-            this.RectangleHeightInput.value=SelectedAreaData.get("height");
-            this.StartSliceInput.value=SelectedAreaData.get("startslice");
-            this.EndSliceInput.value=SelectedAreaData.get("endslice");
-        }
-        this.FromMainProcessToSubFunctions.set("ChangeSelectedArea",ChangeSelectedAreaFunction);
-        //確定ボタンの処理
-        this.EventSetHelper(this.MaskModifyConfirmButton,"mouseup",(e)=>{
-            if(e.button===0){
-                //左クリックのとき
-                this.SendMaskChange();
-            }
-        });
-
-        //複数行入力からラベルネームを取得してラベルを更新する
-        this.EventSetHelper(this.MaskLabelingUpdateButton,"mouseup",(e)=>{
-            if(e.button==0){//左クリックが押されたら
-                console.log("押されたよ");
-                const newlabels=this.MaskLabelingTextArea.value.split("\n").filter(line=>line.trim()!=="");
-                //console.log(newlabel);
-                //入力の長さがラベル長より短い場合、ある分だけ入れて他はそのまま
-                //入力の長さがラベルより長い場合、入るところまで入れて後は捨てる
-                for(let i=0;i<this.colornum;i++){
-                    const newlabel=newlabels[i];
-                    console.log(newlabel);
-                    this.label[i]=newlabel||this.label[i];
-                }
-                //新しいラベルでセレクタ再構成
-                this.setMaskSelecters();
-                //新しいラベルをcolormapに通知する
-                this.SendMaskLabelChange();
-            }
-        });
-    }
     SendSelectedArea(){//ラッパー
         //範囲選択の変更をメインウィンドウに通知する
         const SelectedArea=new Map([
@@ -309,7 +341,7 @@ class MaskModifingClass{
         const FromSubToMainProcessData=new Map([
             ["action","ChangeSelectedArea"],
             ["data",data]
-        ]) 
+        ]);
         this.PassChangesToMainWindow(FromSubToMainProcessData);
     }
     SendMaskChange(){//ラッパー
@@ -324,8 +356,7 @@ class MaskModifingClass{
             ["startslice",parseInt(this.StartSliceInput.value)],
             ["endslice",parseInt(this.EndSliceInput.value)],
             //変更対象も送る
-            ["MaskA",parseInt(this.MaskASelecter.value)],
-            ["MaskB",parseInt(this.MaskBSelecter.value)],
+            
         ]);
         const data=new Map([
             ["MaskChangeData",MaskChangeData],
