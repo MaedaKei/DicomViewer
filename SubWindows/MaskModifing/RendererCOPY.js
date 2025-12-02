@@ -141,8 +141,6 @@ class MaskModifingClass{
         const WindowContentWidth=MaskButtonContaineWidth+MaskModifyControlContainerWidth+BodyGap;
         const WindowContentHeight=Math.max(MaskButtonContainerHeight,MaskModifyControlContainerHeight);
         window.SubWindowResizeAPI(WindowContentWidth,WindowContentHeight);
-        this.ButtonHeight=ButtonHeight;
-        this.ButtonGap=ModifyContainerGridGap;
         //各入力欄のmin,max,stepの設定
         this.LeftTopXInput.min=0;
         this.LeftTopXInput.max=this.originalimagewidth-1;
@@ -214,7 +212,7 @@ class MaskModifingClass{
             ["mouseup",false]
         ]);
         this.MaskButtonClicked=false;
-        this.EventSetHelper(document,"mousedown",(e)=>{
+        this.EventSetHelper(document.body,"mousedown",(e)=>{
             this.MouseDowned=true;
             this.DowningMouseButton=e.button;
             this.ButtonContainerWhenMouseClicked.set("mousedown",this.EnteredButtonContainerID);
@@ -229,16 +227,16 @@ class MaskModifingClass{
             */
             this.FlagManager();
         });
-        this.EventSetHelper(document,"mousemove",(e)=>{
+        this.EventSetHelper(document.body,"mousemove",(e)=>{
             //座標を更新
             const oldpoints=this.MouseTrack.get("previous");
             const newpoints=this.MouseTrack.get("current");
             oldpoints.set("x",newpoints.get("x"));
             oldpoints.set("y",newpoints.get("y"));
-            newpoints.set("x",e.clientX);//body内の座標
-            newpoints.set("y",e.clientY);//body内の座標
+            newpoints.set("x",e.offsetX);//body内の座標
+            newpoints.set("y",e.offsetY);//body内の座標
         });
-        this.EventSetHelper(document,"mouseup",(e)=>{
+        this.EventSetHelper(document.body,"mouseup",(e)=>{
             this.MouseDowned=false;
             //this.DowningMouseButton=false;
             this.ButtonContainerWhenMouseClicked.set("mouseup",this.EnteredButtonContainerID);
@@ -250,7 +248,7 @@ class MaskModifingClass{
         /*
         MaskButton関連のイベント定義
         */
-        if(this.ButtonContainerWhenMouseClicked.get("mousedown")){//どこかのButtonContainerに入っている
+        if(this.DowningMouseButton===0&&this.EnteredButtonContainerID){//どこかのButtonContainerに入っている
             this.MaskButtonOperationFlag=true;
         }else{
             this.MaskButtonOperationFlag=false;
@@ -261,122 +259,36 @@ class MaskModifingClass{
         MaskButton関連のイベント定義
         */
         this.MaskButtonOperationFlag=false;
-        this.MovingButtonArray=[];//Elementそのものを入れる
-        this.MaskButtonMouseDowned=false;
-        this.EventSetHelper(document,"mousedown",(e)=>{
+        this.MaskButtonHold=new Map([
+            ["HoldFlag",false],
+            ["HolddedButtonValueArray",[]],//Number型のリスト
+        ]);
+        this.MaskButtonOperationFlag=false;
+        this.EventSetHelper(document.body,"mousedown",(e)=>{
             //bodyに対して設定する。ユーザーがbuttoncontainer内でのみマウスイベントを発生させるとは限らないから
-            if(e.button===0&&this.MaskButtonOperationFlag){//どこかのButtonContainerでマウスダウンを行ったなら
+            if(e.button===0&&this.ButtonContainerWhenMouseClicked.get("mousedown")){//どこかのButtonContainerでマウスダウンを行ったなら
+                console.log(this.ButtonContainerWhenMouseClicked.get("mousedown"),"でマウスが押された");
                 const TargetButton=e.target.closest("button.MaskButton");//ここは、MaskButtonをクリックするか、Containerの余白をクリックするかわからない
                 if(TargetButton){
                     //マウスのクリックor移動イベントがスタートする
-                    this.MaskButtonMouseDowned=true;
-                    //マウスダウン対象ボタンにはMouseDownedクラスを付与する。これはmousemove時、またはmouseup時に解除される
-                    TargetButton.classList.add("MouseDowned");
+                    this.MaskButtonEventActivateFlag
                 }else{
-                    this.MaskButtonMouseDowned=false;
+                    console.log("余白がクリックされました");
                 }
+            }else{
+                console.log("ButtonContainer外でマウスが押された");
             }
         });
-        this.MaskButtonMoved=false;
-        this.EventSetHelper(document,"mousemove",(e)=>{
-            if(this.MaskButtonMouseDowned){//MaskButtonOperationFlagが有効、かつMaskButton上でマウスダウンが発生してあとのmousemoveなら
-                /*
-                2つの動きがある
-                MaskButtonMouseDownedの後はじめてのmousemoveのとき
-                対象となるButtonを移動用Mapに登録⇒ButtonContainerからbodyの子要素に変更⇒マウスの位置に従って表示変更
-                */
-                if(this.MovingButtonArray.length===0){//まだ何も入っていない＝MouseDownedされて初めてのMouseMove
-                    //移動対象となるのは、MouseDownもしくはSelectedクラスがついているMaskButtonである。
-                    //console.log("mousemoveしたよ");
-                    const TargetButtonContainer=this.ButtonContainerMap.get(this.ButtonContainerWhenMouseClicked.get("mousedown"));
-                    const MoveTargetMaskButtonArray=TargetButtonContainer.querySelectorAll(":scope>button.MaskButton.MouseDowned, :scope>button.MaskButton.Selected");
-                    const BodyFragment=document.createDocumentFragment();
-                    for(const MoveTargetMaskButton of MoveTargetMaskButtonArray){
-                        this.MovingButtonArray.push(MoveTargetMaskButton);  
-                        BodyFragment.appendChild(MoveTargetMaskButton);
-                    }
-                    document.body.appendChild(BodyFragment);
-                }
-                console.log("動いてる");
-                //this.movingButtonArray内のボタンの表示位置を変更する
-                const CurrentMousePosition=this.MouseTrack.get("current");
-                const x=CurrentMousePosition.get("x");
-                const y=CurrentMousePosition.get("y");
-                const OffsetYBase=this.ButtonHeight+this.ButtonGap;
-                this.MovingButtonArray.forEach((Button,index)=>{
-                    const OffsetX=`${x+5}px`;
-                    const OffsetY=`${y+index*OffsetYBase}px`;
-                    Button.style.left=OffsetX;
-                    Button.style.top=OffsetY;
-                    //Button.style.zIndex=10;
-                    //console.log("z-index",Button.style.zIndex);
-                });
-                this.MaskButtonMoved=true;
-            }else{
-                this.MaskButtonMoved=false;
-            }
+        this.EventSetHelper(document.body,"mousemove",(e)=>{
+
         });
         //マウスムーブとマウスアップは、なにかしらのボタンをholdしていないなら発生させなくてもいい
         //マウスアップは、ButtonContainer外でボタンを離したときように発生させる必要がある。
-        this.EventSetHelper(document,"mouseup",(e)=>{
-            //MaskButtonOperationFlagは、マウスダウンがButtonContainer内で起こったときにtrueとなる
-            //つまり、どの場所でmouseupが発生したかわからないが、MaskButtonOperationの後始末をする必要がある。
-            if(e.button===0&&this.MaskButtonOperationFlag){
-                /*
-                行う処理
-                Selectの全解除⇒MaskButtonMouseDowned=false,　MouseMove=false,　mousedown時のButtonContainerが対象となる。
-                Selectの切り替え⇒MaskButtonMouseDowned=true,　MouseMove=false,　mousedown時のButtonContainerが対象となる。
-                MaskButtonの移動のリセット⇒MaskButtonMouseDowned=true,　MauseMove=true,　mouseup時にButtonContainerにいなかった場合、LegendContainerに移動中のMaskButtonを戻す
-                MaskButtonの移動⇒MaskButtonMouseDowned=true,　MauseMove=true,　mouseup時にButtonContainerにいた場合、mouseup時のButtonContainer内のButtonの上で発生したか否かでかわる
-                */  
-                if(this.MaskButtonMoved){
-                    if(this.ButtonContainerWhenMouseClicked.has("mouseup")){
-                        console.log(this.ButtonContainerWhenMouseClicked.get("mouseup"));
-                        const TargetButtonContainerKey=this.ButtonContainerWhenMouseClicked.get("mouseup");
-                        const TargetButtonContainer=this.ButtonContainerMap.get(TargetButtonContainerKey);
-                        const TargetButtonContainerFragment=document.createDocumentFragment();
-                        for(const Button of this.MovingButtonArray){
-                            Button.classList.remove("Selected","MouseDowned");
-                            TargetButtonContainerFragment.appendChild(Button);
-                        }
-                        TargetButtonContainer.appendChild(TargetButtonContainerFragment);
-                    }else{
-                        //LegendContainerに移動させる
-                        const TargetButtonContainer=this.ButtonContainerMap.get("MaskLegendButtonContainer");
-                        const TargetButtonContainerFragment=document.createDocumentFragment();
-                        for(const Button of this.MovingButtonArray){
-                            Button.classList.remove("Selected","MouseDowned");
-                            TargetButtonContainerFragment.appendChild(Button);
-                        }
-                        TargetButtonContainer.appendChild(TargetButtonContainerFragment);
-                    }
-                }else{
-                    /*
-                    Selectクラスの切り替えモード
-                    */
-                    const SelectedClass="Selected";
-                    if(this.MaskButtonMouseDowned){
-                        //個別の切り替え
-                        const ClickedButton=e.target.closest("button.MaskButton");
-                        if(ClickedButton){
-                            if(ClickedButton.classList.contains(SelectedClass)){
-                                ClickedButton.classList.remove(SelectedClass);
-                            }else{
-                                ClickedButton.classList.add(SelectedClass);
-                            }
-                        }
-                    }else{
-                        //MouseDown時のButtonContainer内のMaskButtonのSelectedクラスを消す
-                        const TargetButtonContainerKey=this.ButtonContainerWhenMouseClicked.get("mousedown");
-                        const TargetButtonContainer=this.ButtonContainerMap.get(TargetButtonContainerKey);
-                        for(const MaskButton of TargetButtonContainer.children){
-                            console.log(MaskButton);
-                            MaskButton.classList.remove(SelectedClass);
-                        }
-                    }
-                }
-                this.MaskButtonMoved=false;
-                this.MaskButtonMouseDowned=false;
+        this.EventSetHelper(document.body,"mouseup",(e)=>{
+            if(this.ButtonContainerWhenMouseClicked.get("mouseup")){//どこかのButtonContainerでマウスアップが行われた
+                console.log(this.ButtonContainerWhenMouseClicked.get("mouseup"),"でマウスが離された");
+            }else{
+                console.log("ButtonContainer外でマウスが離された");
             }
         });
         /*
