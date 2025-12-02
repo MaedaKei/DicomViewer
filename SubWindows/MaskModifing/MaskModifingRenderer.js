@@ -198,12 +198,12 @@ class MaskModifingClass{
         this.EnteredButtonContainerID=false;//現在マウスが入っているButtonContainerのIDButtonContainer以外はfalseとする
         const ButtonContainerMouseEnterFunction=(e)=>{
             this.EnteredButtonContainerID=e.target.id;
-            e.target.classList.add("Entered");
+            //e.target.classList.add("Entered");
             //this.FlagManager();
         };
         const ButtonContainerMouseLeaveFunction=(e)=>{
             this.EnteredButtonContainerID=false;
-            e.target.classList.remove("Entered");
+            //e.target.classList.remove("Entered");
             //this.FlagManager();
         }
         for(const [ButtonContainerID,ButtonContainerElement] of this.ButtonContainerMap.entries()){
@@ -269,6 +269,9 @@ class MaskModifingClass{
         this.MaskButtonOperationFlag=false;
         this.MovingButtonArray=[];//Elementそのものを入れる
         this.MaskButtonMouseDowned=false;
+        const dammyButton=document.createElement("button");
+        dammyButton.classList="DammyButton";
+        this.dammyButton=dammyButton;
         this.EventSetHelper(document,"mousedown",(e)=>{
             //bodyに対して設定する。ユーザーがbuttoncontainer内でのみマウスイベントを発生させるとは限らないから
             if(e.button===0&&this.MaskButtonOperationFlag){//どこかのButtonContainerでマウスダウンを行ったなら
@@ -308,7 +311,7 @@ class MaskModifingClass{
                 const CurrentMousePosition=this.MouseTrack.get("current");
                 const x=CurrentMousePosition.get("x");
                 const y=CurrentMousePosition.get("y");
-                const OffsetYBase=this.ButtonHeight+this.ButtonGap;
+                const OffsetYBase=this.ButtonHeight/*+this.ButtonGap*/;
                 this.MovingButtonArray.forEach((Button,index)=>{
                     const OffsetX=`${x+5}px`;
                     const OffsetY=`${y+index*OffsetYBase}px`;
@@ -322,6 +325,31 @@ class MaskModifingClass{
                 this.MaskButtonMoved=false;
             }
         });
+        //各ButtonContainerにイベント登録
+        const ButtonContainerAndMaskButtonMouseOverFunction=(e)=>{
+            if(this.MaskButtonMoved){
+                const MouseOverOriginalTarget=e.target;
+                if(MouseOverOriginalTarget!==this.dammyButton){
+                    const MouseOverTarget=MouseOverOriginalTarget.closest("button.MaskButton");
+                    //ターゲットがボタンなら
+                    if(MouseOverTarget){
+                        //ターゲットボタンの前にdammyButtonを挿入
+                        const TargetButtonContainer=MouseOverTarget.parentElement;
+                        TargetButtonContainer.insertBefore(this.dammyButton,MouseOverTarget);
+                        //this.dammyButton.display="";
+                        console.log("挿入した");
+                    }else{
+                        //余白だった
+                        const TargetButtonContainer=MouseOverOriginalTarget;
+                        TargetButtonContainer.appendChild(this.dammyButton);
+                        //this.dammyButton.display="";
+                    }
+                }
+            }
+        }
+        for(const ButtonContainerElement of this.ButtonContainerMap.values()){
+            this.EventSetHelper(ButtonContainerElement,"mouseover",ButtonContainerAndMaskButtonMouseOverFunction);
+        }
         //マウスムーブとマウスアップは、なにかしらのボタンをholdしていないなら発生させなくてもいい
         //マウスアップは、ButtonContainer外でボタンを離したときように発生させる必要がある。
         this.EventSetHelper(document,"mouseup",(e)=>{
@@ -345,7 +373,10 @@ class MaskModifingClass{
                             Button.classList.remove("Selected","MouseDowned");
                             TargetButtonContainerFragment.appendChild(Button);
                         }
+                        /*
                         TargetButtonContainer.appendChild(TargetButtonContainerFragment);
+                        */
+                        TargetButtonContainer.replaceChild(TargetButtonContainerFragment,this.dammyButton);
                     }else{
                         //LegendContainerに移動させる
                         const TargetButtonContainer=this.ButtonContainerMap.get("MaskLegendButtonContainer");
@@ -355,6 +386,7 @@ class MaskModifingClass{
                             TargetButtonContainerFragment.appendChild(Button);
                         }
                         TargetButtonContainer.appendChild(TargetButtonContainerFragment);
+                        this.dammyButton.remove();
                     }
                 }else{
                     /*
