@@ -198,10 +198,12 @@ class MaskModifingClass{
         this.EnteredButtonContainerID=false;//現在マウスが入っているButtonContainerのIDButtonContainer以外はfalseとする
         const ButtonContainerMouseEnterFunction=(e)=>{
             this.EnteredButtonContainerID=e.target.id;
+            e.target.classList.add("Entered");
             //this.FlagManager();
         };
         const ButtonContainerMouseLeaveFunction=(e)=>{
             this.EnteredButtonContainerID=false;
+            e.target.classList.remove("Entered");
             //this.FlagManager();
         }
         for(const [ButtonContainerID,ButtonContainerElement] of this.ButtonContainerMap.entries()){
@@ -235,8 +237,8 @@ class MaskModifingClass{
             const newpoints=this.MouseTrack.get("current");
             oldpoints.set("x",newpoints.get("x"));
             oldpoints.set("y",newpoints.get("y"));
-            newpoints.set("x",e.clientX);//body内の座標
-            newpoints.set("y",e.clientY);//body内の座標
+            newpoints.set("x",e.pageX);//body内の座標
+            newpoints.set("y",e.pageY);//body内の座標
         });
         this.EventSetHelper(document,"mouseup",(e)=>{
             this.MouseDowned=false;
@@ -252,8 +254,12 @@ class MaskModifingClass{
         */
         if(this.ButtonContainerWhenMouseClicked.get("mousedown")){//どこかのButtonContainerに入っている
             this.MaskButtonOperationFlag=true;
+            this.LabelNameModifyFlag=false;
+            this.MaskModifyFlag=false;
         }else{
             this.MaskButtonOperationFlag=false;
+            this.LabelNameModifyFlag=true;
+            this.MaskModifyFlag=true;
         }
     }
     setUserEvents(){
@@ -297,7 +303,7 @@ class MaskModifingClass{
                     }
                     document.body.appendChild(BodyFragment);
                 }
-                console.log("動いてる");
+                //console.log("動いてる");
                 //this.movingButtonArray内のボタンの表示位置を変更する
                 const CurrentMousePosition=this.MouseTrack.get("current");
                 const x=CurrentMousePosition.get("x");
@@ -330,7 +336,7 @@ class MaskModifingClass{
                 MaskButtonの移動⇒MaskButtonMouseDowned=true,　MauseMove=true,　mouseup時にButtonContainerにいた場合、mouseup時のButtonContainer内のButtonの上で発生したか否かでかわる
                 */  
                 if(this.MaskButtonMoved){
-                    if(this.ButtonContainerWhenMouseClicked.has("mouseup")){
+                    if(this.ButtonContainerWhenMouseClicked.get("mouseup")){
                         console.log(this.ButtonContainerWhenMouseClicked.get("mouseup"));
                         const TargetButtonContainerKey=this.ButtonContainerWhenMouseClicked.get("mouseup");
                         const TargetButtonContainer=this.ButtonContainerMap.get(TargetButtonContainerKey);
@@ -377,6 +383,7 @@ class MaskModifingClass{
                 }
                 this.MaskButtonMoved=false;
                 this.MaskButtonMouseDowned=false;
+                this.MovingButtonArray=[];
             }
         });
         /*
