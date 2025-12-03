@@ -96,7 +96,7 @@ class MaskModifingClass{
         }
         console.log("button生成終了");
         this.ButtonContainerMap.get("MaskLegendButtonContainer").appendChild(MaskLegendButtonContainerFragment);
-        this.LabelNameChangeDialog.appendChild(LabelNameChangeInputContainerFragment);
+        this.LabelNameChangeInputContainer.appendChild(LabelNameChangeInputContainerFragment);
         const ButtonFontSize=15;
         const ButtonHeight=ButtonFontSize+7;//px
         const MaskLabelTextSideMargin=5;//px
@@ -160,14 +160,17 @@ class MaskModifingClass{
         const WindowContentHeight=Math.max(MaskButtonContainerHeight,MaskModifyControlContainerHeight);
         window.SubWindowResizeAPI(WindowContentWidth,WindowContentHeight);
         /*Dialogの画面サイズを決定*/
-        const InputHeight=ButtonHeight;
-        const InputWidth=(InputHeight+MaskLabelTextSideMargin)+150;
-        const LabelNameChangeButtonContainerHeight=40;
+        const InputFontSize=12;
+        const InputHeight=InputFontSize+5;
+        const InputWidth=InputHeight+120;//正方形のカラーボックスと入力部分
+        const LabelNameChangeButtonContainerHeight=30;
         const LabelNameChangeInputContainerGridRowsNum=Math.min(20,this.MaskKindNum);
         const LabelNameChangeInputContainerGridColumnsNum=Math.ceil(this.MaskKindNum/20);
         const LabelNameChangeInputContainerGridGap=1;
         const LabelNameChangeInputContainerWidth=(InputWidth+LabelNameChangeInputContainerGridGap)*LabelNameChangeInputContainerGridColumnsNum-LabelNameChangeInputContainerGridGap;
         const LabelNameChangeInputContainerHeight=(InputHeight+LabelNameChangeInputContainerGridGap)*LabelNameChangeInputContainerGridRowsNum-LabelNameChangeInputContainerGridGap;
+        document.documentElement.style.setProperty("--InputWidth",`${InputWidth}px`);
+        document.documentElement.style.setProperty("--InputHeight",`${InputHeight}px`);
         document.documentElement.style.setProperty("--LabelNameChangeInputContainerWidth",`${LabelNameChangeInputContainerWidth}px`);
         document.documentElement.style.setProperty("--LabelNameChangeInputContainerHeight",`${LabelNameChangeInputContainerHeight}px`);
         document.documentElement.style.setProperty("--LabelNameChangeButtonContainerHeight",`${LabelNameChangeButtonContainerHeight}px`);
@@ -514,7 +517,43 @@ class MaskModifingClass{
         this.LabelNameModifyFlag=true;
         this.EventSetHelper(this.LabelNameChangeDialogOpenButton,"mouseup",(e)=>{
             if(this.LabelNameModifyFlag&&e.button===0){
-                console.log("MaskChangeDialogオープン");
+                this.LabelNameChangeDialog.showModal();
+            }
+        });
+        this.EventSetHelper(this.LabelNameChangeCancelButton,"mouseup",(e)=>{
+            if(this.LabelNameModifyFlag&&e.button===0){
+                this.LabelNameChangeDialog.close();
+            }
+        });
+        this.EventSetHelper(this.LabelNameChangeCancelButton,"keydown",(e)=>{
+            if(this.LabelNameModifyFlag&&e.code==="Enter"){
+                this.LabelNameChangeDialog.close();
+            }
+        });
+        const LabelNameChangeFunction=()=>{
+            //各Inputのvalueを集計
+            for(const [MaskValue,MaskInfo] of this.MaskInfoMap.entries()){
+                const TextInput=MaskInfo.get("TextInput")
+                const NewLabel=TextInput.value;
+                //console.log(MaskValue,NewLabel);
+                if(NewLabel!==""){
+                    MaskInfo.set("MaskLabel",NewLabel);
+                    const ButtonElement=MaskInfo.get("ButtonElement");
+                    const MaskLabelSpan=ButtonElement.querySelector(":scope>span.MaskLabelSpan");
+                    MaskLabelSpan.textContent=NewLabel;
+                    //placeholderを変更
+                    TextInput.placeholder=NewLabel;
+                }
+            }
+        }
+        this.EventSetHelper(this.LabelNameChangeConfirmButton,"mouseup",(e)=>{
+            if(this.LabelNameModifyFlag&&e.button===0){
+                LabelNameChangeFunction();
+            }
+        });
+        this.EventSetHelper(this.LabelNameChangeConfirmButton,"keydown",(e)=>{
+            if(this.LabelNameModifyFlag&&e.code==="Enter"){
+                LabelNameChangeFunction();
             }
         });
         this.MaskModifyFlag=true;
