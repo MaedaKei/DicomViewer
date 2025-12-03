@@ -72,8 +72,8 @@ class MaskModifingClass{
             MaskButtonFragment.appendChild(MaskSelectedSpan);
             MaskButton.appendChild(MaskButtonFragment);
             MaskLegendButtonContainerFragment.appendChild(MaskButton);
-            this.MaskButtonMap.set(MaskValue,new Map([
-                ["MaskValue",MaskValue],//ラベル名は変わる可能性があるので、不変であるマスク値をキーとする
+            this.MaskButtonMap.set(MaskValue,new Map([//ラベル名は変わる可能性があるので、不変であるマスク値をキーとする
+                ["LabelName",MaskValue],
                 ["ButtonElement",MaskButton]
             ]));
         }
@@ -347,8 +347,15 @@ class MaskModifingClass{
                 }
             }
         }
+        const ButtonContainerLeaveFunction=(e)=>{
+            //ButtonContainerからはなれたらdammyButtonは削除する
+            if(this.MaskButtonMoved){
+                this.dammyButton.remove();
+            }
+        }
         for(const ButtonContainerElement of this.ButtonContainerMap.values()){
             this.EventSetHelper(ButtonContainerElement,"mouseover",ButtonContainerAndMaskButtonMouseOverFunction);
+            this.EventSetHelper(ButtonContainerElement,"mouseleave",ButtonContainerLeaveFunction);
         }
         //マウスムーブとマウスアップは、なにかしらのボタンをholdしていないなら発生させなくてもいい
         //マウスアップは、ButtonContainer外でボタンを離したときように発生させる必要がある。
@@ -378,7 +385,6 @@ class MaskModifingClass{
                         */
                         TargetButtonContainer.replaceChild(TargetButtonContainerFragment,this.dammyButton);
                     }else{
-                        //LegendContainerに移動させる
                         const TargetButtonContainer=this.ButtonContainerMap.get("MaskLegendButtonContainer");
                         const TargetButtonContainerFragment=document.createDocumentFragment();
                         for(const Button of this.MovingButtonArray){
@@ -386,7 +392,7 @@ class MaskModifingClass{
                             TargetButtonContainerFragment.appendChild(Button);
                         }
                         TargetButtonContainer.appendChild(TargetButtonContainerFragment);
-                        this.dammyButton.remove();
+                        //this.dammyButton.remove();
                     }
                 }else{
                     /*
@@ -408,7 +414,7 @@ class MaskModifingClass{
                         const TargetButtonContainerKey=this.ButtonContainerWhenMouseClicked.get("mousedown");
                         const TargetButtonContainer=this.ButtonContainerMap.get(TargetButtonContainerKey);
                         for(const MaskButton of TargetButtonContainer.children){
-                            console.log(MaskButton);
+                            //console.log(MaskButton);
                             MaskButton.classList.remove(SelectedClass);
                         }
                     }
