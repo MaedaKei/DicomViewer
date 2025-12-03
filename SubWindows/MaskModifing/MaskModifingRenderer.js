@@ -201,7 +201,12 @@ class MaskModifingClass{
         this.EndSliceInput.max=this.originalslidermax;
         this.EndSliceInput.step=1;
         //メインウィンドウにMultiUseLayerの使用を申請
-        this.SendMultiUseLayerSwitching(this.TargetCanvasID,"AreaSelectModeSwitching",true);//ラッパー
+        this.SwitchedMode=["AreaSelectModeSwitching","MASKClickModeSwitching"];
+        for(const Mode of this.SwitchedMode){
+            this.SendMultiUseLayerSwitching(this.TargetCanvasID,Mode,true);
+        }
+        //this.SendMultiUseLayerSwitching(this.TargetCanvasID,"AreaSelectModeSwitching",true);//ラッパー
+        //this.SendMultiUseLayerSwitching(this.TargetCanvasID,"MASKClickModeSwitching",true);
         //イベントの登録
         this.ElementsWithEvents=new Map();
         this.setObserverEvents();
@@ -452,18 +457,22 @@ class MaskModifingClass{
                     /*
                     Selectクラスの切り替えモード
                     */
-                    const SelectedClass="Selected";
+                    //const SelectedClass="Selected";
                     if(this.MaskButtonMouseDowned){
                         //個別の切り替え
                         const ClickedButton=e.target.closest("button.MaskButton");
-                        ClickedButton.classList.remove("MouseDowned");
                         if(ClickedButton){
+                            /*画像のクリックからのSelect切り替えでも一応MouseDownedを削除する*/
+                            /*
+                            ClickedButton.classList.remove("MouseDowned");
                             if(ClickedButton.classList.contains(SelectedClass)){
                                 ClickedButton.classList.remove(SelectedClass);
                                 console.log(ClickedButton.value,SelectedClass,"削除した");
                             }else{
                                 ClickedButton.classList.add(SelectedClass);
                             }
+                            */
+                            this.ChangeMASKSelect(ClickedButton);
                         }
                     }else{
                         //MouseDown時のButtonContainer内のMaskButtonのSelectedクラスを消す
@@ -471,7 +480,7 @@ class MaskModifingClass{
                         const TargetButtonContainer=this.ButtonContainerMap.get(TargetButtonContainerKey);
                         for(const MaskButton of TargetButtonContainer.children){
                             //console.log(MaskButton);
-                            MaskButton.classList.remove(SelectedClass);
+                            MaskButton.classList.remove("Selected");
                         }
                     }
                 }
@@ -530,45 +539,25 @@ class MaskModifingClass{
                 this.LabelNameChangeDialog.close();
             }
         });
-        const LabelNameChangeFunction=()=>{
-            //各Inputのvalueを集計
-            for(const [MaskValue,MaskInfo] of this.MaskInfoMap.entries()){
-                const TextInput=MaskInfo.get("TextInput")
-                const NewLabel=TextInput.value;
-                //console.log(MaskValue,NewLabel);
-                if(NewLabel!==""){
-                    MaskInfo.set("MaskLabel",NewLabel);
-                    const ButtonElement=MaskInfo.get("ButtonElement");
-                    const MaskLabelSpan=ButtonElement.querySelector(":scope>span.MaskLabelSpan");
-                    MaskLabelSpan.textContent=NewLabel;
-                    //placeholderを変更
-                    TextInput.placeholder=NewLabel;
-                }
-            }
-        }
         this.EventSetHelper(this.LabelNameChangeConfirmButton,"mouseup",(e)=>{
             if(this.LabelNameModifyFlag&&e.button===0){
-                LabelNameChangeFunction();
+                this.LabelNameChangeFunction();
             }
         });
         this.EventSetHelper(this.LabelNameChangeConfirmButton,"keydown",(e)=>{
             if(this.LabelNameModifyFlag&&e.code==="Enter"){
-                LabelNameChangeFunction();
+                this.LabelNameChangeFunction();
             }
         });
         this.MaskModifyFlag=true;
         this.EventSetHelper(this.MaskModifyConfirmButton,"mouseup",(e)=>{
             if(this.MaskModifyFlag&&e.button===0){
-                //個数チェック
-                const MaskModifyBeforeButtonContainer=this.ButtonContainerMap.get("MaskModifyBeforeButtonContainer");
-                const BeforeMaskButtonArray=MaskModifyBeforeButtonContainer.querySelectorAll(":scope>button.MaskButton");
-                const MaskModifyAfterButtonContainer=this.ButtonContainerMap.get("MaskModifyAfterButtonContainer");
-                const AfterMaskButtonArray=MaskModifyAfterButtonContainer.querySelectorAll(":scope>button.MaskButton");
-                if(BeforeMaskButtonArray.length!==AfterMaskButtonArray.length){
-                    alert("変更前と変更後は対応する位置同士で変換が行われるため、同じ数だけ指定されている必要があります。");
-                }else{
-                    
-                }
+                this.SendMaskChange();
+            }
+        });
+        this.EventSetHelper(this.MaskModifyConfirmButton,"keydown",(e)=>{
+            if(this.MaskModifyFlag&&e.code==="Enter"){
+                this.SendMaskChange();
             }
         });
         this.EventSetHelper(this.MaskSelectTradeButton,"mouseup",(e)=>{
@@ -594,13 +583,15 @@ class MaskModifingClass{
                 }
             }
         });
-    }
-    UpdateLabelNameChangeDialogPlaceholder(){
-        for(const MaskInfo of this.MaskInfoMap.values()){
-            const MaskLabel=MaskInfo.get("MaskLabel");
-            const TextInput=MaskInfo.get("TextInput");
-            TextInput.placeholder=MaskLabel;
+        /*(MASKClicked) MainWindowから、MaskClicked通知が送られてくる*/
+        const MASKClickedFunction=(data)=>{
+            const ReceivedDataBody=data.get("data");
+            const ClickedMASKValue=ReceivedDataBody.get("ClickedMASKValue");
+            const TargetButton=this.MaskInfoMap.get(ClickedMASKValue).get("ButtonElement");
+            this.ChangeMASKSelect(TargetButton);
         }
+        this.FromMainProcessToSubFunctions.set("MASKClicked",MASKClickedFunction);
+
     }
     SendMultiUseLayerSwitching(TargetCanvasID,ModeSwitching,Activate){
         const FromSubToMainProcessData=new Map([
@@ -612,7 +603,40 @@ class MaskModifingClass{
         ]);
         this.PassChangesToMainWindow(FromSubToMainProcessData);
     }
-    
+    ChangeMASKSelect(TargetButton){
+        /*画像のクリックからのSelect切り替えでも一応MouseDownedを削除する*/
+        const SelectedClass="Selected";
+        TargetButton.classList.remove("MouseDowned");
+        if(TargetButton.classList.contains(SelectedClass)){
+            TargetButton.classList.remove(SelectedClass);
+            //console.log(TargetButton.value,SelectedClass,"削除した");
+        }else{
+            TargetButton.classList.add(SelectedClass);
+        }
+    }
+    UpdateLabelNameChangeDialogPlaceholder(){
+        for(const MaskInfo of this.MaskInfoMap.values()){
+            const MaskLabel=MaskInfo.get("MaskLabel");
+            const TextInput=MaskInfo.get("TextInput");
+            TextInput.placeholder=MaskLabel;
+        }
+    }
+    ChangeLabelName(){
+        //各Inputのvalueを集計
+        for(const [MaskValue,MaskInfo] of this.MaskInfoMap.entries()){
+            const TextInput=MaskInfo.get("TextInput")
+            const NewLabel=TextInput.value;
+            //console.log(MaskValue,NewLabel);
+            if(NewLabel!==""){
+                MaskInfo.set("MaskLabel",NewLabel);
+                const ButtonElement=MaskInfo.get("ButtonElement");
+                const MaskLabelSpan=ButtonElement.querySelector(":scope>span.MaskLabelSpan");
+                MaskLabelSpan.textContent=NewLabel;
+                //placeholderを変更
+                TextInput.placeholder=NewLabel;
+            }
+        }
+    }
     SelectedAreaChange(){
         //範囲選択が画像の範囲を超えていないかチェックする
         //チェック順
@@ -679,30 +703,50 @@ class MaskModifingClass{
         this.PassChangesToMainWindow(FromSubToMainProcessData);
     }
     SendMaskChange(){//ラッパー
-        //まずは現在の選択範囲を送る
-        this.SelectedAreaChange();
-        //もしかしたら、マスクチェンジの際にメインウィンドウの方の選択領域を変更処理を挟まないようにやってるかも
-        const MaskChangeData=new Map([
-            ["w0",parseInt(this.LeftTopXInput.value)],
-            ["h0",parseInt(this.LeftTopYInput.value)],
-            ["width",parseInt(this.RectangleWidthInput.value)],
-            ["height",parseInt(this.RectangleHeightInput.value)],
-            ["startslice",parseInt(this.StartSliceInput.value)],
-            ["endslice",parseInt(this.EndSliceInput.value)],
-            //変更対象も送る
-            
-        ]);
-        const data=new Map([
-            ["MaskChangeData",MaskChangeData],
-            ["CanvasID",this.TargetCanvasID],
-            ["Layer",this.TargetLayer],
-        ]);
-        //console.log(data);
-        const FromSubToMainProcessData=new Map([
-            ["action","ChangeMask"],
-            ["data",data]
-        ]);
-        this.PassChangesToMainWindow(FromSubToMainProcessData);
+        //個数チェック
+        const MaskModifyBeforeButtonContainer=this.ButtonContainerMap.get("MaskModifyBeforeButtonContainer");
+        const BeforeMaskButtonArray=MaskModifyBeforeButtonContainer.querySelectorAll(":scope>button.MaskButton");
+        const MaskModifyAfterButtonContainer=this.ButtonContainerMap.get("MaskModifyAfterButtonContainer");
+        const AfterMaskButtonArray=MaskModifyAfterButtonContainer.querySelectorAll(":scope>button.MaskButton");
+        if(BeforeMaskButtonArray.length!==AfterMaskButtonArray.length){
+            alert("変更前と変更後は対応する位置同士で変換が行われるため、同じ数だけ指定されている必要があります。");
+        }else{
+            /*
+            変更データの形式
+            {BeforeMaskValue:AfterMaskValue,...,}の形式とする
+            */
+            const ChangeMaskMap=new Map();
+            const ChangeMaskNum=BeforeMaskButtonArray.length;
+            for(let i=0;i<ChangeMaskNum;i++){
+                const BeforeMaskValue=parseInt(BeforeMaskButtonArray[i].value);
+                const AfterMaskValue=parseInt(AfterMaskButtonArray[i].value);
+                ChangeMaskMap.set(BeforeMaskValue,AfterMaskValue);
+            }
+            //まずは現在の選択範囲を送る
+            this.SelectedAreaChange();
+            //もしかしたら、マスクチェンジの際にメインウィンドウの方の選択領域を変更処理を挟まないようにやってるかも
+            const MaskChangeData=new Map([
+                ["w0",parseInt(this.LeftTopXInput.value)],
+                ["h0",parseInt(this.LeftTopYInput.value)],
+                ["width",parseInt(this.RectangleWidthInput.value)],
+                ["height",parseInt(this.RectangleHeightInput.value)],
+                ["startslice",parseInt(this.StartSliceInput.value)],
+                ["endslice",parseInt(this.EndSliceInput.value)],
+                //変更対象も送る
+                ["ChangeMaskMap",ChangeMaskMap]
+            ]);
+            const data=new Map([
+                ["MaskChangeData",MaskChangeData],
+                ["CanvasID",this.TargetCanvasID],
+                ["Layer",this.TargetLayer],
+            ]);
+            //console.log(data);
+            const FromSubToMainProcessData=new Map([
+                ["action","ChangeMask"],
+                ["data",data]
+            ]);
+            this.PassChangesToMainWindow(FromSubToMainProcessData);
+        }
     }
     /*
     SendMaskLabelChange(){
@@ -733,14 +777,26 @@ class MaskModifingClass{
         window.SubWindowMainProcessAPI.CloseSubWindowFromMainProcessToSub((event,ReceiveData)=>{
             //console.log("SubWindow終了準備");
             const ClosingDataList=[];
-            const ClosingData=new Map([
+            /*
+            const AreaSelectModeSwitchingData=new Map([
                 ["action","AreaSelectModeSwitching"],
                 ["data",new Map([
                     ["CanvasID",this.TargetCanvasID],
                     ["Activate",false]
                 ])]
             ]);
-            ClosingDataList.push(ClosingData);
+            ClosingDataList.push(AreaSelectModeSwitchingData);
+            */
+            for(const Mode of this.SwitchedMode){
+                const ModeSwitchingData=new Map([
+                    ["action",Mode],
+                    ["data",new Map([
+                        ["CanvasID",this.TargetCanvasID],
+                        ["Activate",false]
+                    ])]
+                ]);
+                ClosingDataList.push(ModeSwitchingData);
+            }
             window.SubWindowMainProcessAPI.CloseSubWindowFromSubToMainProcess(ClosingDataList);
         });
     }

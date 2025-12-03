@@ -1061,6 +1061,17 @@ class MASKclass{
         //console.log("imageData",imageData);
         return createImageBitmap(imageData);
     }
+    getClickedMASKValue(Z,X,Y){
+        //X,Yは整数じゃないことがほとんどであるため、四捨五入により整数化する
+        const WidthSize=this.width;
+        const HeightSize=this.height;
+        //万が一範囲外の値が渡されたときのための境界処理
+        const IntX=Math.max(0,Math.min(Math.round(X),WidthSize));
+        const IntY=Math.max(0,Math.min(Math.round(Y),HeightSize));
+        const index=Z*WidthSize*HeightSize+IntY*WidthSize+IntX;
+        const ClickedMaskValue=this.ImageVolume[index];
+        return ClickedMaskValue;
+    }
     /*Maskの一部を変更する*/
     ChangeMask(data){
         //console.log("ChangeMask in MASKclass");
@@ -1072,8 +1083,7 @@ class MASKclass{
         const height=ChangeData.get("height");
         const startslice=ChangeData.get("startslice");
         const endslice=ChangeData.get("endslice");
-        const MaskA=ChangeData.get("MaskA");
-        const MaskB=ChangeData.get("MaskB");
+        const ChangeMaskMap=ChangeData.get("ChangeMaskMap");//{BeforeMaskValue:AfterMaskValue,...,}
         //console.log(w0,h0,width,height,startslice,endslice,MaskA,MaskB);
         /*
         slice:startslife~endsliceの範囲
@@ -1093,16 +1103,24 @@ class MASKclass{
                 for(let w=w0;w<w0+width;w++){
                     //index=index*WidthSize+w;
                     index=z*WidthSize*HeightSize+h*WidthSize+w;
+                    /*
                     if(this.ImageVolume[index]==MaskA){
                         //console.log("Change",z,h,w,index);
                         this.ImageVolume[index]=MaskB;
+                        counter++;
+                    }
+                    */
+                    const BeforeMaskValue=this.ImageVolume[index];
+                    if(ChangeMaskMap.has(BeforeMaskValue)){//現在の位置の値が対象として登録されていれば
+                        const AfterMaskValue=ChangeMaskMap.get(BeforeMaskValue);
+                        this.ImageVolume[index]=AfterMaskValue;
                         counter++;
                     }
                 }
             }
         }
         if(counter==0){
-            //console.log(MaskA,"=>",MaskB,"変更箇所なし");
+            console.log(ChangeMaskMap,"変更箇所なし");
         }
     }
 }
@@ -2571,7 +2589,7 @@ class Canvas{
             const DataID=this.LayerDataMap.get(targetLayer).get("DataID");
             const DicomDataInfoMap=DicomDataClassDictionary.get(DataType).get(DataID);
             const DicomDataClass=DicomDataInfoMap.get("Data");
-            //console.log("ChangeMask",DataType,ID);
+            console.log(data);
             DicomDataClass.ChangeMask(data);
             this.DrawStatus.set("regenerate",true);
             this.Layerdraw(targetLayer);
@@ -2678,7 +2696,7 @@ class Canvas{
         //ズームとパンのフラグを分離することでドラッグアンドドロップの検知(マウスが押されたか離れたか)をこちらで行わせる。
         //関数本体を簡素化する目的
         //Zoomの条件がパンよりも緩いかつ、ズームパン状態の同期やリセットの条件はZoom状態の時でいいので、関数本体ではzoomフラグをチェックする
-        if(this.MultiUseLayerModeFlag!=="AreaSelect"&&this.mouseenter&&Controlpressed){
+        if(!this.MultiUseLayerModeFlagSet.has("AreaSelect")&&this.mouseenter&&Controlpressed){
             this.ZoomFlag=true;
             if(this.mouseClicked.get(0)){
                 this.PanFlag=true;
@@ -2698,7 +2716,7 @@ class Canvas{
         //ズームパンとは異なり、ここでマウスが押されているかは条件としない
         //マウスが押されたポイントを始点とする必要があるため、本体の中で定義する
         //Ctrl押してないときのa＆zの押下でZ方向の始点終点の指定
-        if(this.MultiUseLayerModeFlag==="AreaSelect"&&this.mouseenter&&!Controlpressed){
+        if(this.MultiUseLayerModeFlagSet.has("AreaSelect")&&this.mouseenter&&!Controlpressed){
             this.AreaSelectSliceCropFlag=true;
             this.AreaSelectPanFlag=true;
         }else{
@@ -2708,7 +2726,7 @@ class Canvas{
         //Ctrl押しているときのドラッグ&ドロップ⇒選択範囲長方形のパン
         //Ctrl押しているときのホイール⇒選択範囲の拡縮
         //ドラッグ操作があるが、どちらの機能もマウスアップ時に整数に調整させるため、ここではマウス押下を条件に加えない
-        if(this.MultiUseLayerModeFlag==="AreaSelect"&&this.mouseenter&&Controlpressed){
+        if(this.MultiUseLayerModeFlagSet.has("AreaSelect")&&this.mouseenter&&Controlpressed){
             this.AreaSelectDrawRectangleFlag=true;
             this.AreaSelectZoomFlag=true;
         }else{
@@ -2717,13 +2735,19 @@ class Canvas{
         }
         //CONTOURROIClick
         //Ctrl押していないときのクリックでROI内にあるか判定して送信する
-        if(this.MultiUseLayerModeFlag==="CONTOURROIClick"&&this.mouseenter&&!Controlpressed){
+        if(this.MultiUseLayerModeFlagSet.has("CONTOURROIClick")&&this.mouseenter&&!Controlpressed){
             this.CONTOURROIClickFlag=true;
         }else{
             this.CONTOURROIClickFlag=false;
         }
+        //MASKClick
+        //Ctrl押していないときのクリックでマスクValueを送信する
+        if(this.MultiUseLayerModeFlagSet.has("MASKClick")&&this.mouseenter&&!Controlpressed){
+            this.MASKClickFlag=true;
+        }else{
+            this.MASKClickFlag=false;
+        }
     }
-
 
     setObserverEvents(){
         /*イベント関連のフラグ*/
@@ -2834,7 +2858,7 @@ class Canvas{
         //this.setPositionStamp();
         this.setZoomPan();
         /*MultiUseLayerに関する機能*/
-        this.MultiUseLayerModeFlag=false;
+        this.MultiUseLayerModeFlagSet=new Set();
         /*
         イベント発火自体はthis.CanvasBlockに設定すること
         イベント設置要素を一つにまとめた
@@ -2848,9 +2872,10 @@ class Canvas{
         const AreaSelectModeSwitchingFunction=(data)=>{
             const ReceiveDataBody=data.get("data");
             const Activate=ReceiveDataBody.get("Activate");//True or False
+            const ModeFlagName="AreaSelect"
             if(Activate){
                 this.MultiUseLayer.style.display="";
-                this.MultiUseLayerModeFlag="AreaSelect";
+                this.MultiUseLayerModeFlagSet.add(ModeFlagName);
                 //ZoomPan状態のリセット
                 this.DrawStatus.set("w0",0);
                 this.DrawStatus.set("h0",0);
@@ -2861,7 +2886,7 @@ class Canvas{
             }else{
                 //console.log("OPレイヤー終了");
                 this.MultiUseLayer.style.display="none";
-                this.MultiUseLayerModeFlag=false;
+                this.MultiUseLayerModeFlagSet.delete(ModeFlagName);
             }
             //描画状態とActivateは連動する
             this.SelectedAreaStatus.set("drawed",Activate);
@@ -2909,19 +2934,33 @@ class Canvas{
         const CONTOURROIClickModeSwitchingFunction=(data)=>{
             const ReceiveDataBody=data.get("data");
             const Activate=ReceiveDataBody.get("Activate");//True or False
+            const ModeFlagName="CONTOURROIClick";
             if(Activate){
                 //this.MultiUseLayer.style.display="";
                 //console.log("CONTOURROIClick Activate");
-                this.MultiUseLayerModeFlag="CONTOURROIClick";
+                this.MultiUseLayerModeFlagSet.add(ModeFlagName);
             }else{
                 //this.MultiUseLayer.style.display="none";
                 //console.log("CONTOURROIClick Deactivate");
-                this.MultiUseLayerModeFlag=false;
+                this.MultiUseLayerModeFlagSet.delete(ModeFlagName);
             }
             this.FlagManager();
         }
-        this.FromMainProcessToMainFunctions.set("CONTOURROIClickModeSwitchingFunction",CONTOURROIClickModeSwitchingFunction);
+        this.FromMainProcessToMainFunctions.set("CONTOURROIClickModeSwitching",CONTOURROIClickModeSwitchingFunction);
         this.setCONTOURROIClick();
+        const MASKClickModeSwitchingFunction=(data)=>{
+            const ReceiveDataBody=data.get("data");
+            const Activate=ReceiveDataBody.get("Activate");
+            const ModeFlagName="MASKClick";
+            if(Activate){
+                this.MultiUseLayerModeFlagSet.add(ModeFlagName);
+            }else{
+                this.MultiUseLayerModeFlagSet.delete(ModeFlagName);
+            }
+            this.FlagManager();
+        }
+        this.FromMainProcessToMainFunctions.set("MASKClickModeSwitching",MASKClickModeSwitchingFunction);
+        this.setMASKClick();
     }
     setLocalSliceAndAlign(){
         this.LocalSliceAndAlignFlag=false;
@@ -3448,6 +3487,38 @@ class Canvas{
                 this.PassChangesToSubWindow(data);
             }
         })
+    }
+    setMASKClick(){
+        this.MASKClickFlag=false;
+        this.EventSetHelper(this.CanvasBlock,"mouseup",(e)=>{
+            if(this.MASKClickFlag&&this.LayerDataMap.has("MASK")&&e.button===0){
+                //console.log("ROIClicked!!");
+                //現在のZoomPan状態を考慮した画像座標を取得する
+                const newX=this.MouseTrack.get("current").get("x");
+                const newY=this.MouseTrack.get("current").get("y");
+                const rect=this.CanvasBlock.getBoundingClientRect();
+                const currentw0=this.DrawStatus.get("w0");
+                const currenth0=this.DrawStatus.get("h0");
+                const currentwidth=this.DrawStatus.get("width");
+                const currentheight=this.DrawStatus.get("height");
+                const currentIndex=this.DrawStatus.get("index");
+                //現在描画領域を考慮した座標を計算
+                const ClickedPointX=currentwidth*(newX/rect.width)+currentw0;
+                const ClickedPointY=currentheight*(newY/rect.height)+currenth0;
+                //Maskclassに判定依頼、その場所のMaskValueが返ってくる
+                const LayerData=this.LayerDataMap.get("MASK");
+                const TargetDataID=LayerData.get("DataID");
+                const TargetDicomDataClass=DicomDataClassDictionary.get("MASK").get(TargetDataID).get("Data");
+                const ClickedMaskValue=TargetDicomDataClass.getClickedMASKValue(currentIndex,ClickedPointX,ClickedPointY);
+                const data=new Map([
+                    ["action","MASKClicked"],
+                    ["data",new Map([
+                        ["ClickedMASKValue",ClickedMaskValue]
+                    ])]
+                ]);
+                this.PassChangesToSubWindow(data);
+            }
+        });
     }
     //本当は作る必要ないが、複数で全く同じ処理をするのでここに関数として記録しておく
     //確定した選択範囲を様式に沿って構成し、PassChangesToSubを使って送信する
