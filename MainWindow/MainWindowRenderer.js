@@ -592,7 +592,7 @@ class ColorMapforMASK{
         //labelarrayの方が長い場合は、余分な部分は無視する
         //labelarrayの方が短い場合は、残りは数字で埋める
         //上記の処理はサブウィンドウ側が担うのでこちらが気にする必要はない
-        const NewLabel=data.get("data").get("label");
+        const NewLabel=data.get("data").get("MaskLabel");
         this.label=NewLabel;
     }
 }
@@ -2548,7 +2548,7 @@ class Canvas{
                     //修正対象選択用に使う
                     ["histgram",DicomDataClass.histgram],//ヒストグラムのkeys()はイテレータとなっており、これが送れないみたい
                     ["colormap",colormapformask.colormap],//カラーマップの本体だけ送る。クラスインスタンスは構造化オブジェクトじゃないらしいから送れない
-                    ["label",colormapformask.label],
+                    ["MaskLabel",colormapformask.label],
 
                     ["windowsize",windowsize],
                     //["MultiUseLayerMode",MultiUseLayerMode],
@@ -3830,7 +3830,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
             for(let lp=0;lp<this.LP2CanvasID.length;lp++){
                 const r=Math.floor(lp/this.currentColumns)+1;
                 const c=lp%this.currentColumns+1;
-                //const label=document.createElement("label");
+                //const label=document.createElement("MaskLabel");
                 const button=document.createElement("button");
                 button.style.width=`${ButtonSize}px`;
                 button.style.height=`${ButtonSize}px`;

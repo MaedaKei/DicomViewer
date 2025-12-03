@@ -14,6 +14,10 @@ class MaskModifingClass{
         ];
         this.ButtonContainerMap=new Map(ButtonContainerIDArray.map((ButtonContainerID)=>[ButtonContainerID,document.getElementById(ButtonContainerID)]));
         this.LabelNameChangeDialogOpenButton=document.getElementById("LabelNameChangeDialogOpenButton");//ラベル名変更ダイアログオープンボタン
+        this.LabelNameChangeDialog=document.getElementById("LabelNameChangeDialog");
+        this.LabelNameChangeInputContainer=document.getElementById("LabelNameChangeInputContainer");
+        this.LabelNameChangeCancelButton=document.getElementById("LabelNameChangeCancelButton");
+        this.LabelNameChangeConfirmButton=document.getElementById("LabelNameChangeConfirmButton");
         //エリアセレクト用インプット欄
         this.LeftTopXInput=document.getElementById("LeftTopXInput");
         this.LeftTopYInput=document.getElementById("LeftTopYInput");
@@ -39,20 +43,21 @@ class MaskModifingClass{
         //その他の情報の保持
         this.MaskValues=Array.from(ReceivedDataBody.get("histgram").keys());//ヒストグラムの最初の値をマスク値とする
         const colormap=ReceivedDataBody.get("colormap");//ボタンに色情報を付与したらあとは使わない
-        this.label=ReceivedDataBody.get("label");//ラベル情報のArray
+        const MaskLabel=ReceivedDataBody.get("MaskLabel");//ラベル情報のArray
         this.originalimagewidth=ReceivedDataBody.get("originalimagewidth");
         this.originalimageheight=ReceivedDataBody.get("originalimageheight");
         this.originalslidermax=ReceivedDataBody.get("originalslidermax");//スライダーの最小値は0、最大値はこれ
         
         /*MaskLegendButtonContainerにマスクボタンを配置*/
         /*送られてきたマスクの個数を基に画面のサイズを再計算する*/
-        this.MaskButtonMap=new Map();//{maskvalue:{"label":labelName,"ButtonElement":ButtonElement}}
+        this.MaskInfoMap=new Map();//{maskvalue:{"MaskLabel":labelName,"ButtonElement":ButtonElement}}
         this.MaskKindNum=this.MaskValues.length;//マスクの種類数、実際のデータに出現しているマスク値の種類。飛んでいる値もあるかもしれない。colormapとlabelはArrayとなっていて、インデックスがマスク値に対応している。
         const MaskLegendButtonContainerFragment=document.createDocumentFragment();
+        const LabelNameChangeInputContainerFragment=document.createDocumentFragment();
         for(let i=0;i<this.MaskKindNum;i++){
             const MaskValue=this.MaskValues[i];
             const colormapbaseindex=MaskValue*4;//RGBAなので4倍
-            const LabelName=this.label[MaskValue];
+            const LabelName=MaskLabel[MaskValue];
             const MaskButton=document.createElement("button");
             MaskButton.className="MaskButton";
             MaskButton.value=MaskValue;
@@ -72,13 +77,26 @@ class MaskModifingClass{
             MaskButtonFragment.appendChild(MaskSelectedSpan);
             MaskButton.appendChild(MaskButtonFragment);
             MaskLegendButtonContainerFragment.appendChild(MaskButton);
-            this.MaskButtonMap.set(MaskValue,new Map([//ラベル名は変わる可能性があるので、不変であるマスク値をキーとする
-                ["LabelName",MaskValue],
-                ["ButtonElement",MaskButton]
+            //ダイアログを作成
+            const InputBlockDiv=document.createElement("div");
+            const InputColorBoxSpan=ColorBoxSpan.cloneNode(false);
+            const TextInput=document.createElement("input");
+            TextInput.type="text";
+            const InputBlockDivFragment=document.createDocumentFragment();
+            InputBlockDivFragment.appendChild(InputColorBoxSpan);
+            InputBlockDivFragment.appendChild(TextInput);
+            InputBlockDiv.appendChild(InputBlockDivFragment);
+            LabelNameChangeInputContainerFragment.appendChild(InputBlockDiv);
+
+            this.MaskInfoMap.set(MaskValue,new Map([//ラベル名は変わる可能性があるので、不変であるマスク値をキーとする
+                ["MaskLabel",MaskValue],
+                ["ButtonElement",MaskButton],
+                ["TextInput",TextInput]
             ]));
         }
         console.log("button生成終了");
         this.ButtonContainerMap.get("MaskLegendButtonContainer").appendChild(MaskLegendButtonContainerFragment);
+        this.LabelNameChangeDialog.appendChild(LabelNameChangeInputContainerFragment);
         const ButtonFontSize=15;
         const ButtonHeight=ButtonFontSize+7;//px
         const MaskLabelTextSideMargin=5;//px
@@ -141,6 +159,23 @@ class MaskModifingClass{
         const WindowContentWidth=MaskButtonContaineWidth+MaskModifyControlContainerWidth+BodyGap;
         const WindowContentHeight=Math.max(MaskButtonContainerHeight,MaskModifyControlContainerHeight);
         window.SubWindowResizeAPI(WindowContentWidth,WindowContentHeight);
+        /*Dialogの画面サイズを決定*/
+        const InputHeight=ButtonHeight;
+        const InputWidth=(InputHeight+MaskLabelTextSideMargin)+150;
+        const LabelNameChangeButtonContainerHeight=40;
+        const LabelNameChangeInputContainerGridRowsNum=Math.min(20,this.MaskKindNum);
+        const LabelNameChangeInputContainerGridColumnsNum=Math.ceil(this.MaskKindNum/20);
+        const LabelNameChangeInputContainerGridGap=1;
+        const LabelNameChangeInputContainerWidth=(InputWidth+LabelNameChangeInputContainerGridGap)*LabelNameChangeInputContainerGridColumnsNum-LabelNameChangeInputContainerGridGap;
+        const LabelNameChangeInputContainerHeight=(InputHeight+LabelNameChangeInputContainerGridGap)*LabelNameChangeInputContainerGridRowsNum-LabelNameChangeInputContainerGridGap;
+        document.documentElement.style.setProperty("--LabelNameChangeInputContainerWidth",`${LabelNameChangeInputContainerWidth}px`);
+        document.documentElement.style.setProperty("--LabelNameChangeInputContainerHeight",`${LabelNameChangeInputContainerHeight}px`);
+        document.documentElement.style.setProperty("--LabelNameChangeButtonContainerHeight",`${LabelNameChangeButtonContainerHeight}px`);
+        document.documentElement.style.setProperty("--LabelNameChangeInputContainerGridGap",`${LabelNameChangeInputContainerGridGap}px`);
+        document.documentElement.style.setProperty("--LabelNameChangeInputContainerGridRowsNum",`${LabelNameChangeInputContainerGridRowsNum}`);
+        document.documentElement.style.setProperty("--LabelNameChangeInputContainerGridColumnsNum",`${LabelNameChangeInputContainerGridColumnsNum}`);
+        //ダイアログの表示を初期化
+        this.UpdateLabelNameChangeDialogPlaceholder();
         this.ButtonHeight=ButtonHeight;
         this.ButtonGap=ModifyContainerGridGap;
         //各入力欄のmin,max,stepの設定
@@ -503,7 +538,6 @@ class MaskModifingClass{
                 const BeforeMaskButtonArray=MaskModifyBeforeButtonContainer.querySelectorAll(":scope>button.MaskButton");
                 const MaskModifyAfterButtonContainer=this.ButtonContainerMap.get("MaskModifyAfterButtonContainer");
                 const AfterMaskButtonArray=MaskModifyAfterButtonContainer.querySelectorAll(":scope>button.MaskButton");
-
                 //入れ替え開始
                 if(AfterMaskButtonArray.length>0){
                     const MaskModifyBeforeButtonContainerFragment=document.createDocumentFragment();
@@ -521,6 +555,13 @@ class MaskModifingClass{
                 }
             }
         });
+    }
+    UpdateLabelNameChangeDialogPlaceholder(){
+        for(const MaskInfo of this.MaskInfoMap.values()){
+            const MaskLabel=MaskInfo.get("MaskLabel");
+            const TextInput=MaskInfo.get("TextInput");
+            TextInput.placeholder=MaskLabel;
+        }
     }
     SendMultiUseLayerSwitching(TargetCanvasID,ModeSwitching,Activate){
         const FromSubToMainProcessData=new Map([
@@ -624,25 +665,21 @@ class MaskModifingClass{
         ]);
         this.PassChangesToMainWindow(FromSubToMainProcessData);
     }
+    /*
     SendMaskLabelChange(){
         const data=new Map([
-            ["label",this.label],
+            ["MaskLabel",label],
 
             ["CanvasID",this.TargetCanvasID],
             ["Layer",this.TargetLayer],
         ]);
-        /*
-        FromSubToMainProcessData.set("body",new Map([
-            ["action","ChangeLabel"],
-            ["data",data]
-        ]));
-        */
         const FromSubToMainProcessData=new Map([
             ["action","ChangeLabel"],
             ["data",data]
         ]);
         this.PassChangesToMainWindow(FromSubToMainProcessData);
     }
+    */
     PassChangesToMainWindow(data){
         window.SubWindowMainProcessAPI.FromSubToMainProcess(data);
     }
