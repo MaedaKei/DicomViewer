@@ -68,7 +68,7 @@ body{
     flex-direction: row;
     position:relative;
     gap: var(--BodyGap);
-    background-color: rgb(40, 28, 61);
+    background-color:rgb(87, 87, 87);
     overflow: hidden;
 }
 /*MaskButton*/

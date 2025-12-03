@@ -314,7 +314,7 @@ class MaskModifingClass{
                 const OffsetYBase=this.ButtonHeight/*+this.ButtonGap*/;
                 this.MovingButtonArray.forEach((Button,index)=>{
                     const OffsetX=`${x+5}px`;
-                    const OffsetY=`${y+index*OffsetYBase}px`;
+                    const OffsetY=`${y+index*OffsetYBase+10}px`;
                     Button.style.left=OffsetX;
                     Button.style.top=OffsetY;
                     //Button.style.zIndex=10;
@@ -337,7 +337,6 @@ class MaskModifingClass{
                         const TargetButtonContainer=MouseOverTarget.parentElement;
                         TargetButtonContainer.insertBefore(this.dammyButton,MouseOverTarget);
                         //this.dammyButton.display="";
-                        console.log("挿入した");
                     }else{
                         //余白だった
                         const TargetButtonContainer=MouseOverOriginalTarget;
@@ -371,29 +370,46 @@ class MaskModifingClass{
                 MaskButtonの移動⇒MaskButtonMouseDowned=true,　MauseMove=true,　mouseup時にButtonContainerにいた場合、mouseup時のButtonContainer内のButtonの上で発生したか否かでかわる
                 */  
                 if(this.MaskButtonMoved){
-                    if(this.ButtonContainerWhenMouseClicked.get("mouseup")){
-                        console.log(this.ButtonContainerWhenMouseClicked.get("mouseup"));
+                    let TargetButtonContainer=false;
+                    if(this.ButtonContainerWhenMouseClicked.get("mouseup")){//どこかのButtonContainerにボタンが落とされた
                         const TargetButtonContainerKey=this.ButtonContainerWhenMouseClicked.get("mouseup");
-                        const TargetButtonContainer=this.ButtonContainerMap.get(TargetButtonContainerKey);
+                        TargetButtonContainer=this.ButtonContainerMap.get(TargetButtonContainerKey);
+                        /*
                         const TargetButtonContainerFragment=document.createDocumentFragment();
                         for(const Button of this.MovingButtonArray){
                             Button.classList.remove("Selected","MouseDowned");
                             TargetButtonContainerFragment.appendChild(Button);
                         }
+                        TargetButtonContainer.replaceChild(TargetButtonContainerFragment,this.dammyButton);
+                        */
+                    }else{
+                        TargetButtonContainer=this.ButtonContainerMap.get("MaskLegendButtonContainer");
                         /*
+                        const TargetButtonContainerFragment=document.createDocumentFragment();
+                        for(const Button of this.MovingButtonArray){
+                            Button.classList.remove("Selected","MouseDowned");
+                            TargetButtonContainerFragment.appendChild(Button);
+                        }
                         TargetButtonContainer.appendChild(TargetButtonContainerFragment);
                         */
-                        TargetButtonContainer.replaceChild(TargetButtonContainerFragment,this.dammyButton);
-                    }else{
-                        const TargetButtonContainer=this.ButtonContainerMap.get("MaskLegendButtonContainer");
-                        const TargetButtonContainerFragment=document.createDocumentFragment();
-                        for(const Button of this.MovingButtonArray){
-                            Button.classList.remove("Selected","MouseDowned");
-                            TargetButtonContainerFragment.appendChild(Button);
-                        }
-                        TargetButtonContainer.appendChild(TargetButtonContainerFragment);
-                        //this.dammyButton.remove();
                     }
+                    //TargetContainerがLegendButtonContainerならば、入っているButtonの順番が変わらないようにする。
+                    if(TargetButtonContainer===this.ButtonContainerMap.get("MaskLegendButtonContainer")){
+                        //this.MovingButtonArrayにMaskLegendButtonContainer内のボタンを追加する。
+                        const MaskLegendButtonArray=TargetButtonContainer.querySelectorAll(":scope>button.MaskButton");
+                        this.MovingButtonArray=[...this.MovingButtonArray,...MaskLegendButtonArray].sort((Button1,Button2)=>{
+                            const MaskValue1=parseInt(Button1.value);
+                            const MaskValue2=parseInt(Button2.value);
+                            return MaskValue1-MaskValue2;
+                        });
+                    }
+                    const TargetButtonContainerFragment=document.createDocumentFragment();
+                    for(const Button of this.MovingButtonArray){
+                        Button.classList.remove("Selected","MouseDowned");
+                        TargetButtonContainerFragment.appendChild(Button);
+                    }
+                    TargetButtonContainer.appendChild(TargetButtonContainerFragment);
+                    this.dammyButton.remove();//挿入位置を示すダミーボタンをDOMツリーから削除する
                 }else{
                     /*
                     Selectクラスの切り替えモード
@@ -402,9 +418,11 @@ class MaskModifingClass{
                     if(this.MaskButtonMouseDowned){
                         //個別の切り替え
                         const ClickedButton=e.target.closest("button.MaskButton");
+                        ClickedButton.classList.remove("MouseDowned");
                         if(ClickedButton){
                             if(ClickedButton.classList.contains(SelectedClass)){
                                 ClickedButton.classList.remove(SelectedClass);
+                                console.log(ClickedButton.value,SelectedClass,"削除した");
                             }else{
                                 ClickedButton.classList.add(SelectedClass);
                             }
@@ -457,6 +475,52 @@ class MaskModifingClass{
             this.EndSliceInput.value=SelectedAreaData.get("endslice");
         }
         this.FromMainProcessToSubFunctions.set("ChangeSelectedArea",ChangeSelectedAreaFunction);
+        //各ボタンにイベントを登録する
+        this.LabelNameModifyFlag=true;
+        this.EventSetHelper(this.LabelNameChangeDialogOpenButton,"mouseup",(e)=>{
+            if(this.LabelNameModifyFlag&&e.button===0){
+                console.log("MaskChangeDialogオープン");
+            }
+        });
+        this.MaskModifyFlag=true;
+        this.EventSetHelper(this.MaskModifyConfirmButton,"mouseup",(e)=>{
+            if(this.MaskModifyFlag&&e.button===0){
+                //個数チェック
+                const MaskModifyBeforeButtonContainer=this.ButtonContainerMap.get("MaskModifyBeforeButtonContainer");
+                const BeforeMaskButtonArray=MaskModifyBeforeButtonContainer.querySelectorAll(":scope>button.MaskButton");
+                const MaskModifyAfterButtonContainer=this.ButtonContainerMap.get("MaskModifyAfterButtonContainer");
+                const AfterMaskButtonArray=MaskModifyAfterButtonContainer.querySelectorAll(":scope>button.MaskButton");
+                if(BeforeMaskButtonArray.length!==AfterMaskButtonArray.length){
+                    alert("変更前と変更後は対応する位置同士で変換が行われるため、同じ数だけ指定されている必要があります。");
+                }else{
+                    
+                }
+            }
+        });
+        this.EventSetHelper(this.MaskSelectTradeButton,"mouseup",(e)=>{
+            if(this.MaskModifyFlag&&e.button===0){
+                const MaskModifyBeforeButtonContainer=this.ButtonContainerMap.get("MaskModifyBeforeButtonContainer");
+                const BeforeMaskButtonArray=MaskModifyBeforeButtonContainer.querySelectorAll(":scope>button.MaskButton");
+                const MaskModifyAfterButtonContainer=this.ButtonContainerMap.get("MaskModifyAfterButtonContainer");
+                const AfterMaskButtonArray=MaskModifyAfterButtonContainer.querySelectorAll(":scope>button.MaskButton");
+
+                //入れ替え開始
+                if(AfterMaskButtonArray.length>0){
+                    const MaskModifyBeforeButtonContainerFragment=document.createDocumentFragment();
+                    for(const AfterMaskButton of AfterMaskButtonArray){
+                        MaskModifyBeforeButtonContainerFragment.appendChild(AfterMaskButton);
+                    }
+                    MaskModifyBeforeButtonContainer.appendChild(MaskModifyBeforeButtonContainerFragment);
+                }
+                if(BeforeMaskButtonArray.length>0){
+                    const MaskModifyAfterButtonContainerFragment=document.createDocumentFragment();
+                    for(const BeforeMaskButton of BeforeMaskButtonArray){
+                        MaskModifyAfterButtonContainerFragment.appendChild(BeforeMaskButton);
+                    }
+                    MaskModifyAfterButtonContainer.appendChild(MaskModifyAfterButtonContainerFragment);
+                }
+            }
+        });
     }
     SendMultiUseLayerSwitching(TargetCanvasID,ModeSwitching,Activate){
         const FromSubToMainProcessData=new Map([
