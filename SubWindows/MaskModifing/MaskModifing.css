@@ -141,7 +141,9 @@ button.MaskButton.Selected>span.MaskColorBoxSpan::before{
     content:"✔";
 }
 button.MaskButton.Clicked>span.MaskClickedSpan::before{
-    content:"C";
+    content:"!";
+    color:red;
+    font-weight: bold;
 }
 body>button.MaskButton{
     position: absolute;
