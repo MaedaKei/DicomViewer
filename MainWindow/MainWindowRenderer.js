@@ -592,8 +592,8 @@ class ColorMapforMASK{
         //labelarrayの方が長い場合は、余分な部分は無視する
         //labelarrayの方が短い場合は、残りは数字で埋める
         //上記の処理はサブウィンドウ側が担うのでこちらが気にする必要はない
-        const NewLabel=data.get("data").get("MaskLabel");
-        this.label=NewLabel;
+        const NewLabelArray=data.get("data").get("MaskLabel");//["Name1","Name2",...,]
+        this.label=NewLabelArray;
     }
 }
 const colormapformask=new ColorMapforMASK();
@@ -2595,6 +2595,7 @@ class Canvas{
             this.Layerdraw(targetLayer);
         }
         this.FromMainProcessToMainFunctions.set("ChangeMask",ChangeMaskFunction);
+
         const ChangeLabelFunction=(data)=>{
             colormapformask.ChangeLabel(data);
         }

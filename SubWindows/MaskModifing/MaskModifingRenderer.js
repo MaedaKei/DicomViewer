@@ -68,13 +68,13 @@ class MaskModifingClass{
             const MaskLabelSpan=document.createElement("span");
             MaskLabelSpan.className="MaskLabelSpan";
             MaskLabelSpan.textContent=LabelName;
-            const MaskSelectedSpan=document.createElement("span");
-            MaskSelectedSpan.className="MaskSelectedSpan";
-            MaskSelectedSpan.textContent="";
+            const MaskClickedSpan=document.createElement("span");
+            MaskClickedSpan.className="MaskClickedSpan";
+            MaskClickedSpan.textContent="";
             const MaskButtonFragment=document.createDocumentFragment();
             MaskButtonFragment.appendChild(ColorBoxSpan);
             MaskButtonFragment.appendChild(MaskLabelSpan);
-            MaskButtonFragment.appendChild(MaskSelectedSpan);
+            MaskButtonFragment.appendChild(MaskClickedSpan);
             MaskButton.appendChild(MaskButtonFragment);
             MaskLegendButtonContainerFragment.appendChild(MaskButton);
             //ダイアログを作成
@@ -463,18 +463,11 @@ class MaskModifingClass{
                         const ClickedButton=e.target.closest("button.MaskButton");
                         if(ClickedButton){
                             /*画像のクリックからのSelect切り替えでも一応MouseDownedを削除する*/
-                            /*
                             ClickedButton.classList.remove("MouseDowned");
-                            if(ClickedButton.classList.contains(SelectedClass)){
-                                ClickedButton.classList.remove(SelectedClass);
-                                console.log(ClickedButton.value,SelectedClass,"削除した");
-                            }else{
-                                ClickedButton.classList.add(SelectedClass);
-                            }
-                            */
                             this.ChangeMASKSelect(ClickedButton);
                         }
                     }else{
+                        /*
                         //MouseDown時のButtonContainer内のMaskButtonのSelectedクラスを消す
                         const TargetButtonContainerKey=this.ButtonContainerWhenMouseClicked.get("mousedown");
                         const TargetButtonContainer=this.ButtonContainerMap.get(TargetButtonContainerKey);
@@ -482,6 +475,11 @@ class MaskModifingClass{
                             //console.log(MaskButton);
                             MaskButton.classList.remove("Selected");
                         }
+                        */
+                        //コンテナの余白クリック時はどこであってもすべてのボタンのSelectを解除する
+                        this.ChangeMASKSelect();
+                        //コンテナの余白クリックでMaskButtonのClickedを解除する
+                        this.ChangeMASKClick();
                     }
                 }
                 this.MaskButtonMoved=false;
@@ -541,12 +539,12 @@ class MaskModifingClass{
         });
         this.EventSetHelper(this.LabelNameChangeConfirmButton,"mouseup",(e)=>{
             if(this.LabelNameModifyFlag&&e.button===0){
-                this.LabelNameChangeFunction();
+                this.ChangeLabelName();
             }
         });
         this.EventSetHelper(this.LabelNameChangeConfirmButton,"keydown",(e)=>{
             if(this.LabelNameModifyFlag&&e.code==="Enter"){
-                this.LabelNameChangeFunction();
+                this.ChangeLabelName();
             }
         });
         this.MaskModifyFlag=true;
@@ -588,7 +586,7 @@ class MaskModifingClass{
             const ReceivedDataBody=data.get("data");
             const ClickedMASKValue=ReceivedDataBody.get("ClickedMASKValue");
             const TargetButton=this.MaskInfoMap.get(ClickedMASKValue).get("ButtonElement");
-            this.ChangeMASKSelect(TargetButton);
+            this.ChangeMASKClick(TargetButton);
         }
         this.FromMainProcessToSubFunctions.set("MASKClicked",MASKClickedFunction);
 
@@ -603,15 +601,33 @@ class MaskModifingClass{
         ]);
         this.PassChangesToMainWindow(FromSubToMainProcessData);
     }
-    ChangeMASKSelect(TargetButton){
+    ChangeMASKSelect(TargetButton=false){
         /*画像のクリックからのSelect切り替えでも一応MouseDownedを削除する*/
+        /*画像のクリックではSelectにはせず、ハイライト表示にとどめる*/
         const SelectedClass="Selected";
-        TargetButton.classList.remove("MouseDowned");
-        if(TargetButton.classList.contains(SelectedClass)){
-            TargetButton.classList.remove(SelectedClass);
-            //console.log(TargetButton.value,SelectedClass,"削除した");
+        if(TargetButton){
+            if(TargetButton.classList.contains(SelectedClass)){
+                TargetButton.classList.remove(SelectedClass);
+                //console.log(TargetButton.value,SelectedClass,"削除した");
+            }else{
+                TargetButton.classList.add(SelectedClass);
+            }
         }else{
-            TargetButton.classList.add(SelectedClass);
+            //ボタンを指定しない場合はリセットとして働く
+            for(const MaskInfo of this.MaskInfoMap.values()){
+                MaskInfo.get("ButtonElement").classList.remove(SelectedClass);
+            }
+        }
+    }
+    ChangeMASKClick(TargetButton=false){
+        const ClickedClass="Clicked";
+        //すべてのClickedを解除
+        for(const MaskInfo of this.MaskInfoMap.values()){
+            MaskInfo.get("ButtonElement").classList.remove(ClickedClass);
+        }
+        if(TargetButton){
+            //ボタンしていない場合はリセットとして働く
+            TargetButton.classList.add(ClickedClass);
         }
     }
     UpdateLabelNameChangeDialogPlaceholder(){
@@ -634,6 +650,7 @@ class MaskModifingClass{
                 MaskLabelSpan.textContent=NewLabel;
                 //placeholderを変更
                 TextInput.placeholder=NewLabel;
+                TextInput.value="";
             }
         }
     }
@@ -797,6 +814,15 @@ class MaskModifingClass{
                 ]);
                 ClosingDataList.push(ModeSwitchingData);
             }
+            //現時点でのマスクラベルを送信
+            const NewLabelArray=Array.from(this.MaskInfoMap.values()).map((MaskInfo)=>MaskInfo.get("MaskLabel"));
+            const ChangeLabelData=new Map([
+                ["action","ChangeLabel"],
+                ["data",new Map([
+                    ["MaskLabel",NewLabelArray]
+                ])]
+            ]);
+            ClosingDataList.push(ChangeLabelData);
             window.SubWindowMainProcessAPI.CloseSubWindowFromSubToMainProcess(ClosingDataList);
         });
     }

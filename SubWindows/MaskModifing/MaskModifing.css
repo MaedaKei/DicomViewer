@@ -106,7 +106,7 @@ button.MaskButton.Selected{
     color:white;
 }
 /*
-button.MaskButton.MaskClicked{
+button.MaskButton.Clicked{
     color:red;
 }
 */
@@ -127,7 +127,7 @@ button.MaskButton>span.MaskLabelSpan{
     line-height: var(--MaskButtonHeight);
     text-align: left;
 }
-button.MaskButton>span.MaskSelectedSpan{
+button.MaskButton>span.MaskClickedSpan{
     display:inline-block;
     /*width:var(--MaskButtonHeight);*/
     height:100%;
@@ -137,13 +137,16 @@ button.MaskButton>span.MaskSelectedSpan{
     flex-shrink: 0;
     margin-left:var(--MaskLabelTextSideMargin);
 }
-button.MaskButton.Selected>span.MaskSelectedSpan::before{
+button.MaskButton.Selected>span.MaskColorBoxSpan::before{
     content:"✔";
+}
+button.MaskButton.Clicked>span.MaskClickedSpan::before{
+    content:"C";
 }
 body>button.MaskButton{
     position: absolute;
     z-index: 10;/*移動中は前面に表示する*/
-    border:2px solid rgb(0, 0, 0);
+    border:1px solid rgb(0, 0, 0);
 }
 /*左半分にあるMaskButtonContainerのスタイル*/
 body>div#MaskButtonContainer{
@@ -170,6 +173,7 @@ div#MaskLegendContainer>div#MaskLegendTitle{
     background-color: rgb(0, 4, 255);
     color: white;
     font: var(--LegendContainerTitleFontStyle);
+    border-bottom:1px solid black;
 }
 div#MaskLegendContainer>div#MaskLegendButtonContainer{
     width:100%;
@@ -217,6 +221,7 @@ div#MaskModifyBeforeContainer>div#MaskModifyBeforeTitle{
     background-color: rgb(148, 148, 255);
     color: black;
     font: var(--ModifyContainerTitleFontStyle);
+    border-bottom:1px solid black;
 }
 div#MaskButtonContainer>div#MaskModifyAfterContainer{
     display:flex;
@@ -233,6 +238,7 @@ div#MaskModifyAfterContainer>div#MaskModifyAfterTitle{
     background-color: rgb(255, 148, 148);
     color: black;
     font: var(--ModifyContainerTitleFontStyle);
+    border-bottom:1px solid black;
 }
 /*ModifyButtonContainerの共通スタイル*/
 div.MaskModifyContainer>div.MaskModifyButtonContainer{
