@@ -36,14 +36,13 @@
         </div>
         <!--ここからダイアログを定義する-->
         <!--データ読み込みダイアログ-->
-        <dialog id="MultiTypeLoadDialog">
-            <div id="MultiTypeLoadPathContainer">
-                <!--どのデータタイプを読み込めるかはアップデート時に変化するのでJSの方でここは初期化する-->
-                <!--ここはスクロール可能な状態にしてダイアログが縦に伸びるのを防ぐ-->
+        <dialog id="LoadDialog">
+            <div id="LoadDialogDOMTreeContainer">
+
             </div>
-            <div id="MultiTypeLoadButtonContainer">
-                <button id="MultiTypeLoadConfirmButton">読み込み</button>
-                <button id="MultiTypeLoadCancelButton">キャンセル</button>
+            <div id="LoadDialogButtonContainer">
+                <button id="LoadDialogConfirmButton">Loading</button>
+                <button id="LoadDialogCancelButton">Cancel</button>
             </div>
         </dialog>
         <!--格子配置変更ダイアログ-->

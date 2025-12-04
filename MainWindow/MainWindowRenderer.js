@@ -3706,6 +3706,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
     }
     setUserEvents(){
         //共通のダイアログテンプレートを作成
+        /*
         const LoadDialog=document.createElement("dialog");
         LoadDialog.id="LoadDialog";//IDを設定する
         const LoadDialogDOMTreeContainer=document.createElement("div");
@@ -3727,31 +3728,31 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
         ButtonContainer.appendChild(ButtonContainerFragment);
         LoadDialogFragment.appendChild(ButtonContainer);
         LoadDialog.appendChild(LoadDialogFragment);
-        this.LoadDialog=LoadDialog;
-        this.LoadDialogDOMTreeContainer=LoadDialogDOMTreeContainer;
-        this.LoadDialogCancelButton=LoadDialogCancelButton;
-        this.LoadDialogConfirmButton=LoadDialogConfirmButton;
-        document.body.appendChild(LoadDialog);
+        */
+        this.LoadDialog=document.getElementById("LoadDialog");
+        this.LoadDialogDOMTreeContainer=document.getElementById("LoadDialogDOMTreeContainer");
+        this.LoadDialogCancelButton=document.getElementById("LoadDialogCancelButton");
+        this.LoadDialogConfirmButton=document.getElementById("LoadDialogConfirmButton");
         /*ダイアログのイベント設定*/
-        LoadDialogCancelButton.addEventListener("mouseup",(e)=>{
+        this.LoadDialogCancelButton.addEventListener("mouseup",(e)=>{
             if(e.button===0){
                 //キャンセルが押されたので閉じる
                 this.LoadDialogClose();
             }
         });
-        LoadDialogCancelButton.addEventListener("keydown",(e)=>{
+        this.LoadDialogCancelButton.addEventListener("keydown",(e)=>{
             if(e.code==="Enter"){
                 this.LoadDialogClose();
             }
         });
-        LoadDialogConfirmButton.addEventListener("mouseup",(e)=>{
+        this.LoadDialogConfirmButton.addEventListener("mouseup",(e)=>{
             if(e.button===0){
                 //読み込み開始する
                 this.LoadDialogClose();
                 this.DialogLoadingStart();
             }
         });
-        LoadDialogConfirmButton.addEventListener("keydown",(e)=>{
+        this.LoadDialogConfirmButton.addEventListener("keydown",(e)=>{
             if(e.code==="Enter"){
                 this.LoadDialogClose();
                 this.DialogLoadingStart();
