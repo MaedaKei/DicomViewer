@@ -2673,11 +2673,15 @@ class Canvas{
     ここまで、MultiUseLayerModeの切り替え用関数群
     */
     FlagManager(){
+        //const MouseWheelSwitchingKeyArray=["ControlLeft","ControlRight","KeyD"];//マウスホイールやドラッグ＆ドロップの切り替えのトリガーとなるキーのリスト
         //LocalSliceAndAlign
         //PositionStanp
-        //画像内にマウスあり、かつコントロール押されていない
-        const Controlpressed=(this.pressedkey.get("ControlLeft")||this.pressedkey.get("ControlRight"));
-        if(this.mouseenter&&!Controlpressed){
+        //画像内にマウスあり、かつコントロール押されていない、かつDボタンが押されていない
+        //マウスホイールがＺoomPanやエリアセレクト時の拡縮と競合する。
+        const ZoomPanKeyPressed=(this.pressedkey.get("ControlLeft")||this.pressedkey.get("ControlRight"));
+        const AreaSelectKeyPressed=this.pressedkey.get("KeyD");
+
+        if(this.mouseenter&&!ZoomPanKeyPressed&&!AreaSelectKeyPressed){
             this.LocalSliceAndAlignFlag=true;
         }else{
             this.LocalSliceAndAlignFlag=false;
@@ -2697,7 +2701,7 @@ class Canvas{
         //ズームとパンのフラグを分離することでドラッグアンドドロップの検知(マウスが押されたか離れたか)をこちらで行わせる。
         //関数本体を簡素化する目的
         //Zoomの条件がパンよりも緩いかつ、ズームパン状態の同期やリセットの条件はZoom状態の時でいいので、関数本体ではzoomフラグをチェックする
-        if(!this.MultiUseLayerModeFlagSet.has("AreaSelect")&&this.mouseenter&&Controlpressed){
+        if(this.mouseenter&&ZoomPanKeyPressed){
             this.ZoomFlag=true;
             if(this.mouseClicked.get(0)){
                 this.PanFlag=true;
@@ -2713,11 +2717,11 @@ class Canvas{
         常にON状態にある画像のズームパンとの兼ね合いだけ考慮して設定すればOK
         */
         //AreaSelect
-        //Ctrl押してないときのドラッグ&ドロップ⇒範囲選択
+        //D押下時にON状態にすることで、ZoomPanとの併用を可能にする
+        //D押してないときのドラッグ&ドロップ⇒範囲選択
         //ズームパンとは異なり、ここでマウスが押されているかは条件としない
         //マウスが押されたポイントを始点とする必要があるため、本体の中で定義する
-        //Ctrl押してないときのa＆zの押下でZ方向の始点終点の指定
-        if(this.MultiUseLayerModeFlagSet.has("AreaSelect")&&this.mouseenter&&!Controlpressed){
+        if(this.MultiUseLayerModeFlagSet.has("AreaSelect")&&this.mouseenter&&!ZoomPanKeyPressed&&!AreaSelectKeyPressed){
             this.AreaSelectSliceCropFlag=true;
             this.AreaSelectPanFlag=true;
         }else{
@@ -2727,7 +2731,7 @@ class Canvas{
         //Ctrl押しているときのドラッグ&ドロップ⇒選択範囲長方形のパン
         //Ctrl押しているときのホイール⇒選択範囲の拡縮
         //ドラッグ操作があるが、どちらの機能もマウスアップ時に整数に調整させるため、ここではマウス押下を条件に加えない
-        if(this.MultiUseLayerModeFlagSet.has("AreaSelect")&&this.mouseenter&&Controlpressed){
+        if(this.MultiUseLayerModeFlagSet.has("AreaSelect")&&this.mouseenter&&!ZoomPanKeyPressed&&AreaSelectKeyPressed){
             this.AreaSelectDrawRectangleFlag=true;
             this.AreaSelectZoomFlag=true;
         }else{
@@ -2735,15 +2739,17 @@ class Canvas{
             this.AreaSelectZoomFlag=false;
         }
         //CONTOURROIClick
+        //ZoomPanと競合しないようにしたい
         //Ctrl押していないときのクリックでROI内にあるか判定して送信する
-        if(this.MultiUseLayerModeFlagSet.has("CONTOURROIClick")&&this.mouseenter&&!Controlpressed){
+        if(this.MultiUseLayerModeFlagSet.has("CONTOURROIClick")&&this.mouseenter&&!ZoomPanKeyPressed){
             this.CONTOURROIClickFlag=true;
         }else{
             this.CONTOURROIClickFlag=false;
         }
         //MASKClick
+        //ZoomPanと競合しないようにしたい
         //Ctrl押していないときのクリックでマスクValueを送信する
-        if(this.MultiUseLayerModeFlagSet.has("MASKClick")&&this.mouseenter&&!Controlpressed){
+        if(this.MultiUseLayerModeFlagSet.has("MASKClick")&&this.mouseenter&&!ZoomPanKeyPressed){
             this.MASKClickFlag=true;
         }else{
             this.MASKClickFlag=false;
