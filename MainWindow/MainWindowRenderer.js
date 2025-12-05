@@ -2379,6 +2379,11 @@ class Canvas{
         for(const DataType of this.LayerDataMap.keys()){
             this.Layerdraw(DataType);
         }
+        //MultiUseLayerも、Modeに応じて描画する
+        //MultiUseLayerへの描画は現在はAreaSelectしかないが、今後増えることも想定してこのように分岐を実装する
+        if(this.MultiUseLayerModeFlagSet.has("AreaSelect")){
+            this.SelectedAreaDraw();
+        }
     }
     Layerdraw(Layer){//targetlayer="CT"とか"MASK"とか
         //指定されたレイヤーのみ再描画
@@ -3138,16 +3143,19 @@ class Canvas{
             しかし、前回の選択範囲確定版は消去されていない
             あくまで視覚的な範囲選択を消すだけ←範囲選択状態が邪魔になるときもあり、これに対処した機能
             11/26時点でこのメソッドが起動しているときはZoomPan状態がリセットされているはず
+            12/05、ZoomPan状態でも行えるように一般化する
             */
             if(this.AreaSelectDrawRectangleFlag&&this.mouseClicked.get(0)){
                 const newX=this.MouseTrack.get("current").get("x");
                 const newY=this.MouseTrack.get("current").get("y");
                 const rect=this.CanvasBlock.getBoundingClientRect();
                 //患者座標系への変換
-                const currentwidth=this.SelectedAreaStatus.get("originalimagewidth");//描画座標系のサイズ
-                const currentheight=this.SelectedAreaStatus.get("originalimageheight");
-                const neww0=currentwidth*(newX/rect.width);
-                const newh0=currentheight*(newY/rect.height);
+                const currentw0=this.DrawStatus.get("w0");
+                const currenth0=this.DrawStatus.get("h0");
+                const currentwidth=this.DrawStatus.get("width");//現在の描画座標系のサイズ
+                const currentheight=this.DrawStatus.get("height");
+                const neww0=currentwidth*(newX/rect.width)+currentw0;
+                const newh0=currentheight*(newY/rect.height)+currenth0;
                 //SelectedAreaStatusにセットする
                 this.SelectedAreaStatus.set("sw",neww0);
                 this.SelectedAreaStatus.set("sh",newh0);
@@ -3161,11 +3169,14 @@ class Canvas{
                 const newX=this.MouseTrack.get("current").get("x");
                 const newY=this.MouseTrack.get("current").get("y");
                 const rect=this.CanvasBlock.getBoundingClientRect();
-                const currentwidth=this.SelectedAreaStatus.get("originalimagewidth");//描画座標系のサイズ
-                const currentheight=this.SelectedAreaStatus.get("originalimageheight");
-                //画像座標系上の移動点
-                let movedX=currentwidth*(newX/rect.width);
-                let movedY=currentheight*(newY/rect.height);
+
+                const currentw0=this.DrawStatus.get("w0");
+                const currenth0=this.DrawStatus.get("h0");
+                const currentwidth=this.DrawStatus.get("width");
+                const currentheight=this.DrawStatus.get("height");
+                //画像座標系上の移動に変換
+                let movedX=currentwidth*(newX/rect.width)+currentw0;
+                let movedY=currentheight*(newY/rect.height)+currenth0;
                 const sw=this.SelectedAreaStatus.get("sw");
                 const sh=this.SelectedAreaStatus.get("sh");
                 //新しいSelectedAreaStatusの値を計算
@@ -3318,17 +3329,20 @@ class Canvas{
                 const h0=this.SelectedAreaStatus.get("h0");
                 const width=this.SelectedAreaStatus.get("width");
                 const height=this.SelectedAreaStatus.get("height");
-
-                const originalimagewidth=this.SelectedAreaStatus.get("originalimagewidth");
-                const originalimageheight=this.SelectedAreaStatus.get("originalimageheight");
+                //現在のZoomPan状態よりも大きくならないようにする
+                const DrawW0=this.DrawStatus.get("w0");
+                const DrawH0=this.DrawStatus.get("h0");
+                const DrawWidth=this.DrawStatus.get("width");
+                const DrawHeight=this.DrawStatus.get("height");
                 //画面サイズより大きいサイズにならないようにする
-                const newwidth=Math.max(0,Math.min(width+2*sizechangevalue,originalimagewidth));
-                const newheight=Math.max(0,Math.min(height+2*sizechangevalue,originalimageheight));
+                const newwidth=Math.max(0,Math.min(width+2*sizechangevalue,DrawWidth));
+                const newheight=Math.max(0,Math.min(height+2*sizechangevalue,DrawHeight));
                 const w0changevalue=(newwidth-width)/2;
                 const h0changevalue=(newheight-height)/2;
                 //左上のチェック
-                const neww0=Math.max(0,Math.min(w0-w0changevalue,originalimagewidth-newwidth));
-                const newh0=Math.max(0,Math.min(h0-h0changevalue,originalimageheight-newheight));
+                //neww0=w0-w0changevalue
+                const neww0=Math.max(DrawW0,Math.min(w0-w0changevalue,DrawWidth-newwidth));
+                const newh0=Math.max(DrawH0,Math.min(h0-h0changevalue,DrawHeight-newheight));
                 //console.log(neww0,newh0,newwidth,newheight);
                 //値を更新する
                 this.SelectedAreaStatus.set("w0",neww0);
@@ -3426,15 +3440,51 @@ class Canvas{
             this.slider.style.setProperty("--track-hilight-end",`${fillendposition}%`);
         }
     }
+    /*
+    draw(ctx,DrawStatus){
+        const dx=0,dy=0,dWidth=ctx.canvas.width,dHeight=ctx.canvas.height;
+        const index=DrawStatus.get("index");
+        ctx.clearRect(0,0,dWidth,dHeight);//初期化
+        //座標系の移動・拡縮
+        const sx=DrawStatus.get("w0");
+        const sy=DrawStatus.get("h0");
+        ctx.save();
+        ctx.translate(dx,dy);
+        ctx.scale(dWidth/DrawStatus.get("width"),dHeight/DrawStatus.get("height"));
+        ctx.translate(-sx,-sy);
+        //輪郭の描画
+        for(const ROIName of this.ROISelectStatusSet){
+            const ROIContourDataMap=this.ContourDataMap.get(ROIName);
+            if(ROIContourDataMap.has(index)){
+                const ContourPath=ROIContourDataMap.get(index);
+                const ContourColorHexText=this.ContourColorMap.get(ROIName);
+                ctx.strokeStyle=ContourColorHexText+this.LineAlpha;
+                ctx.fillStyle=ContourColorHexText+this.FillAlpha;
+                ctx.lineWidth=1;
+                ctx.stroke(ContourPath);
+                ctx.fill(ContourPath,"evenodd");
+            }
+        }
+        ctx.restore();
+    }
+    */
     SelectedAreaDraw(){
-        const linectx=this.MultiUseLayer.getContext("2d");
-        const dWidth=linectx.canvas.width,dHeight=linectx.canvas.height;
-        linectx.clearRect(0,0,dWidth,dHeight);//初期化する
+        const ctx=this.MultiUseLayer.getContext("2d");
+        const dx=0,dy=0,dWidth=ctx.canvas.width,dHeight=ctx.canvas.height;
+        ctx.clearRect(0,0,dWidth,dHeight);//初期化する
         //slider用のデータ
-        if(this.SelectedAreaStatus.get("drawed")){
+        if(this.SelectedAreaStatus.get("drawed")){//描画しなければならない
+            //Originalの描画領域を反映する
+            const DrawStatus=this.DrawStatus;
+            const sx=DrawStatus.get("w0");
+            const sy=DrawStatus.get("h0");
+            ctx.save();
+            ctx.translate(dx,dy);//基準点に一度戻る
+            ctx.scale(dWidth/DrawStatus.get("width"),dHeight/DrawStatus.get("height"));//サイズを変更
+            ctx.translate(-sx,-sy);//中心をずらす
             /*Rectangleの描画*/
-            linectx.imageSmoothingEnabled=false;
-            linectx.imageSmoothingQuality='low'; // 'low' | 'medium' | 'high'
+            ctx.imageSmoothingEnabled=false;
+            ctx.imageSmoothingQuality='low'; // 'low' | 'medium' | 'high'
             
             const w0=this.SelectedAreaStatus.get("w0");
             const h0=this.SelectedAreaStatus.get("h0");
@@ -3445,17 +3495,14 @@ class Canvas{
             const currentslice=parseInt(this.slider.value);
             if(startslice<=currentslice&&currentslice<=endslice){
                 //現在のスライスが選択範囲内なら塗りつぶし
-                linectx.fillStyle="rgba(255, 135, 135, 0.36)";
-                linectx.fillRect(w0,h0,width,height);
+                ctx.fillStyle="rgba(255, 135, 135, 0.36)";
+                ctx.fillRect(w0,h0,width,height);
             }
-            linectx.strokeStyle="rgba(255,0,0,0.95)";
-            linectx.lineWidth=0.5;
-            linectx.strokeRect(w0-0.5,h0-0.5,width+1,height+1);
+            ctx.strokeStyle="rgba(255,0,0,0.95)";
+            ctx.lineWidth=0.5;
+            ctx.strokeRect(w0-0.5,h0-0.5,width+1,height+1);
+            ctx.restore();
         }
-        //文字列表示
-        linectx.fillStyle="rgba(255,255,0,0.8)";
-        linectx.font="15px sans-serif";
-        linectx.fillText("Area Select Mode",5,15);
     }
     /*CONTOURROIClickイベント登録*/
     //11/26時点ではCONTOUR専用機能
