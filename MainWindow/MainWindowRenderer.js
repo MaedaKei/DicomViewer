@@ -3377,16 +3377,22 @@ class Canvas{
                 const rect=this.CanvasBlock.getBoundingClientRect();
                 //OPモード起動時にZoomPanをリセット＆OPモード中は無効になるのでoriginalのサイズを使って移動分を計算する
                 //現在のZoomPan状態よりも大きくならないようにする
-                const DrawW0=this.DrawStatus.get("w0");
-                const DrawH0=this.DrawStatus.get("h0");
-                const DrawWidth=this.DrawStatus.get("width");
-                const DrawHeight=this.DrawStatus.get("height");
+                //整数に丸め込む
+                const _DrawSW=this.DrawStatus.get("w0");
+                const _DrawSH=this.DrawStatus.get("h0");
+                const _DrawWidth=this.DrawStatus.get("width");
+                const _DrawHeight=this.DrawStatus.get("height");
+                const DrawSW=Math.ceil(_DrawSW);
+                const DrawSH=Math.ceil(_DrawSH);
+                const DrawGW=Math.floor(_DrawSW+_DrawWidth);
+                const DrawGH=Math.floor(_DrawSH+_DrawHeight);
+                const DrawWidth=DrawGW-DrawSW;
+                const DrawHeight=DrawGH-DrawSH;
                 console.log("------------------AreaSelectPan-------------------");
-                console.log(DrawW0,DrawH0,DrawWidth,DrawHeight);
-                console.log(Math.ceil(DrawW0),Math.ceil(DrawH0));
+                console.log(DrawSW,DrawSH,DrawWidth,DrawHeight);
                 //移動量を計算
-                const moveX=DrawWidth*(newX-oldX)/rect.width;
-                const moveY=DrawHeight*(newY-oldY)/rect.height;
+                const moveX=_DrawWidth*(newX-oldX)/rect.width;
+                const moveY=_DrawHeight*(newY-oldY)/rect.height;
                 const neww0=Math.max(Math.floor(DrawW0),Math.min(this.SelectedAreaStatus.get("w0")+moveX,Math.floor(DrawW0+DrawWidth)-this.SelectedAreaStatus.get("width")));
                 const newh0=Math.max(Math.floor(DrawH0),Math.min(this.SelectedAreaStatus.get("h0")+moveY,Math.floor(DrawH0+DrawHeight)-this.SelectedAreaStatus.get("height")));
                 //描画情報を更新
