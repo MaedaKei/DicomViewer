@@ -3424,8 +3424,8 @@ class Canvas{
                 const IntegerDrawSH=Math.ceil(DrawSH);
                 const IntegerDrawGW=Math.floor(DrawSW+DrawWidth);
                 const IntegerDrawGH=Math.floor(DrawSH+DrawHeight);
-                const IntegerDrawWidth=IntegerDrawGW-IntegerDrawSW;
-                const IntegerDrawHeight=IntegerDrawGH-IntegerDrawSH;
+                //const IntegerDrawWidth=IntegerDrawGW-IntegerDrawSW;
+                //const IntegerDrawHeight=IntegerDrawGH-IntegerDrawSH;
                 /*
                 console.log("------------------------------------");
                 console.log(DrawSW,DrawSW+DrawWidth,DrawWidth,DrawSH,DrawSH+DrawHeight,DrawHeight);
