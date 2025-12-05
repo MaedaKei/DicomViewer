@@ -3331,24 +3331,28 @@ class Canvas{
                 const height=this.SelectedAreaStatus.get("height");
                 //現在のZoomPan状態よりも大きくならないようにする
                 //以下の4つは小数であることの方が多いので、Math.ceil、Math.floorで適切に整数に丸めること
-                const DrawW0=this.DrawStatus.get("w0");
-                const DrawH0=this.DrawStatus.get("h0");
+                const DrawSW=this.DrawStatus.get("w0");
+                const DrawSH=this.DrawStatus.get("h0");
                 const DrawWidth=this.DrawStatus.get("width");
                 const DrawHeight=this.DrawStatus.get("height");
-                console.log("------------------AreaSelectZoom-------------------");
-                console.log(DrawW0,DrawH0,DrawWidth,DrawHeight);
-                console.log(Math.ceil(DrawW0),Math.ceil(DrawH0));
+                const DrawGW=DrawSW+DrawWidth;
+                const DrawGH=DrawSH+DrawHeight;
+                //選択していい範囲
+                const IntegerDrawSW=Math.ceil(DrawSW);
+                const IntegerDrawSH=Math.ceil(DrawSH);
+                const IntegerWidth=Math.floor(DrawGW)-IntegerDrawSW;//現在の描画領域において実際に選択していいサイズ
+                const IntegerHeight=Math.floor(DrawGH)-IntegerDrawSH;
                 //画面サイズより大きいサイズにならないようにする
-                const newwidth=Math.max(0,Math.min(width+2*sizechangevalue,Math.floor(DrawWidth)));
-                const newheight=Math.max(0,Math.min(height+2*sizechangevalue,Math.floor(DrawHeight)));
+                const newwidth=Math.max(0,Math.min(width+2*sizechangevalue,IntegerWidth));
+                const newheight=Math.max(0,Math.min(height+2*sizechangevalue,IntegerHeight));
                 const w0changevalue=(newwidth-width)/2;
                 const h0changevalue=(newheight-height)/2;
                 //左上のチェック
                 //neww0=w0-w0changevalue
                 //DrawW0, DrawH0の値によっては小数点になったりするの
                 //Zoomでは内側に整数化する
-                const neww0=Math.max(Math.ceil(DrawW0),Math.min(w0-w0changevalue,Math.floor(DrawW0+DrawWidth)-newwidth));
-                const newh0=Math.max(Math.ceil(DrawH0),Math.min(h0-h0changevalue,Math.floor(DrawH0+DrawHeight)-newheight));
+                const neww0=Math.max(IntegerDrawSW,Math.min(w0-w0changevalue,IntegerDrawSW+IntegerWidth-newwidth));
+                const newh0=Math.max(IntegerDrawSH,Math.min(h0-h0changevalue,IntegerDrawSH+IntegerHeight-newheight));
                 //console.log(neww0,newh0,newwidth,newheight);
                 //値を更新する
                 this.SelectedAreaStatus.set("w0",neww0);
@@ -3378,23 +3382,15 @@ class Canvas{
                 //OPモード起動時にZoomPanをリセット＆OPモード中は無効になるのでoriginalのサイズを使って移動分を計算する
                 //現在のZoomPan状態よりも大きくならないようにする
                 //整数に丸め込む
-                const _DrawSW=this.DrawStatus.get("w0");
-                const _DrawSH=this.DrawStatus.get("h0");
-                const _DrawWidth=this.DrawStatus.get("width");
-                const _DrawHeight=this.DrawStatus.get("height");
-                const DrawSW=Math.ceil(_DrawSW);
-                const DrawSH=Math.ceil(_DrawSH);
-                const DrawGW=Math.floor(_DrawSW+_DrawWidth);
-                const DrawGH=Math.floor(_DrawSH+_DrawHeight);
-                const DrawWidth=DrawGW-DrawSW;
-                const DrawHeight=DrawGH-DrawSH;
-                console.log("------------------AreaSelectPan-------------------");
-                console.log(DrawSW,DrawSH,DrawWidth,DrawHeight);
+                const DrawW0=this.DrawStatus.get("w0");
+                const DrawH0=this.DrawStatus.get("h0");
+                const DrawWidth=this.DrawStatus.get("width");
+                const DrawHeight=this.DrawStatus.get("height");
                 //移動量を計算
-                const moveX=_DrawWidth*(newX-oldX)/rect.width;
-                const moveY=_DrawHeight*(newY-oldY)/rect.height;
-                const neww0=Math.max(Math.floor(DrawW0),Math.min(this.SelectedAreaStatus.get("w0")+moveX,Math.floor(DrawW0+DrawWidth)-this.SelectedAreaStatus.get("width")));
-                const newh0=Math.max(Math.floor(DrawH0),Math.min(this.SelectedAreaStatus.get("h0")+moveY,Math.floor(DrawH0+DrawHeight)-this.SelectedAreaStatus.get("height")));
+                const moveX=DrawWidth*(newX-oldX)/rect.width;
+                const moveY=DrawHeight*(newY-oldY)/rect.height;
+                const neww0=Math.max(DrawW0,Math.min(this.SelectedAreaStatus.get("w0")+moveX,DrawW0+DrawWidth-this.SelectedAreaStatus.get("width")));
+                const newh0=Math.max(DrawH0,Math.min(this.SelectedAreaStatus.get("h0")+moveY,DrawH0+DrawHeight-this.SelectedAreaStatus.get("height")));
                 //描画情報を更新
                 this.SelectedAreaStatus.set("w0",neww0);
                 this.SelectedAreaStatus.set("h0",newh0);
@@ -3412,14 +3408,33 @@ class Canvas{
                 //console.log("AreaSelectZoomPan","mouseup");
                 let sw=this.SelectedAreaStatus.get("w0");
                 let sh=this.SelectedAreaStatus.get("h0");
+                const SelectedWidth=this.SelectedAreaStatus.get("width");
+                const SelectedHeight=this.SelectedAreaStatus.get("height");
                 //let gw=sw+this.SelectedAreaStatus.get("width");
                 //let gh=sh+this.SelectedAreaStatus.get("height");
                 //ZoomPanではwidthとheightは変わってはいけないため、すべて同じ方法で整数に直す
                 //sw,shは自分以上の最小の整数にする
-                sw=Math.floor(sw);//DrawRectではceil
-                sh=Math.floor(sh);
-                //gw,ghは自分以下の最大の整数にする
-                //最終的な値に更新して再描画
+                sw=Math.round(sw);//DrawRectではceil
+                sh=Math.round(sh);
+                const DrawSW=this.DrawStatus.get("w0");
+                const DrawSH=this.DrawStatus.get("h0");
+                const DrawWidth=this.DrawStatus.get("width");
+                const DrawHeight=this.DrawStatus.get("height");
+                const IntegerDrawSW=Math.ceil(DrawSW);
+                const IntegerDrawSH=Math.ceil(DrawSH);
+                const IntegerDrawGW=Math.floor(DrawSW+DrawWidth);
+                const IntegerDrawGH=Math.floor(DrawSH+DrawHeight);
+                const IntegerDrawWidth=IntegerDrawGW-IntegerDrawSW;
+                const IntegerDrawHeight=IntegerDrawGH-IntegerDrawSH;
+                /*
+                console.log("------------------------------------");
+                console.log(DrawSW,DrawSW+DrawWidth,DrawWidth,DrawSH,DrawSH+DrawHeight,DrawHeight);
+                console.log(IntegerDrawSW,IntegerDrawGW,IntegerDrawWidth,IntegerDrawSH,IntegerDrawGH,IntegerDrawHeight);
+                */
+                //現在の描画領域で存在できる範囲を確認して最終的な値とする
+                //Width,Heightはしっかり条件を満たす整数値になっているという信頼のもと
+                sw=Math.max(IntegerDrawSW,Math.min(sw,IntegerDrawGW-SelectedWidth));
+                sh=Math.max(IntegerDrawSH,Math.min(sh,IntegerDrawGH-SelectedHeight));
                 this.SelectedAreaStatus.set("w0",sw);
                 this.SelectedAreaStatus.set("h0",sh);
                 this.SelectedAreaDraw();

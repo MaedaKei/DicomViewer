@@ -808,8 +808,9 @@ class MaskModifingClass{
                 const ModeSwitchingData=new Map([
                     ["action",Mode],
                     ["data",new Map([
+                        ["Activate",false],
                         ["CanvasID",this.TargetCanvasID],
-                        ["Activate",false]
+                        ["Layer",this.TargetLayer],
                     ])]
                 ]);
                 ClosingDataList.push(ModeSwitchingData);
@@ -819,7 +820,9 @@ class MaskModifingClass{
             const ChangeLabelData=new Map([
                 ["action","ChangeLabel"],
                 ["data",new Map([
-                    ["MaskLabel",NewLabelArray]
+                    ["MaskLabel",NewLabelArray],
+                    ["CanvasID",this.TargetCanvasID],
+                    ["Layer",this.TargetLayer],
                 ])]
             ]);
             ClosingDataList.push(ChangeLabelData);

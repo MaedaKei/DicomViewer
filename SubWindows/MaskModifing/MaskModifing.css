@@ -141,7 +141,7 @@ button.MaskButton.Selected>span.MaskColorBoxSpan::before{
     content:"✔";
 }
 button.MaskButton.Clicked>span.MaskClickedSpan::before{
-    content:"!";
+    content:"◀";
     color:red;
     font-weight: bold;
 }
