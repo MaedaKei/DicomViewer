@@ -3335,6 +3335,9 @@ class Canvas{
                 const DrawH0=this.DrawStatus.get("h0");
                 const DrawWidth=this.DrawStatus.get("width");
                 const DrawHeight=this.DrawStatus.get("height");
+                console.log("------------------AreaSelectZoom-------------------");
+                console.log(DrawW0,DrawH0,DrawWidth,DrawHeight);
+                console.log(Math.ceil(DrawW0),Math.ceil(DrawH0));
                 //画面サイズより大きいサイズにならないようにする
                 const newwidth=Math.max(0,Math.min(width+2*sizechangevalue,Math.floor(DrawWidth)));
                 const newheight=Math.max(0,Math.min(height+2*sizechangevalue,Math.floor(DrawHeight)));
@@ -3378,6 +3381,9 @@ class Canvas{
                 const DrawH0=this.DrawStatus.get("h0");
                 const DrawWidth=this.DrawStatus.get("width");
                 const DrawHeight=this.DrawStatus.get("height");
+                console.log("------------------AreaSelectPan-------------------");
+                console.log(DrawW0,DrawH0,DrawWidth,DrawHeight);
+                console.log(Math.ceil(DrawW0),Math.ceil(DrawH0));
                 //移動量を計算
                 const moveX=DrawWidth*(newX-oldX)/rect.width;
                 const moveY=DrawHeight*(newY-oldY)/rect.height;
