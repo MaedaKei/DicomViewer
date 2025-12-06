@@ -145,7 +145,7 @@ class CTclass{
         this.ExistingPathInputSelecter=ExistingPathInputSelecter;
         this.PathSelectDOMTree=PathSelectDOMTree;
         /*tabIndexを無効を設定する*/
-        //Focus可能な要素をまとめる
+        //Focus不可とする要素をまとめる
         const TabIndexTargetArray=[NewModeButton,ExistingModeButton,NewPathInputText,OpenFileDialogButton,ExistingPathInputSelecter];
         TabIndexTargetArray.forEach((element)=>element.tabIndex="-1");
         //console.dir(this.PathSelectDOMTree);
@@ -4119,6 +4119,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
                     const DataTypeIDContainerFragment=document.createDocumentFragment();
                     const PathDisplayContainer=document.createElement("div");
                     PathDisplayContainer.className="PathDisplayContainer";
+                    PathDisplayContainer.tabIndex="-1";
                     const PathDisplayContainerFragment=document.createDocumentFragment();
                     const PathDisplayWidth=7*MaxPathLength+10;
                     for(const DisplayData of DisplayDataList){
@@ -4428,9 +4429,12 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
             const w=currentbodyrect.width,h=currentbodyrect.height;
             //横長なら行を追加、縦長なら列を追加する
             //console.log("空きがない状態",w,h);
+            console.log(w,h);
             if(w>=h){
+                console.log("行を増やす");
                 this.UpdateCanvasPosition(this.currentRows+1,this.currentColumns);
             }else if(w<h){
+                console.log("列を増やす");
                 this.UpdateCanvasPosition(this.currentRows,this.currentColumns+1);
             }
         }
@@ -4557,6 +4561,12 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
             //console.log("前回と同じ要望サイズなのでリサイズは行わない");
         }
         //this.UpdateStyle();
+        /*
+        console.log("---------------------リサイズ完了------------------\n",this.previousBodyOrderWidth,this.previousBodyOrderHeight);
+        const currentbodyrect=document.body.getBoundingClientRect();
+        const w=currentbodyrect.width,h=currentbodyrect.height;
+        console.log(w,h);
+        */
     }
     //もしものためにヘルパーを使う
     EventSetHelper(element,event,callback){
