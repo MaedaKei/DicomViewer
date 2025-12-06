@@ -4310,7 +4310,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
                 CanvasDataMap.set(CanvasID,CanvasIDDataMap);
             }
             //パスと画面配置を記憶したので消す。ただし、LayoutGridはそのままにする
-            this.ResetCanvas(false);
+            await this.ResetCanvas(false);
             /*
             パスを変更して新しいDicomDataDictionaryを作成し、新旧DataIDの変換Mapを作成する。
             変換MapはMASKDIFFやCONTOURの読み込みでも使用する。
@@ -4361,6 +4361,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
             }
             this.UpdateStyle();//CanvasのDOMTreeのスタイルを書き換えて位置交換を反映する
             this.Resize();
+            alert("パス変更＆読み込み完了");
         }
         //alert("読み込み＆再配置が完了しました。");
     }
@@ -4444,6 +4445,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
     }
     async delateCanvas(CanvasID){
         if(await LoadAndLayout.CheckPossibilityLoadORDelete()){
+            console.log("delateCanvas");
             const CanvasClass=CanvasClassDictionary.get(CanvasID);
             //削除対象で参照されているデータを消そうとしてみる
             /*
@@ -4472,8 +4474,9 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
     async ResetCanvas(LayoutGridReset=false){
         if(await LoadAndLayout.CheckPossibilityLoadORDelete()){
             //Canvasを消す
+            //console.log(CanvasClassDictionary);
             for(const cid of CanvasClassDictionary.keys()){
-                this.delateCanvas(cid);
+                await this.delateCanvas(cid);
             }
             //DicomDataClassもリセットする
             //ここでBGCTもリセットされる
@@ -4483,6 +4486,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
                 DataTypeClassMap.clear();
             }
             //一応CanvasClassもリセットする
+            console.log("CanvasClassDictionary Clear");
             CanvasClassDictionary.clear();
             //Layoutでは、画像を削除してもgridは変更しないようにしているため、それを初期化する
             this.ResetLayoutStatus(LayoutGridReset);

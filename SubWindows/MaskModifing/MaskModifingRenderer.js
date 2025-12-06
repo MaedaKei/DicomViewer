@@ -89,7 +89,7 @@ class MaskModifingClass{
             LabelNameChangeInputContainerFragment.appendChild(InputBlockDiv);
 
             this.MaskInfoMap.set(MaskValue,new Map([//ラベル名は変わる可能性があるので、不変であるマスク値をキーとする
-                ["MaskLabel",MaskValue],
+                ["MaskLabel",MaskLabel[MaskValue]],
                 ["ButtonElement",MaskButton],
                 ["TextInput",TextInput]
             ]));
