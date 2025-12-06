@@ -61,7 +61,6 @@ class MaskModifingClass{
             const MaskButton=document.createElement("button");
             MaskButton.className="MaskButton";
             MaskButton.value=MaskValue;
-            MaskButton.tabIndex="-1";
             const ColorBoxSpan=document.createElement("span");
             ColorBoxSpan.className="MaskColorBoxSpan";
             //console.log(MaskValue,colormap[MaskValue+0],colormap[MaskValue+1],colormap[MaskValue+2]);
@@ -676,7 +675,7 @@ class MaskModifingClass{
         //スライスをチェック
         startslice=Math.max(0,Math.min(startslice,this.originalslidermax));
         endslice=Math.max(0,Math.min(endslice,this.originalslidermax));
-        //console.log("Check",startslice,endslice);
+        console.log("Check",startslice,endslice);
         if(startslice>endslice){
             const temp=startslice;
             startslice=endslice;
