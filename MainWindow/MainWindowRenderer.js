@@ -3936,7 +3936,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
             this.ColumnsInput.value=Math.max(parseInt(this.ColumnsInput.value)+changevalue,1);
         });
         */
-        const ConfirmFunc=()=>{
+        const ConfirmFunc=async ()=>{
             //変更処理
             //CanvasBlockの格子配置が変更されたら、詰めて配置しなおすことにする
             const newRows=parseInt(this.RowsInput.value)||this.currentRows;
@@ -3949,8 +3949,8 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
                 //Grid情報を更新
                 this.UpdateCanvasPosition(newRows,newColumns);
                 //更新した情報を基にスタイル変更
-                this.Resize();
                 this.UpdateStyle();
+                await this.Resize();
             }
             this.GridChangeDialog.close();
         }
@@ -4258,7 +4258,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
             }
         }else{//TargetCanvasがない＝存在しないTargetCanvasIDだった
             for(const DataInfoMap of DataInfoMapList){//
-                this.CreateNewCanvasBlock(DataInfoMap);
+                await this.CreateNewCanvasBlock(DataInfoMap);
             }
         }
     }
@@ -4348,7 +4348,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
                         return [DataType,NewDataID];
                     })
                 );
-                const NewCanvasID=this.CreateNewCanvasBlock(NewDataInfoMap);
+                const NewCanvasID=await this.CreateNewCanvasBlock(NewDataInfoMap);
                 NewCanvasIDLPMap.set(NewCanvasID,LP);
             }
             /*
@@ -4361,7 +4361,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
                 this.LP2CanvasID[LP]=NewCanvasID;
             }
             this.UpdateStyle();//CanvasのDOMTreeのスタイルを書き換えて位置交換を反映する
-            this.Resize();
+            await this.Resize();
             alert("パス変更＆読み込み完了");
         }
         //alert("読み込み＆再配置が完了しました。");
@@ -4415,7 +4415,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
         CanvasContainer.style.gridTemplateColumns=`repeat(${this.currentColumns},1fr)`;
         CanvasContainer.style.gridTemplateRows=`repeat(${this.currentRows},1fr)`;
     }
-    CreateNewCanvasBlock(DataInfoMap){
+    async CreateNewCanvasBlock(DataInfoMap){
         //キャンバスの作成と登録
         const NewCanvasID=CanvasNextID;
         const NewCanvas=new Canvas(NewCanvasID,DataInfoMap);
@@ -4444,7 +4444,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
         this.CanvasID2LP.set(NewCanvasID,newLP);
         //スタイルを変更する
         this.UpdateStyle();
-        this.Resize();
+        await this.Resize();
         return NewCanvasID;//とりあえず新しいCanvasIDを返す
     }
     async delateCanvas(CanvasID){
@@ -4498,7 +4498,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
     }
     //余裕を持たせるためにディスプレイサイズから少しだけ小さい値をデフォルトにする。
     //現在の実装方法では、bodyサイズは指定できるがウィンドウの上らへんにあるOS依存ぽいスペースまで正確に制御できていない状況もあいまって余裕を持たせるようにしている
-    Resize(width=this.DisplayWidth-50,height=this.DisplayHeight-50){
+    async Resize(width=this.DisplayWidth-50,height=this.DisplayHeight-50){
         if(CanvasClassDictionary.size==0)return;//キャンバスがないなら何もしない
         //とりあえずはcolumnsの方向で増やしていく応急処理
         //this.currentColumns=CanvasClassDictionary.size;
@@ -4554,7 +4554,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
         document.body.style.height=WindowContentHeight;
         //console.log("ContentSize",WindowContentWidth,WindowContentHeight);
         if(this.previousBodyOrderWidth!==WindowContentWidth||this.previousBodyOrderHeight!==WindowContentHeight){
-            window.MainWindowResizeAPI(WindowContentWidth,WindowContentHeight);
+            await window.MainWindowResizeAPI(WindowContentWidth,WindowContentHeight);
             this.previousBodyOrderWidth=WindowContentWidth;
             this.previousBodyOrderHeight=WindowContentHeight;
         }else{

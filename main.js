@@ -110,7 +110,7 @@ ipcMain.handle("loadDicom", async (event,SelectedPath)=>{
     return items;
 });
 
-ipcMain.on("WindowResize",(event,TargetWindow,width,height)=>{
+ipcMain.handle("WindowResize",(event,TargetWindow,width,height)=>{
     //console.log("Check",width,height)
     const targetWindow=WindowManager.get(TargetWindow);
     try{
@@ -127,6 +127,7 @@ ipcMain.on("WindowResize",(event,TargetWindow,width,height)=>{
     }catch(e){
         console.log(e);
     }
+    return true;
 });
 
 /*SubWindow関連のIPCハンドラ*/
