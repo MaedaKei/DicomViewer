@@ -127,6 +127,7 @@ ipcMain.handle("WindowResize",(event,TargetWindow,width,height)=>{
     }catch(e){
         console.log(e);
     }
+    //戻り値は特に必要ではないが、リサイズが完了するまでレンダラー側の処理を止めたい
     return true;
 });
 
