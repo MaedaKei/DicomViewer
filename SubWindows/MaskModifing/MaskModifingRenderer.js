@@ -158,7 +158,6 @@ class MaskModifingClass{
         //最終的なコンテンツサイズを決定
         const WindowContentWidth=MaskButtonContaineWidth+MaskModifyControlContainerWidth+BodyGap;
         const WindowContentHeight=Math.max(MaskButtonContainerHeight,MaskModifyControlContainerHeight);
-        window.SubWindowResizeAPI(WindowContentWidth,WindowContentHeight);
         /*Dialogの画面サイズを決定*/
         const InputFontSize=12;
         const InputHeight=InputFontSize+5;
@@ -212,6 +211,9 @@ class MaskModifingClass{
         this.setObserverEvents();
         this.setUserEvents();
         this.setSubWindowCloseEvents();
+    }
+    async SubWindowResize(){
+        await window.SubWindowResizeAPI(WindowContentWidth,WindowContentHeight);
     }
     setObserverEvents(){
         /*
