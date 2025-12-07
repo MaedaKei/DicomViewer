@@ -109,7 +109,7 @@ ipcMain.handle("loadDicom", async (event,SelectedPath)=>{
     return items;
 });
 
-ipcMain.handle("WindowResize",(event,TargetWindow,width,height)=>{
+ipcMain.on("WindowResize",(event,TargetWindow,width,height)=>{
     //console.log("Check",width,height)
     const targetWindow=WindowManager.get(TargetWindow);
     try{
@@ -126,8 +126,6 @@ ipcMain.handle("WindowResize",(event,TargetWindow,width,height)=>{
     }catch(e){
         console.log(e);
     }
-    //戻り値は特に必要ではないが、リサイズが完了するまでレンダラー側の処理を止めたい
-    return true;
 });
 
 /*SubWindow関連のIPCハンドラ*/

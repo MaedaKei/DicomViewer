@@ -176,6 +176,8 @@ class MaskModifingClass{
         document.documentElement.style.setProperty("--LabelNameChangeInputContainerGridGap",`${LabelNameChangeInputContainerGridGap}px`);
         document.documentElement.style.setProperty("--LabelNameChangeInputContainerGridRowsNum",`${LabelNameChangeInputContainerGridRowsNum}`);
         document.documentElement.style.setProperty("--LabelNameChangeInputContainerGridColumnsNum",`${LabelNameChangeInputContainerGridColumnsNum}`);
+        //適したwindowサイズに変更
+        window.SubWindowResizeAPI(WindowContentWidth,WindowContentHeight);
         //ダイアログの表示を初期化
         this.UpdateLabelNameChangeDialogPlaceholder();
         this.ButtonHeight=ButtonHeight;
@@ -211,9 +213,6 @@ class MaskModifingClass{
         this.setObserverEvents();
         this.setUserEvents();
         this.setSubWindowCloseEvents();
-    }
-    async SubWindowResize(){
-        await window.SubWindowResizeAPI(WindowContentWidth,WindowContentHeight);
     }
     setObserverEvents(){
         /*

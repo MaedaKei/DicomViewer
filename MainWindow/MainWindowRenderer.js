@@ -3883,7 +3883,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
             const result=window.confirm("読み込んだデータがリセットされます。\nよろしいですか？");
             if(result){
                 //Canvasを消す
-                this.ResetCanvas(true);
+                await this.ResetCanvas(true);
             }
             //console.log(DicomDataClassDictionary);
             //console.log(CanvasClassDictionary);
@@ -3936,7 +3936,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
             this.ColumnsInput.value=Math.max(parseInt(this.ColumnsInput.value)+changevalue,1);
         });
         */
-        const ConfirmFunc=async ()=>{
+        const ConfirmFunc=()=>{
             //変更処理
             //CanvasBlockの格子配置が変更されたら、詰めて配置しなおすことにする
             const newRows=parseInt(this.RowsInput.value)||this.currentRows;
@@ -3950,7 +3950,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
                 this.UpdateCanvasPosition(newRows,newColumns);
                 //更新した情報を基にスタイル変更
                 this.UpdateStyle();
-                await this.Resize();
+                this.Resize();
             }
             this.GridChangeDialog.close();
         }
@@ -4258,7 +4258,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
             }
         }else{//TargetCanvasがない＝存在しないTargetCanvasIDだった
             for(const DataInfoMap of DataInfoMapList){//
-                await this.CreateNewCanvasBlock(DataInfoMap);
+                this.CreateNewCanvasBlock(DataInfoMap);
             }
         }
     }
@@ -4348,7 +4348,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
                         return [DataType,NewDataID];
                     })
                 );
-                const NewCanvasID=await this.CreateNewCanvasBlock(NewDataInfoMap);
+                const NewCanvasID=this.CreateNewCanvasBlock(NewDataInfoMap);
                 NewCanvasIDLPMap.set(NewCanvasID,LP);
             }
             /*
@@ -4361,7 +4361,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
                 this.LP2CanvasID[LP]=NewCanvasID;
             }
             this.UpdateStyle();//CanvasのDOMTreeのスタイルを書き換えて位置交換を反映する
-            await this.Resize();
+            this.Resize();
             alert("パス変更＆読み込み完了");
         }
         //alert("読み込み＆再配置が完了しました。");
@@ -4415,7 +4415,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
         CanvasContainer.style.gridTemplateColumns=`repeat(${this.currentColumns},1fr)`;
         CanvasContainer.style.gridTemplateRows=`repeat(${this.currentRows},1fr)`;
     }
-    async CreateNewCanvasBlock(DataInfoMap){
+    CreateNewCanvasBlock(DataInfoMap){
         //キャンバスの作成と登録
         const NewCanvasID=CanvasNextID;
         const NewCanvas=new Canvas(NewCanvasID,DataInfoMap);
@@ -4425,8 +4425,12 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
         //現在空いている場所はあるか？
         if(CanvasClassDictionary.size>this.currentRows*this.currentColumns){
             //空きがない状態なので、アップデートして空きを作る
+            /*
             const currentbodyrect=document.body.getBoundingClientRect();
             const w=currentbodyrect.width,h=currentbodyrect.height;
+            */
+            const w=this.previousBodyOrderWidth;
+            const h=this.previousBodyOrderHeight;
             //横長なら行を追加、縦長なら列を追加する
             //console.log("空きがない状態",w,h);
             console.log(w,h);
@@ -4444,7 +4448,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
         this.CanvasID2LP.set(NewCanvasID,newLP);
         //スタイルを変更する
         this.UpdateStyle();
-        await this.Resize();
+        this.Resize();
         return NewCanvasID;//とりあえず新しいCanvasIDを返す
     }
     async delateCanvas(CanvasID){
@@ -4554,7 +4558,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
         document.body.style.height=WindowContentHeight;
         //console.log("ContentSize",WindowContentWidth,WindowContentHeight);
         if(this.previousBodyOrderWidth!==WindowContentWidth||this.previousBodyOrderHeight!==WindowContentHeight){
-            await window.MainWindowResizeAPI(WindowContentWidth,WindowContentHeight);
+            window.MainWindowResizeAPI(WindowContentWidth,WindowContentHeight);
             this.previousBodyOrderWidth=WindowContentWidth;
             this.previousBodyOrderHeight=WindowContentHeight;
         }else{

@@ -112,12 +112,14 @@ class ROISelectClass{
         document.documentElement.style.setProperty("--GridColumnsNum",`${ColumnsNum}`);
         document.documentElement.style.setProperty("--GridGap",`${GridGap}px`);
         /*TestPrint*/
+        /*
         console.log(ROISelectContainerHeight);
         console.log(ButtonWidth,ButtonHeight);
         console.log(RowsNum,ColumnsNum);
         console.log(WindowContentWidth,WindowContentHeight);
-        //console.log(MaxROINameTextWidth);
-        
+        */
+        //適したウィンドウサイズに変更
+        window.SubWindowResizeAPI(WindowContentWidth,WindowContentHeight);
 
         this.ROISelectContainer.appendChild(ROISelectContainerFragment);
         //MultiUseLayerMode申請
@@ -131,9 +133,6 @@ class ROISelectClass{
         this.setObserverEvents();
         this.setUserEvents();
         this.setSubWindowCloseEvents();
-    }
-    async SubWindowResize(){
-        await window.SubWindowResizeAPI(WindowContentWidth,WindowContentHeight);
     }
     SendMultiUseLayerSwitching(TargetCanvasID,ModeSwitching,Activate){
         const FromSubToMainProcessData=new Map([
