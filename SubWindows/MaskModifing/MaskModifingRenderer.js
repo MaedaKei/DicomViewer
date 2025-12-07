@@ -316,6 +316,8 @@ class MaskModifingClass{
         const dammyButton=document.createElement("button");
         dammyButton.classList="DammyButton";
         this.dammyButton=dammyButton;
+        this.MouseDownTimer=false;//マウスダウン長押し
+        this.MaskButtonMovable=false;
         this.EventSetHelper(document,"mousedown",(e)=>{
             //bodyに対して設定する。ユーザーがbuttoncontainer内でのみマウスイベントを発生させるとは限らないから
             if(e.button===0&&this.MaskButtonOperationFlag){//どこかのButtonContainerでマウスダウンを行ったなら
@@ -328,11 +330,28 @@ class MaskModifingClass{
                 }else{
                     this.MaskButtonMouseDowned=false;
                 }
+                //movableタイマースタート
+                this.MouseDownTimer=setTimeout(()=>{
+                    this.MaskButtonMovable=true;
+                },100);//200ms後にマウスムーブ有効化になる
             }
         });
+        //ボタンの上から離れたらタイマーリセットのみ行う。MaskButtonMovableはリセットしない。MaskButtonMovableのリセットはMouseUp時のみ。あくまでMaskButtonMovableの有効化の阻害のみ
+        
+        this.EventSetHelper(document,"mouseout",(e)=>{
+            if(this.MaskButtonMouseDowned){//押された後にmouseoutした＝押されたボタンから一度離れた
+                const MouseOutedButton=e.target.closest("button.MaskButton");
+                if(MouseOutedButton){
+                    clearTimeout(this.MouseDownTimer);
+                }
+            }
+        });
+        
         this.MaskButtonMoved=false;
+        //ボタン要素を移動できるようになる条件
+        //ボタンの上で200ms以上長押しする＆＆mousemove発火
         this.EventSetHelper(document,"mousemove",(e)=>{
-            if(this.MaskButtonMouseDowned){//MaskButtonOperationFlagが有効、かつMaskButton上でマウスダウンが発生してあとのmousemoveなら
+            if(this.MaskButtonMovable&&this.MaskButtonMouseDowned){//MaskButtonOperationFlagが有効、かつMaskButton上でマウスダウンが発生してあとのmousemoveなら
                 /*
                 2つの動きがある
                 MaskButtonMouseDownedの後はじめてのmousemoveのとき
@@ -357,14 +376,17 @@ class MaskModifingClass{
                 const y=CurrentMousePosition.get("y");
                 const OffsetYBase=this.ButtonHeight/*+this.ButtonGap*/;
                 this.MovingButtonArray.forEach((Button,index)=>{
-                    const OffsetX=`${x+5}px`;
-                    const OffsetY=`${y+index*OffsetYBase+10}px`;
+                    //マウスに被るとイベント発火の妨げになるので、現時点ではマウスポインタから少しずらした位置に表示させるようにする。CSSでbuttonに対してマウスイベント発火の防止を指定できるかも
+                    const OffsetX=`${x+3}px`;
+                    const OffsetY=`${y+index*OffsetYBase+3}px`;
                     Button.style.left=OffsetX;
                     Button.style.top=OffsetY;
                     //Button.style.zIndex=10;
                     //console.log("z-index",Button.style.zIndex);
                 });
-                this.MaskButtonMoved=true;
+                if(!this.MaskButtonMoved){
+                    this.MaskButtonMoved=true;
+                }
             }else{
                 this.MaskButtonMoved=false;
             }
@@ -486,6 +508,9 @@ class MaskModifingClass{
                 this.MaskButtonMoved=false;
                 this.MaskButtonMouseDowned=false;
                 this.MovingButtonArray=[];
+                //マウスダウンタイマーリセット&&スタイルリセット
+                this.MaskButtonMovable=false;
+                clearTimeout(this.MouseDownTimer);
             }
         });
         /*
