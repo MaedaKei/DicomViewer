@@ -752,7 +752,7 @@ class MaskModifingClass{
         const MaskModifyAfterButtonContainer=this.ButtonContainerMap.get("MaskModifyAfterButtonContainer");
         const AfterMaskButtonArray=MaskModifyAfterButtonContainer.querySelectorAll(":scope>button.MaskButton");
         if(BeforeMaskButtonArray.length!==AfterMaskButtonArray.length){
-            alert("変更前と変更後は対応する位置同士で変換が行われるため、同じ数だけ指定されている必要があります。");
+            console.log("変更前と変更後は対応する位置同士で変換が行われるため、同じ数だけ指定されている必要があります。");
         }else{
             /*
             変更データの形式

@@ -3810,7 +3810,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
         const SubWindowOpendResult=await this.CheckSubWindowOpened();
         //console.log(SubWindowOpendResult);
         if(SubWindowOpendResult){
-            alert("サブウィンドウが開かれているため、データの追加・削除はできません");
+            conslole.log("サブウィンドウが開かれているため、データの追加・削除はできません");
             return false;
         }else{
             return true;
@@ -3945,7 +3945,8 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
         /*リセットボタン*/
         this.ResetButton=document.getElementById("ResetButton");
         this.EventSetHelper(this.ResetButton,"mouseup",async ()=>{
-            const result=window.confirm("読み込んだデータがリセットされます。\nよろしいですか？");
+            //const result=window.confirm("読み込んだデータがリセットされます。\nよろしいですか？");
+            const result=true;
             if(result){
                 //Canvasを消す
                 await this.ResetCanvas(true);
@@ -4007,7 +4008,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
             const newRows=parseInt(this.RowsInput.value)||this.currentRows;
             const newColumns=parseInt(this.ColumnsInput.value)||this.currentColumns;
             if(newRows*newColumns<CanvasClassDictionary.size){
-                alert(`現在のCanvasBlockの個数は ${CanvasClassDictionary.size} です。`);
+                console.log(`現在のCanvasBlockの個数は ${CanvasClassDictionary.size} です。`);
                 return;
             }
             if(!(this.currentRows==newRows&&this.currentColumns==newColumns)){
@@ -4094,7 +4095,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
             //Canvasの移動処理
             const SelectedPositionButtonList=Array.from(this.CanvasMovePositionButtonContainer.querySelectorAll(":scope>button.Selected"));
             if(SelectedPositionButtonList.length!=2){
-                alert("必ず2つ選択してください");
+                console.log("必ず2つ選択してください");
             }else{
                 const checkedLPs=SelectedPositionButtonList.map((PositionButton)=>{
                     PositionButton.classList.remove("Selected");//Selected解除
@@ -4363,10 +4364,10 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
         const ConfirmConduct=false;
         let ConfirmResult=true;
         if(ConfirmConduct){
-            ConfirmResult=window.confirm("一括変更では処理結果にかかわらず画面がリセットされます。\n不正なパス変更がされた場合、画面がリセットされるのみとなりますがよろしいですか？");
+            //ConfirmResult=window.confirm("一括変更では処理結果にかかわらず画面がリセットされます。\n不正なパス変更がされた場合、画面がリセットされるのみとなりますがよろしいですか？");
         }
         if(!ConfirmResult){
-            console.alert("一括変更がキャンセルられました。");
+            //console.log("一括変更がキャンセルされました。");
         }else{
             this.ChangeAndLoadDialog.close();
             /*
@@ -4482,9 +4483,9 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
             }
             this.UpdateStyle();//CanvasのDOMTreeのスタイルを書き換えて位置交換を反映する
             this.Resize();
-            alert("パス変更＆読み込み完了");
+            console.log("パス変更＆読み込み完了");
         }
-        //alert("読み込み＆再配置が完了しました。");
+        //console.log("読み込み＆再配置が完了しました。");
     }
     //各キャンバスの位置情報を更新する
     //すでに配置されているキャンバスたちに対して、新しい格子での位置を与える
@@ -4618,6 +4619,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
             CanvasClassDictionary.clear();
             //Layoutでは、画像を削除してもgridは変更しないようにしているため、それを初期化する
             this.ResetLayoutStatus(LayoutGridReset);
+            console.log(document.activeElement);
         }
     }
     //余裕を持たせるためにディスプレイサイズから少しだけ小さい値をデフォルトにする。
@@ -4774,7 +4776,7 @@ class Evaluate{
                 if(CanvasClassDictionary.size>0 || true){
                     this.OrderEvaluateWindowOpen();
                 }else{
-                    alert("評価対象がありません");
+                    console.log("評価対象がありません");
                 }
             }
         });
