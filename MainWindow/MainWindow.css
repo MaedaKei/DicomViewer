@@ -233,10 +233,10 @@ dialog#CanvasMoveDialog>div#CanvasMoveSelecterContainer>div#CanvasMovePositionBu
     color:black;
     font-size:10px;
 }
-dialog#CanvasMoveDialog>div#CanvasMoveSelecterContainer>div#CanvasMovePositionButtonContainer>button.Selected{
+dialog#CanvasMoveDialog>div#CanvasMoveSelecterContainer>div#CanvasMovePositionButtonContainer>button:hover{
     border:2px solid rgb(255, 0, 0);
 }
-dialog#CanvasMoveDialog>div#CanvasMoveSelecterContainer>div#CanvasMovePositionButtonContainer>button:hover{
+dialog#CanvasMoveDialog>div#CanvasMoveSelecterContainer>div#CanvasMovePositionButtonContainer>button.Selected{
     background-color: #bb95d6;
 }
 /* ボタン横並び */
@@ -776,7 +776,7 @@ dialog#ChangeAndLoadDialog[open]{
     top:50%;
     left:50%;
     transform: translate(-50%,-50%);
-    --PathContainerWidth:300px;
+    --PathContainerWidth:400px;
     --OperationContainerWidth:250px;
     width:calc(var(--PathContainerWidth) + var(--OperationContainerWidth));
     height:400px;
@@ -816,7 +816,7 @@ div#ChangeAndLoadPathContainer>div.CanvasInfoContainer>div.DataTypeIDPathContain
     flex-direction: row;
     --DataTypeIDPathLineHeight:25px;
     --DataTypeIDPathLineFontSize:12px;
-    --DataTypeIDDisplayContainerWidth:120px;
+    --DataTypeIDDisplayContainerWidth:200px;
     --PathDisplayContainerWidth:calc(100% - var(--DataTypeIDContainerWidth));
 }
 div#ChangeAndLoadPathContainer>div.CanvasInfoContainer>div.DataTypeIDPathContainer>div.DataTypeIDDisplayContainer{
@@ -871,6 +871,7 @@ div#ChangeAndLoadOperationContainer>div#ChangeAndLoadTargetContainer{
     overflow-y: scroll;
     display:flex;
     flex-direction: column;
+    background-color: gray;
 }
 div#ChangeAndLoadOperationContainer>div#ChangeAndLoadTargetContainer>div.ChangeAndLoadTarget{
     width:100%;
@@ -922,7 +923,7 @@ div#ChangeAndLoadOperationContainer>div#ChangeAndLoadTargetContainer>button#Chan
     height:20px;
     padding:2px;
     border: 1px solid black;
-    background-color: gray;
+    background-color: rgb(195, 195, 195);
     color:black;
     font:bold 10px sans-serif;
     text-align: center;
