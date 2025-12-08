@@ -771,22 +771,23 @@ dialog#LoadDialog>div#LoadDialogButtonContainer>button:active{
 }
 
 /*ChangeAndLoadDialog*/
-dialog#ChangeAndLoadDialog{
-    --PathContainerHeight:300px;
-    --TargetContainerHeight:30px;
-    --ButtonContainerHeight:40px;
+dialog#ChangeAndLoadDialog[open]{
     position:absolute;
     top:50%;
     left:50%;
     transform: translate(-50%,-50%);
-    width:600px;
-    height:calc(var(--PathContainerHeight) + var(--TargetContainerHeight) + var(--ButtonContainerHeight) + 2px);
+    --PathContainerWidth:300px;
+    --OperationContainerWidth:250px;
+    width:calc(var(--PathContainerWidth) + var(--OperationContainerWidth));
+    height:400px;
     background-color: rgb(255, 255, 255);
+    display:flex;
+    flex-direction: row;
 }
 /*読み込まれているCanvasIDとファイルパスを一覧で表示するコンテナ*/
-dialog#ChangeAndLoadDialog>div#ChangeAndLoadPathContainer{
-    width:100%;
-    height:var(--PathContainerHeight);
+dialog#ChangeAndLoadDialog[open]>div#ChangeAndLoadPathContainer{
+    width:var(--PathContainerWidth);
+    height:100%;
     display: flex;
     flex-direction: column;
     background-color: gray;
@@ -800,10 +801,10 @@ div#ChangeAndLoadPathContainer>div.CanvasInfoContainer{
 }
 div#ChangeAndLoadPathContainer>div.CanvasInfoContainer>div.CanvasIDDisplay{
     width:100%;
-    height:30px;
+    height:20px;
     background-color: rgb(95, 0, 95);
     color:white;
-    font-size:20px;
+    font-size:10px;
     font-weight:bold;
     text-align: center;
     vertical-align: top;
@@ -857,35 +858,83 @@ div#ChangeAndLoadPathContainer>div.CanvasInfoContainer>div.DataTypeIDPathContain
     border: 1px solid black;
 }
 /*ChangeAndLoadDialogの変更対象を記述するコンテナ*/
-dialog#ChangeAndLoadDialog>div#ChangeAndLoadTargetContainer{
-    width:100%;
-    height:var(--TargetContainerHeight);
-    display: flex;
-    flex-direction: row;
-    --ChangeAndLoadTargetInputSeparaterWidth:80px;
-    --ChangeAndLoadTargetInputWidth:calc((100% - var(--ChangeAndLoadTargetInputSeparaterWidth)) / 2);
-}
-div#ChangeAndLoadTargetContainer>input[type="text"]{
-    width:var(--ChangeAndLoadTargetInputWidth);
+dialog#ChangeAndLoadDialog[open]>div#ChangeAndLoadOperationContainer{
+    width:var(--OperationContainerWidth);
     height:100%;
-    padding:5px;
-    font-size: 20px;
-    vertical-align: top;
-    border: 1px solid black;
+    --ButtonContainerHeight:30px;
+    display: flex;
+    flex-direction: column;
 }
-div#ChangeAndLoadTargetContainer>div{
-    width:var(--ChangeAndLoadTargetInputSeparaterWidth);
+div#ChangeAndLoadOperationContainer>div#ChangeAndLoadTargetContainer{
+    width:100%;
+    height:calc(100% - var(--ButtonContainerHeight));
+    overflow-y: scroll;
+    display:flex;
+    flex-direction: column;
+}
+div#ChangeAndLoadOperationContainer>div#ChangeAndLoadTargetContainer>div.ChangeAndLoadTarget{
+    width:100%;
+    height:25px;
+    display:flex;
+    flex-direction: row;
+    --AllowWidth:30px;
+    --DeleteButtonWidth:30px;
+    --InputWidth:calc((100% - var(--AllowWidth) - var(--DeleteButtonWidth)) / 2);
+    border:1px solid black;
+    flex-shrink: 0;
+}
+div#ChangeAndLoadOperationContainer>div#ChangeAndLoadTargetContainer>div.ChangeAndLoadTarget>input[type="text"]{
+    width:var(--InputWidth);
     height:100%;
     padding:2px;
-    font-size: 12px;
-    font-weight: bold;
-    background-color: #529395;
-    color:white;
-    text-align: center;
-    vertical-align: top;
-    border: 1px solid black;
+    font:12px sans-serif;
 }
-dialog#ChangeAndLoadDialog>div#ChangeAndLoadButtonContainer{
+div#ChangeAndLoadOperationContainer>div#ChangeAndLoadTargetContainer>div.ChangeAndLoadTarget>input[type="text"]:focus{
+    outline: none;
+}
+
+div#ChangeAndLoadOperationContainer>div#ChangeAndLoadTargetContainer>div.ChangeAndLoadTarget>button.ChangeAndLoadTargetDeleteButton{
+    width:var(--DeleteButtonWidth);
+    height:100%;
+    padding:1px;
+    font:bold 10px sans-serif;
+    text-align: center;
+    background-color: rgb(253, 134, 134);
+    color:white;
+}
+div#ChangeAndLoadOperationContainer>div#ChangeAndLoadTargetContainer>div.ChangeAndLoadTarget>button.ChangeAndLoadTargetDeleteButton:hover{
+    background-color: red;
+}
+div#ChangeAndLoadOperationContainer>div#ChangeAndLoadTargetContainer>div.ChangeAndLoadTarget>button.ChangeAndLoadTargetDeleteButton:active{
+    color:black;
+}
+div#ChangeAndLoadOperationContainer>div#ChangeAndLoadTargetContainer>div.ChangeAndLoadTarget>div.ChangeAndLoadAllow{
+    width:var(--AllowWidth);
+    height:100%;
+    background-color: rgb(47, 47, 47);
+    color:white;
+    font:bold 10px sans-serif;
+    padding:2px;
+    text-align: center;
+}
+div#ChangeAndLoadOperationContainer>div#ChangeAndLoadTargetContainer>button#ChangeAndLoadTargetAddButton{
+    width:100%;
+    height:20px;
+    padding:2px;
+    border: 1px solid black;
+    background-color: gray;
+    color:black;
+    font:bold 10px sans-serif;
+    text-align: center;
+    flex-shrink: 0;
+}
+div#ChangeAndLoadOperationContainer>div#ChangeAndLoadTargetContainer>button#ChangeAndLoadTargetAddButton:hover{
+    background-color: rgb(225, 232, 147);
+}
+div#ChangeAndLoadOperationContainer>div#ChangeAndLoadTargetContainer>button#ChangeAndLoadTargetAddButton:active{
+    color:white;
+}
+div#ChangeAndLoadOperationContainer>div#ChangeAndLoadButtonContainer{
     width:100%;
     height:var(--ButtonContainerHeight);
     display: flex;
@@ -894,18 +943,16 @@ dialog#ChangeAndLoadDialog>div#ChangeAndLoadButtonContainer{
 div#ChangeAndLoadButtonContainer>button{
     width:50%;
     height:100%;
-    padding: 2px;
-    font-size:20px;
-    font-weight: bold;
-    text-align: center;
-    vertical-align: top;
-    background-color: rgb(95, 96, 95);
+    padding:1px;
+    border:1px solid black;
+    background-color: #005a9e;
     color:white;
-    border: 1px solid black;
+    font:bold 10px sans-serif;
+    text-align: center;
 }
 div#ChangeAndLoadButtonContainer>button:hover{
-    background-color: rgb(229, 155, 155);
+    background-color: #0077d2;
 }
 div#ChangeAndLoadButtonContainer>button:active{
-    color:rgb(38, 237, 38);
+    color:white;
 }

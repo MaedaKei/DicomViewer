@@ -381,14 +381,36 @@ class CTclass{
         }
         return false;
     }
-    static ChangePath(OldPathArray,PathChangeTargetMap,Old2NewDataIDMap){
+    static ChangePath(OldPathArray,PatternTargetMap,Old2NewDataIDMap){
         /*
         変更前のPathのArrayが送られてくるので、それらを変更した新しいArrayを返す.
         DataTypeによっては使わない引数あり
         */
-        const BeforeTarget=PathChangeTargetMap.get("Before");
-        const AfterTarget=PathChangeTargetMap.get("After");
-        const NewPathArray=OldPathArray.map((OldPath)=>OldPath.replace(BeforeTarget,AfterTarget));
+        //OldPathArrayに対してパターンがあるか確認する
+        /*
+        PatternTargetMap
+        {
+            {<x>:{Before:Pattern,After:Pattern},}
+        }
+        */
+        //対象文字列を中間文字列に変換する
+        const NewPathArray=[];
+        for(let i=0;i<OldPathArray.length;i++){
+            let Before2MiddlePath=OldPathArray[i];
+            for(const [MiddlePattern,BeforeAndAfterPatternMap] of PatternTargetMap.entries()){
+                const BeforePattern=BeforeAndAfterPatternMap.get("Before");
+                Before2MiddlePath=Before2MiddlePath.replace(BeforePattern,MiddlePattern);
+            }
+            NewPathArray.push(Before2MiddlePath);
+        }
+        for(let i=0;i<NewPathArray.length;i++){
+            let Middle2AfterPath=NewPathArray[i];
+            for(const [MiddlePattern,BeforeAndAfterPatternMap] of PatternTargetMap.entries()){
+                const AfterPattern=BeforeAndAfterPatternMap.get("After");
+                Middle2AfterPath=Middle2AfterPath.replace(MiddlePattern,AfterPattern);
+            }
+            NewPathArray[i]=Middle2AfterPath;
+        }
         return NewPathArray;
     }
     /*ここから下はインスタンスとしての動き*/
@@ -912,14 +934,28 @@ class MASKclass{
         }
         return false;
     }
-    static ChangePath(OldPathArray,PathChangeTargetMap,Old2NewDataIDMap){
+    static ChangePath(OldPathArray,PatternTargetMap,Old2NewDataIDMap){
         /*
         変更前のPathのArrayが送られてくるので、それらを変更した新しいArrayを返す.
         DataTypeによっては使わない引数あり
         */
-        const BeforeTarget=PathChangeTargetMap.get("Before");
-        const AfterTarget=PathChangeTargetMap.get("After");
-        const NewPathArray=OldPathArray.map((OldPath)=>OldPath.replace(BeforeTarget,AfterTarget));
+        const NewPathArray=[];
+        for(let i=0;i<OldPathArray.length;i++){
+            let Before2MiddlePath=OldPathArray[i];
+            for(const [MiddlePattern,BeforeAndAfterPatternMap] of PatternTargetMap.entries()){
+                const BeforePattern=BeforeAndAfterPatternMap.get("Before");
+                Before2MiddlePath=Before2MiddlePath.replace(BeforePattern,MiddlePattern);
+            }
+            NewPathArray.push(Before2MiddlePath);
+        }
+        for(let i=0;i<NewPathArray.length;i++){
+            let Middle2AfterPath=NewPathArray[i];
+            for(const [MiddlePattern,BeforeAndAfterPatternMap] of PatternTargetMap.entries()){
+                const AfterPattern=BeforeAndAfterPatternMap.get("After");
+                Middle2AfterPath=Middle2AfterPath.replace(MiddlePattern,AfterPattern);
+            }
+            NewPathArray[i]=Middle2AfterPath;
+        }
         return NewPathArray;
     }
     /*ここから下はインスタンスとしての動き*/
@@ -1470,7 +1506,7 @@ class MASKDIFFclass{
         }
         return false;
     }
-    static ChangePath(OldPathArray,PathChangeTargetMap,Old2NewDataIDMap){
+    static ChangePath(OldPathArray,PatternTargetMap,Old2NewDataIDMap){
         /*
         変更前のPathのArrayが送られてくるので、それらを変更した新しいArrayを返す.
         MASKDIFFはOldPathArrayを解析して、新しいIDを使った新しいパスを作成する
@@ -1840,6 +1876,7 @@ class CONTOURclass{
             const option=document.createElement("option");
             const Path=DicomDataClassDictionary.get(CTclass.DataType).get(DataID).get("Data").Path;
             option.text=`DataID:${DataID} ${Path} ( CanvasID= ${CanvasIDList.join(", ")} )`;
+            option.value=DataID;
             ReferOriginalPathInputSelecterFragment.appendChild(option);
         }
         /*
@@ -1887,6 +1924,7 @@ class CONTOURclass{
         }else{
             const DataInfoList=[];
             for(const LoadPath of LoadPathList){
+                //console.log(LoadPath);
                 const [FilePath,DataIDstr]=LoadPath.split(this.FilePathCanvasIDDelimita);
                 const NewLoadedData=await this.DataLoader(FilePath);
                 /*
@@ -1895,6 +1933,10 @@ class CONTOURclass{
                 const OriginalCTDataID=OriginalCTCanvas.LayerDataMap.get(CTclass.DataType).get("DataID");
                 */
                 const OriginalCTDataID=parseInt(DataIDstr);
+                //console.log(OriginalCTDataID);
+                const _DicomDataClass=DicomDataClassDictionary.get(CTclass.DataType);
+                const _OriginalCTData=_DicomDataClass.get(OriginalCTDataID);
+                const _CTData=_OriginalCTData.get("Data");
                 const OriginalCTData=DicomDataClassDictionary.get(CTclass.DataType).get(OriginalCTDataID).get("Data");
                 if(NewLoadedData&&OriginalCTData){//ちゃんと読み込めているか
                     //OriginalCTの参照はコンストラクタ内でもできるが、コンストラクタが走るとエラーに関わらずインスタンスが生成されるような気がするので、確実に完了させるために事前にチェックする方策をとる
@@ -1945,13 +1987,34 @@ class CONTOURclass{
         }
         return false;
     }
-    static ChangePath(OldPathArray,PathChangeTargetMap,Old2NewDataIDMap){
+    static ChangePath(OldPathArray,PatternTargetMap,Old2NewDataIDMap){
         /*
         変更前のPathのArrayが送られてくるので、それらを変更した新しいArrayを返す.
         CONTOURはPath変換＆DataID変換が必要
+        CONTOURPathの形式はPath:DataID
         */
-        const BeforeTarget=PathChangeTargetMap.get("Before");
-        const AfterTarget=PathChangeTargetMap.get("After");
+        const NewPathArray=[];
+        for(let i=0;i<OldPathArray.length;i++){
+            let Before2MiddlePath=OldPathArray[i];
+            for(const [MiddlePattern,BeforeAndAfterPatternMap] of PatternTargetMap.entries()){
+                const BeforePattern=BeforeAndAfterPatternMap.get("Before");
+                Before2MiddlePath=Before2MiddlePath.replace(BeforePattern,MiddlePattern);
+            }
+            NewPathArray.push(Before2MiddlePath);
+        }
+        const TargetDataTypeOld2NewDataIDMap=Old2NewDataIDMap.get(CTclass.DataType);
+        for(let i=0;i<NewPathArray.length;i++){
+            let Middle2AfterPath=NewPathArray[i];
+            let [Middle2AfterFilePath,Middle2AfterDataIDstr]=Middle2AfterPath.split(this.FilePathCanvasIDDelimita);
+            for(const [MiddlePattern,BeforeAndAfterPatternMap] of PatternTargetMap.entries()){
+                const AfterPattern=BeforeAndAfterPatternMap.get("After");
+                Middle2AfterFilePath=Middle2AfterFilePath.replace(MiddlePattern,AfterPattern);
+            }
+            const NewDataID=TargetDataTypeOld2NewDataIDMap.get(parseInt(Middle2AfterDataIDstr));
+            NewPathArray[i]=[Middle2AfterFilePath,NewDataID].join(this.FilePathCanvasIDDelimita);
+        }
+        return NewPathArray;
+        /*
         const TargetDataTypeOld2NewDataIDMap=Old2NewDataIDMap.get(CTclass.DataType);
         const PathNum=OldPathArray.length;
         const NewPathArray=new Array(PathNum);//長さがわかっているのでこの宣言をした
@@ -1964,6 +2027,7 @@ class CONTOURclass{
             NewPathArray[i]=NewPath;
         }
         return NewPathArray;
+        */
     }
     //Contour専用のカラーマップ生成関数
     static hsv2rgb(h,s=1,v=1){
@@ -3709,6 +3773,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
         return LoadingPathList;
     }
     static async LoadFiles(loadingPath){
+        console.log(loadingPath);
         const items=await window.DicomLoadAPI.loadDicom(loadingPath);
         if(!items || items.length === 0) {
             console.error("No files selected or loaded.");
@@ -4076,8 +4141,10 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
         this.ChangeAndLoadButton=document.getElementById("ChangeAndLoadButton");
         this.ChangeAndLoadDialog=document.getElementById("ChangeAndLoadDialog");
         this.ChangeAndLoadPathContainer=document.getElementById("ChangeAndLoadPathContainer");
-        this.ChangeAndLoadTargetInput1=document.getElementById("ChangeAndLoadTargetInput1");
-        this.ChangeAndLoadTargetInput2=document.getElementById("ChangeAndLoadTargetInput2");
+        this.ChangeAndLoadTargetContainer=document.getElementById("ChangeAndLoadTargetContainer");
+        this.ChangeAndLoadTargetTemplate=document.getElementById("ChangeAndLoadTargetTemplate");
+        this.ChangeAndLoadTargetAddButton=document.getElementById("ChangeAndLoadTargetAddButton");
+
         this.ChangeAndLoadConfirmButton=document.getElementById("ChangeAndLoadConfirmButton");
         this.ChangeAndLoadCancelButton=document.getElementById("ChangeAndLoadCancelButton");
         this.EventSetHelper(this.ChangeAndLoadButton,"mouseup",async (e)=>{
@@ -4144,9 +4211,39 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
                     ChangeAndLoadPathContainerFragment.appendChild(CanvasInfoContainer);
                 }
                 this.ChangeAndLoadPathContainer.appendChild(ChangeAndLoadPathContainerFragment);
+                /*
+                ChangeAndLoadTargetContainerに一つ目のターゲット入力欄を追加する
+                新しいターゲットの追加は追加ボタンの前に挿入する
+                */ 
+                //初期化
+                const ChangeAndLoadTargetArray=this.ChangeAndLoadTargetContainer.querySelectorAll(":scope>div.ChangeAndLoadTarget");
+                ChangeAndLoadTargetArray.forEach((TargetElement)=>TargetElement.remove());
+                const ChangeAndLoadTarget=this.ChangeAndLoadTargetTemplate.content.cloneNode(true);
+                this.ChangeAndLoadTargetContainer.insertBefore(ChangeAndLoadTarget,this.ChangeAndLoadTargetAddButton);
                 this.ChangeAndLoadDialog.showModal();
             }
         });
+        //ChangeAndLoadTargetの追加処理
+        //ChangeAndLoadTargetの削除処理
+        this.EventSetHelper(this.ChangeAndLoadTargetContainer,"mouseup",(e)=>{
+            if(e.button===0){
+                //console.log(e.target);
+                if(e.target.tagName==="BUTTON"){
+                    const TargetButton=e.target;
+                    if(TargetButton===this.ChangeAndLoadTargetAddButton){
+                        const NewTarget=this.ChangeAndLoadTargetTemplate.content.cloneNode(true);
+                        this.ChangeAndLoadTargetContainer.insertBefore(NewTarget,this.ChangeAndLoadTargetAddButton);
+                    }else if(TargetButton.className==="ChangeAndLoadTargetDeleteButton"){
+                        //親を辿って削除対象のdivを補足する
+                        const DeleteTarget=TargetButton.closest("div.ChangeAndLoadTarget");
+                        if(DeleteTarget){
+                            DeleteTarget.remove();
+                        }
+                    }
+                }
+            }
+        });
+        
         this.EventSetHelper(this.ChangeAndLoadConfirmButton,"keydown",async (e)=>{
             if(e.code==="Enter"){
                 await this.ChangeAndLoad();
@@ -4316,18 +4413,41 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
             パスを変更して新しいDicomDataDictionaryを作成し、新旧DataIDの変換Mapを作成する。
             変換MapはMASKDIFFやCONTOURの読み込みでも使用する。
             */
-            const PathChangeTargetMap=new Map([
+            /*
+            const PatternTargetMap=new Map([
                 ["Before",this.ChangeAndLoadTargetInput1.value],
                 ["After",this.ChangeAndLoadTargetInput2.value]
             ]);
-            //console.log(PathChangeTargetMap);
+            */
+            /*
+            {
+                Before:[text,text,...,]
+                After:[text,text,...,]
+            }
+            */
+            const ChangeAndLoadTargetArray=Array.from(this.ChangeAndLoadTargetContainer.querySelectorAll(":scope>div.ChangeAndLoadTarget"));
+            const PatternTargetMap=new Map();
+            for(let i=0;i<ChangeAndLoadTargetArray.length;i++){
+                const ChangeMiddlePattern=`<${i}>`;//< ,　> はファイルパスに使われないので変換中間文字列として適している
+                const ChangeAndLoadTarget=ChangeAndLoadTargetArray[i];
+                const InputBefore=ChangeAndLoadTarget.querySelector(":scope>input.InputBefore");
+                const InputAfter=ChangeAndLoadTarget.querySelector(":scope>input.InputAfter");
+                const BeforePattern=InputBefore.value;
+                const AfterPattern=InputAfter.value;
+                const BeforeAndAfterPatternMap=new Map([
+                    ["Before",BeforePattern],
+                    ["After",AfterPattern]
+                ]);
+                PatternTargetMap.set(ChangeMiddlePattern,BeforeAndAfterPatternMap);
+            }
+            console.log(PatternTargetMap);
             const Old2NewDataIDMap=new Map();//{DataType:{OldDataID:NewID}}
             for(const [DataType,DataTypeDataPathMap] of DicomDataPathMap.entries()){
                 const DataTypeClass=this.DataClassMap.get(DataType);
                 //パス変換はDataTypeClassに担当させる
                 const OldDataIDArray=Array.from(DataTypeDataPathMap.keys());
                 const OldPathArray=Array.from(DataTypeDataPathMap.values());
-                const NewPathArray=DataTypeClass.ChangePath(OldPathArray,PathChangeTargetMap,Old2NewDataIDMap);
+                const NewPathArray=DataTypeClass.ChangePath(OldPathArray,PatternTargetMap,Old2NewDataIDMap);
                 const NewDataIDArray=await DataTypeClass.Loading(NewPathArray);
                 //OldDataID=>NewDataIDのMapを作成
                 const Old2NewDataIDPareArray=[];

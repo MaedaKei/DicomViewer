@@ -81,15 +81,23 @@
             <div id="ChangeAndLoadPathContainer">
                 <!--CanvasIDごとに読み込まれているDataType,DataID,Pathをまとめて表示する-->
             </div>
-            <div id="ChangeAndLoadTargetContainer">
-                <!--変更対象とするパスのパーツと変更後のパスのパーツを表示-->
-                <input type="text" id="ChangeAndLoadTargetInput1" placeholder="変更したい文字列を入力">
-                <div> ➡ 置換 ➡ </div>
-                <input type="text" id="ChangeAndLoadTargetInput2" placeholder="変更後の文字列を入力">
-            </div>
-            <div id="ChangeAndLoadButtonContainer">
-                <button id="ChangeAndLoadConfirmButton">パス置換&読み込み</button>
-                <button id="ChangeAndLoadCancelButton">キャンセル</button>
+            <div id="ChangeAndLoadOperationContainer">
+                <div id="ChangeAndLoadTargetContainer">
+                    <template id="ChangeAndLoadTargetTemplate">
+                        <div class="ChangeAndLoadTarget">
+                            <input type="text" class="InputBefore" placeholder="変更後..." tabindex="-1">
+                            <div class="ChangeAndLoadAllow">▶▶</div>
+                            <input type="text" class="InputAfter" placeholder="変更前..." tabindex="-1">
+                            <button class="ChangeAndLoadTargetDeleteButton" tabindex="-1">✖</button>
+                        </div>
+                    </template>
+                    <!--ここはユーザー操作によって増減する-->
+                    <button id="ChangeAndLoadTargetAddButton">追加</button>
+                </div>
+                <div id="ChangeAndLoadButtonContainer">
+                    <button id="ChangeAndLoadConfirmButton">パス置換&読み込み</button>
+                    <button id="ChangeAndLoadCancelButton">キャンセル</button>
+                </div>
             </div>
         </dialog>
         <div id="CanvasContainer"></div>
