@@ -832,7 +832,8 @@ div#ChangeAndLoadPathContainer>div.CanvasInfoContainer>div.DataTypeIDPathContain
     padding:2px;
     background-color: rgb(63, 63, 63);
     color:white;
-    font-size:var(--DataTypeIDPathLineFontSize);
+    /*font-size:var(--DataTypeIDPathLineFontSize);*/
+    font-size:8px;
     font-weight: bold;
     text-align: center;
     vertical-align: top;
