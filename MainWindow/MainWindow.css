@@ -112,9 +112,12 @@ dialog#GridChangeDialog{
 /* タイトル */
 dialog#GridChangeDialog>h3 {
     font-size: calc(var(--label-height) / 2);
+    font-weight: bold;
     width:100%;
     height:var(--label-height);
     text-align: center;
+    background-color: #054c82;
+    color:white;
 }
 
 /* ドロップダウン横並び */
@@ -245,12 +248,13 @@ dialog#CanvasMoveDialog>div.CanvasMoveButtonContainer{
     height:var(--button-height);
     display: flex;
     justify-content: flex-end;
-    gap: 5px;
+    /*gap: 5px;*/
 }
 
 /* ボタンスタイル */
 dialog#CanvasMoveDialog>div.CanvasMoveButtonContainer>button{
-    width:50%;
+    width:100%;
+    height:100%;
     padding: 2px;
     font-size: 12px;
     border: none;

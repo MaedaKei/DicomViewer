@@ -3857,29 +3857,6 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
     }
     setUserEvents(){
         //共通のダイアログテンプレートを作成
-        /*
-        const LoadDialog=document.createElement("dialog");
-        LoadDialog.id="LoadDialog";//IDを設定する
-        const LoadDialogDOMTreeContainer=document.createElement("div");
-        LoadDialogDOMTreeContainer.id="LoadDialogDOMTreeContainer";
-        const ButtonContainer=document.createElement("div");
-        ButtonContainer.id="LoadDialogButtonContainer";
-        const LoadDialogCancelButton=document.createElement("button");
-        LoadDialogCancelButton.id="LoadDialogCancelButton";
-        LoadDialogCancelButton.textContent="Cancel";
-        const LoadDialogConfirmButton=document.createElement("button");
-        LoadDialogConfirmButton.textContent="Loading";
-        LoadDialogConfirmButton.id="LoadDialogConfirmButton";
-
-        const LoadDialogFragment=document.createDocumentFragment();
-        LoadDialogFragment.appendChild(LoadDialogDOMTreeContainer);
-        const ButtonContainerFragment=document.createDocumentFragment();
-        ButtonContainerFragment.appendChild(LoadDialogCancelButton);
-        ButtonContainerFragment.appendChild(LoadDialogConfirmButton);
-        ButtonContainer.appendChild(ButtonContainerFragment);
-        LoadDialogFragment.appendChild(ButtonContainer);
-        LoadDialog.appendChild(LoadDialogFragment);
-        */
         this.LoadDialog=document.getElementById("LoadDialog");
         this.LoadDialogDOMTreeContainer=document.getElementById("LoadDialogDOMTreeContainer");
         this.LoadDialogCancelButton=document.getElementById("LoadDialogCancelButton");
@@ -4036,8 +4013,9 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
         this.CanvasMoveButton=document.getElementById("CanvasMoveButton");
         this.CanvasMoveDialog=document.getElementById("CanvasMoveDialog");
         this.CanvasMovePositionButtonContainer=document.getElementById("CanvasMovePositionButtonContainer");
-        this.CanvasMoveConfirmButton=document.getElementById("CanvasMoveConfirmButton");
+        /*this.CanvasMoveConfirmButton=document.getElementById("CanvasMoveConfirmButton");*/
         this.CanvasMoveCancelButton=document.getElementById("CanvasMoveCancelButton");
+        this.CanvasMovePositionSelectedCount=0;
         this.EventSetHelper(this.CanvasMoveButton,"mouseup",()=>{
             //this.CanvasMovePositionButtonContainer.innerHTML="";
             //SelectorContainerの格子を更新する
@@ -4076,6 +4054,8 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
             }
             this.CanvasMovePositionButtonContainer.appendChild(CanvasMovePositionButtonContainerFragment);
             this.CanvasMoveDialog.showModal();
+            //選択数を初期化
+            this.CanvasMovePositionSelectedCount=0;
         });
         this.EventSetHelper(this.CanvasMovePositionButtonContainer,"mouseup",(e)=>{
             if(e.button===0&&e.target.tagName==="BUTTON"){
@@ -4083,14 +4063,52 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
                 if(PositionButton.classList.contains("Selected")){
                     //Selectedを外す
                     PositionButton.classList.remove("Selected");
+                    this.CanvasMovePositionSelectedCount--;
                 }else{
                     PositionButton.classList.add("Selected");
+                    this.CanvasMovePositionSelectedCount++;
                 }
-                //Selectedが2つあれば押していい状態にする
-                this.CanvasMoveConfirmButton.disabled=!(Array.from(this.CanvasMovePositionButtonContainer.querySelectorAll(":scope>button.Selected")).length===2);
+                if(this.CanvasMovePositionSelectedCount===2){
+                    //２個選択されたので即座に入れ替え処理
+                    //選択数初期化
+                    this.CanvasMovePositionSelectedCount=0;
+                    const SelectedPositionButtonArray=Array.from(this.CanvasMovePositionButtonContainer.querySelectorAll(":scope>button.Selected"));
+                    const CheckedLPArray=SelectedPositionButtonArray.map((PositionButton)=>{
+                        PositionButton.classList.remove("Selected");
+                        return parseInt(PositionButton.value);
+                    });
+                    const LPA=CheckedLPArray[0];
+                    const LPB=CheckedLPArray[1];
+                    const CanvasIDA=this.LP2CanvasID[LPA];//-1の可能性あり。
+                    const CanvasIDB=this.LP2CanvasID[LPB];//-1の可能性あり
+                    this.LP2CanvasID[LPA]=CanvasIDB;
+                    this.LP2CanvasID[LPB]=CanvasIDA;
+                    let StyleUpdateFlag=false;
+                    if(CanvasIDB>=0){
+                        this.CanvasID2LP.set(CanvasIDB,LPA);
+                        StyleUpdateFlag=true;
+                    }
+                    if(CanvasIDA>=0){
+                        this.CanvasID2LP.set(CanvasIDA,LPB);
+                        StyleUpdateFlag=true;
+                    }
+                    if(StyleUpdateFlag){
+                        this.UpdateStyle();
+                    }
+                    /*見た目の更新*/
+                    //ボタンに表示している情報など
+                    const PositionButtonA=SelectedPositionButtonArray[0];
+                    const PositionButtonB=SelectedPositionButtonArray[1];
+                    const EmptyStatusBuffer=PositionButtonA.getAttribute("data-EmptyStatus");
+                    const TextContentBuffer=PositionButtonA.textContent;
+                    PositionButtonA.setAttribute("data-EmptyStatus",PositionButtonB.getAttribute("data-EmptyStatus"));
+                    PositionButtonA.textContent=PositionButtonB.textContent;
+                    PositionButtonB.setAttribute("data-EmptyStatus",EmptyStatusBuffer);
+                    PositionButtonB.textContent=TextContentBuffer;
+                }
             }
         });
-        this.CanvasMoveConfirmButton.disabled=true;//CanvasMoveボタンは2つ選択時にしかできないようにする
+        /*
         this.EventSetHelper(this.CanvasMoveConfirmButton,"mouseup",()=>{
             //Canvasの移動処理
             const SelectedPositionButtonList=Array.from(this.CanvasMovePositionButtonContainer.querySelectorAll(":scope>button.Selected"));
@@ -4119,7 +4137,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
                 if(styleupdateFlag){
                     this.UpdateStyle();
                 }
-                /*見た目の更新*/
+                //見た目の更新
                 //CanvasMoveDialogCloseFunction();
                 //ButtonのEmpty,NotEmptyの交換、textContentの交換を行う
                 const PositionButton1=SelectedPositionButtonList[0];
@@ -4132,12 +4150,16 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
                 PositionButton2.textContent=TextContentBuffer;
             }
         });
+        */
         this.EventSetHelper(this.CanvasMoveCancelButton,"mouseup",()=>{
             //CanvasMovePositionButtonContainerの初期化
             //Containerの中はgrid上に並んだチェックボックス
             this.CanvasMovePositionButtonContainer.innerHTML="";
+            //一応選択数初期化
+            this.CanvasMovePositionSelectedCount=0;
             this.CanvasMoveDialog.close();
         });
+        
         /*ChangeAndLoad*/
         this.ChangeAndLoadButton=document.getElementById("ChangeAndLoadButton");
         this.ChangeAndLoadDialog=document.getElementById("ChangeAndLoadDialog");
@@ -4619,7 +4641,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
             CanvasClassDictionary.clear();
             //Layoutでは、画像を削除してもgridは変更しないようにしているため、それを初期化する
             this.ResetLayoutStatus(LayoutGridReset);
-            console.log(document.activeElement);
+            //console.log(document.activeElement);
         }
     }
     //余裕を持たせるためにディスプレイサイズから少しだけ小さい値をデフォルトにする。
