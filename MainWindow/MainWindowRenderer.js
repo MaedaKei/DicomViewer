@@ -4108,49 +4108,6 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
                 }
             }
         });
-        /*
-        this.EventSetHelper(this.CanvasMoveConfirmButton,"mouseup",()=>{
-            //Canvasの移動処理
-            const SelectedPositionButtonList=Array.from(this.CanvasMovePositionButtonContainer.querySelectorAll(":scope>button.Selected"));
-            if(SelectedPositionButtonList.length!=2){
-                console.log("必ず2つ選択してください");
-            }else{
-                const checkedLPs=SelectedPositionButtonList.map((PositionButton)=>{
-                    PositionButton.classList.remove("Selected");//Selected解除
-                    return parseInt(PositionButton.value);
-                });
-                const lpA=checkedLPs[0];
-                const lpB=checkedLPs[1];
-                const cidA=this.LP2CanvasID[lpA];//-1が入っている可能性あり
-                const cidB=this.LP2CanvasID[lpB];//-1が入っている可能性あり
-                this.LP2CanvasID[lpA]=cidB;
-                this.LP2CanvasID[lpB]=cidA;
-                let styleupdateFlag=false;
-                if(cidB>=0){
-                    this.CanvasID2LP.set(cidB,lpA);
-                    styleupdateFlag=true;
-                }
-                if(cidA>=0){
-                    this.CanvasID2LP.set(cidA,lpB);
-                    styleupdateFlag=true;
-                }
-                if(styleupdateFlag){
-                    this.UpdateStyle();
-                }
-                //見た目の更新
-                //CanvasMoveDialogCloseFunction();
-                //ButtonのEmpty,NotEmptyの交換、textContentの交換を行う
-                const PositionButton1=SelectedPositionButtonList[0];
-                const PositionButton2=SelectedPositionButtonList[1];
-                const EmptyStatusBuffer=PositionButton1.getAttribute("data-EmptyStatus");
-                const TextContentBuffer=PositionButton1.textContent;
-                PositionButton1.setAttribute("data-EmptyStatus",PositionButton2.getAttribute("data-EmptyStatus"));
-                PositionButton1.textContent=PositionButton2.textContent;
-                PositionButton2.setAttribute("data-EmptyStatus",EmptyStatusBuffer);
-                PositionButton2.textContent=TextContentBuffer;
-            }
-        });
-        */
         this.EventSetHelper(this.CanvasMoveCancelButton,"mouseup",()=>{
             //CanvasMovePositionButtonContainerの初期化
             //Containerの中はgrid上に並んだチェックボックス
@@ -4465,20 +4422,66 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
             }
             console.log(PatternTargetMap);
             const Old2NewDataIDMap=new Map();//{DataType:{OldDataID:NewID}}
+            let ChangeAndLoadCancelFlag=false;
             for(const [DataType,DataTypeDataPathMap] of DicomDataPathMap.entries()){
                 const DataTypeClass=this.DataClassMap.get(DataType);
                 //パス変換はDataTypeClassに担当させる
                 const OldDataIDArray=Array.from(DataTypeDataPathMap.keys());
                 const OldPathArray=Array.from(DataTypeDataPathMap.values());
-                const NewPathArray=DataTypeClass.ChangePath(OldPathArray,PatternTargetMap,Old2NewDataIDMap);
+                const NewPathArray=DataTypeClass.ChangePath(OldPathArray,PatternTargetMap,Old2NewDataIDMap);//ChangePathの時点でファイルパスが存在するか確かめる←DataTypeClass.Loadingで不正パス読み込み時にfalseを返すようになっているのでそいつの戻り値で判定可能
+                //一つでも存在しないパスがあった場合、falseを返し、このループから抜ける
+                //ResetCanvasで古いデータはすべて削除され、この時点で読み込み済みのデータは変更パスが存在したデータのみ
+                //存在しないパスでループから抜けたときは、DicomDataClassをclearしてデータの読み込み状態をリセットする。Canvasはすでにリセット済みなのでここでは不要
                 const NewDataIDArray=await DataTypeClass.Loading(NewPathArray);
-                //OldDataID=>NewDataIDのMapを作成
-                const Old2NewDataIDPareArray=[];
-                for(let i=0;i<Math.min(OldDataIDArray.length,NewPathArray.length);i++){
-                    Old2NewDataIDPareArray.push([OldDataIDArray[i],NewDataIDArray[i]]);
+                if(NewDataIDArray){//パターン変更の結果不正なパスが一つでも含まれていた場合、falseが返ってくる
+                    //OldDataID=>NewDataIDのMapを作成
+                    const Old2NewDataIDPareArray=[];
+                    for(let i=0;i<Math.min(OldDataIDArray.length,NewDataIDArray.length);i++){
+                        Old2NewDataIDPareArray.push([OldDataIDArray[i],NewDataIDArray[i]]);
+                    }
+                    const DataTypeOld2NewDataIDMap=new Map(Old2NewDataIDPareArray);
+                    Old2NewDataIDMap.set(DataType,DataTypeOld2NewDataIDMap);
+                }else{
+                    ChangeAndLoadCancelFlag=true;
+                    //forループを中断する
+                    break;
                 }
-                const DataTypeOld2NewDataIDMap=new Map(Old2NewDataIDPareArray);
-                Old2NewDataIDMap.set(DataType,DataTypeOld2NewDataIDMap);
+            }
+            //もしパターン変換したファイルパスの読み込みが中断されているなら
+            /*
+            パターンマッチでマッチする部分がない場合は古いパスに変更が加えられずにそのまま再読み込みになるが
+            マッチして変更が加えられた結果不正パスになる場合がある。
+            パス変更とデータローディングのループを分離できればいいが、DataIDなどを指定するタイプのデータは、CTやMASKなど先に読み込まれたデータが逐次的に記録した新しいDataIDを必要とするため、ループは分離不可能
+            そもそも、DataIDなどのパスはパス存在の判定ができないためループ分離はそもそも不可能である。
+            よって、下のように同じ処理を繰り返し書く必要が出てくる
+            */
+            if(ChangeAndLoadCancelFlag){
+                console.log("復帰モード");
+                /*ここで行われる処理は上記の処理と全く同じである*/
+                //DicomDataClassDictionaryとOld2NewDataIDMapを初期化する
+                for(const DataTypeDataMap of DicomDataClassDictionary.values()){
+                    DataTypeDataMap.clear();
+                }
+                Old2NewDataIDMap.clear();
+                //PatternTargetMapのAfterの部分をBeforeの部分に一致させる
+                for(const BeforeAndAfterPatternMap of PatternTargetMap.values()){
+                    const BeforePattern=BeforeAndAfterPatternMap.get("Before");
+                    BeforeAndAfterPatternMap.set("After",BeforePattern);//これで同じパスが読み込まれるようになる
+                }
+                //古いパスの再読み込みを行う
+                for(const [DataType,DataTypeDataPathMap] of DicomDataPathMap.entries()){
+                    const DataTypeClass=this.DataClassMap.get(DataType);
+                    const OldDataIDArray=Array.from(DataTypeDataPathMap.keys());
+                    const OldPathArray=Array.from(DataTypeDataPathMap.values());
+                    const NewPathArray=DataTypeClass.ChangePath(OldPathArray,PatternTargetMap,Old2NewDataIDMap);
+                    const NewDataIDArray=await DataTypeClass.Loading(NewPathArray);
+                    const Old2NewDataIDPareArray=[];
+                    for(let i=0;i<Math.min(OldDataIDArray.length,NewDataIDArray.length);i++){
+                        Old2NewDataIDPareArray.push([OldDataIDArray[i],NewDataIDArray[i]]);
+                    }
+                    const DataTypeOld2NewDataIDMap=new Map(Old2NewDataIDPareArray);
+                    Old2NewDataIDMap.set(DataType,DataTypeOld2NewDataIDMap);
+                }
             }
             /*CanvasDataMapに対して、DataIDの変換⇒DataInfoMapの作成、Canvasの作成を行う*/
             const NewCanvasIDLPMap=new Map();
