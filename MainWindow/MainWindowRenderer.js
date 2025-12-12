@@ -4422,7 +4422,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
             }
             console.log(PatternTargetMap);
             const Old2NewDataIDMap=new Map();//{DataType:{OldDataID:NewID}}
-            let ChangeAndLoadCancelFlag=false;
+            let ChangeAndLoadCancelFlag=false;//存在しないパスが読み込まれた場合、今回の変更は白紙にしてリセットして消してしまった画面を復元する
             for(const [DataType,DataTypeDataPathMap] of DicomDataPathMap.entries()){
                 const DataTypeClass=this.DataClassMap.get(DataType);
                 //パス変換はDataTypeClassに担当させる
@@ -4456,7 +4456,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
             よって、下のように同じ処理を繰り返し書く必要が出てくる
             */
             if(ChangeAndLoadCancelFlag){
-                console.log("復帰モード");
+                console.log("ChangeAndLoadキャンセル&変更開始前に復帰モード");
                 /*ここで行われる処理は上記の処理と全く同じである*/
                 //DicomDataClassDictionaryとOld2NewDataIDMapを初期化する
                 for(const DataTypeDataMap of DicomDataClassDictionary.values()){
