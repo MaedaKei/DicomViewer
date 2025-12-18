@@ -4724,6 +4724,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
     現在のデータタイプとCanvasIDの関係を示すマップを返す
     他のクラスからも使われるかもしれないのでLoadAndLayoutが担当する
     */
+    /*
     UpdateDataTypeCanvasIDMap(){
         const DataTypeList=Array.from(DicomDataClassDictionary.keys());
         const DataTypeCanvasIDMap=new Map(
@@ -4740,20 +4741,35 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
         }
         this.DataTypeCanvasIDMap=DataTypeCanvasIDMap;//{DataType:{CanvasID:DataID,CanvasID:DataID,...,}}
     }
+    */
+    UpdateCanvasIDDataTypeMap(){
+        const CanvasIDDataTypeMap=new Map();//{CanvasID:{DataType:DataID,...,},...}
+        for(const [CanvasID,CanvasClass] of CanvasClassDictionary.entries()){
+            const LoadedDataTypeDataIDMap=new Map();
+            for(const [DataType,LayerData] of CanvasClass.LayerDataMap.entries()){
+                const DataID=LayerData.get("DataID");
+                LoadedDataTypeDataIDMap.set(DataType,DataID);
+            }
+            CanvasIDDataTypeMap.set(CanvasID,LoadedDataTypeDataIDMap);
+        }
+        this.CanvasIDDataTypeMap=CanvasIDDataTypeMap;
+    }
     /*
     SubWindow向けにメインウィンドウで読み込まれている画像とどこに配置されているかを送信する
     3つの情報をまとめて送信する
     */
     SendMainWindowStatus(){
+        /*CanvasIDごとに何が読み込まれているかまとめたデータを作成*/
         const SendingData=new Map([
             ["action","UpdateMainWindowStatus"],
             ["data",new Map([
-                ["DataTypeCanvasIDMap",this.DataTypeCanvasIDMap],
+                ["CanvasIDDataTypeMap",this.CanvasIDDataTypeMap],
                 ["LayoutGridMap",new Map([
                     ["RowsNum",this.CurrentRowsNum],
                     ["ColumnsNum",this.CurrentColumnsNum]
                 ])],
-                ["CanvasID2GridNumberMap",this.CanvasID2GridNumberMap]
+                ["CanvasID2GridNumberMap",this.CanvasID2GridNumberMap],
+                ["GridNumber2CanvasIDArray",this.GridNumber2CanvasIDArray]
             ])]
         ]);
         this.PassChangesToSubWindow(SendingData);
@@ -4866,16 +4882,7 @@ class Evaluate{
             targetCanvasClass.ReceiveChangesFromSubWindow(dammydata);
         }
         this.FromMainProcessToMainFunctions.set("ChangeCanvasesSelectedArea",ChangeSelectedAreaFunction);
-        //現存のCIDを連絡する
-        const ChangeExistingCIDFunction=(data)=>{
-            const DataTypeCanvasIDMap=this.getDataTypeCanvasIDMap();
-            const SendingData=new Map([
-                ["action","UpdateExistingCID"],
-                ["data",DataTypeCanvasIDMap]
-            ]);
-            this.PassChangesToSubWindow(SendingData);
-        };
-        this.FromMainProcessToMainFunctions.set("UpdateExistingCID",ChangeExistingCIDFunction);
+        
         //選択されているCanvasを切り替える
         const ChangeTargetCanvasFunction=(data)=>{
             //body⇒data
@@ -5013,14 +5020,15 @@ class Evaluate{
     OrderEvaluateWindowOpen(){
         //body データタイプごとのCIDの入れ子Mapとする
         //BGのデータに対する評価はなしとする。つまり、評価指標に投げたい場合はメインとしてロードする必要がある
-        const DataTypeCanvasIDMap=LoadAndLayoutFunctions.DataTypeCanvasIDMap;
+        const CanvasIDDataTypeMap=LoadAndLayoutFunctions.CanvasIDDataTypeMap;
         const SendingDataBody=new Map([
-            ["DataTypeCanvasIDMap",DataTypeCanvasIDMap],//{DataType:{CanvasID:DataID,...,},...,}
+            ["CanvasIDDataTypeMap",CanvasIDDataTypeMap],//{DataType:{CanvasID:DataID,...,},...,}
             ["LayoutGridMap",new Map([
                 ["RowsNum",LoadAndLayoutFunctions.CurrentRowsNum],
                 ["ColumnsNum",LoadAndLayoutFunctions.CurrentColumnsNum],
             ])],//現在の画像を配置する枠組み
-            ["CanvasID2GridNumberMap",LoadAndLayoutFunctions.CanvasID2GridNumberMap]//現在の画像配置枠組みのうち、どこに画像が配置されているか
+            ["CanvasID2GridNumberMap",LoadAndLayoutFunctions.CanvasID2GridNumberMap],//現在の画像配置枠組みのうち、どこに画像が配置されているか
+            ["GridNumber2CanvasIDArray",LoadAndLayoutFunctions.GridNumber2CanvasIDArray],
             ["windowsize",[800,600]],
         ]);
         const SendingData=new Map([

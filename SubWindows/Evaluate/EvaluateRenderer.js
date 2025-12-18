@@ -17,6 +17,8 @@ class Evaluate{
         this.InputSelectDialog=document.getElementById("InputSelectDialog");
         this.TargetDataTypeDisplay=document.getElementById("TargetDataTypeDisplay");
         this.TargetInputNumDisplay=document.getElementById("TargetInputNumDisplay");
+        this.TargetDataTypeDisplay.textContent="TestPrint";
+        this.TargetInputNumDisplay.textContent="TestPrint";
         this.CanvasSelectButtonContainer=document.getElementById("CanvasSelectButtonContainer");
         this.InputSelectDialogCloseButton=document.getElementById("InputSelectDialogCloseButton");
         //領域選択入力欄
@@ -38,6 +40,7 @@ class Evaluate{
         this.ResultContainer=document.getElementById("ResultContainer");
         //渡された引数を保持する
         const ReceivedDataBody=SendingData.get("data");
+        this.InvalidCanvasID=(-99999);
         this.InvalidDataType="Invalid";
         this.InvalidDataID=(-99999);
         /*
@@ -48,16 +51,10 @@ class Evaluate{
         ダイアログ展開中に変更があった場合リアルタイムで再生成する
         とりあえずは常時リアルタイムダイアログ生成で実装
         */
-        this.DataTypeCanvasIDMap=ReceivedDataBody.get("DataTypeCanvasIDMap");
+        this.CanvasIDDataTypeMap=ReceivedDataBody.get("CanvasIDDataTypeMap");
         this.LayoutGridMap=ReceivedDataBody.get("LayoutGridMap");
+        this.GridNumber2CanvasIDArray=ReceivedDataBody.get("GridNumber2CanvasIDArray");
         this.CanvasID2GridNumberMap=ReceivedDataBody.get("CanvasID2GridNumberMap");
-        console.log(this.DataTypeCanvasIDMap);
-        /*
-        //無効のデータを入れておく
-        this.DataTypeCanvasIDMap.set(this.InvalidDataType,new Map([
-            [this.InvalidCanvasID,this.InvalidDataID]
-        ]));
-        */
         /*各要素に値を突っ込んでいく*/
         //関数選択機能の設定
         //評価関数の登録
@@ -69,8 +66,6 @@ class Evaluate{
         this.PreviousSelectedFunctionName=false;
         //関数セレクト周辺への反映
         this.EvaluationFunctionSelecter.innerHTML="";
-        this.TargetDataTypeDisplay.innerHTML="";
-        this.InputNumDisplay.innerHTML="";
         for(const EvaluateName of this.EvaluationFunctionMap.keys()){
             const option=document.createElement("option");
             option.value=EvaluateName;
@@ -82,16 +77,8 @@ class Evaluate{
         //OFFにする時に必要になる
         //その他でも必要になることになったので、Selecterの選択変化時にCanvasID,Layer=DataType,DataIDを保持させる
         //CIDとターゲットレイヤーをセットで保持する
-        //{SelectのID:"CanvasID:Invalid"}
-        this.PreviousSelectedCID=new Map(
-            Array.from(this.InputBlockSelecterMap.keys()).map((SelecterID)=>{
-                return [SelecterID,new Map([
-                    ["CanvasID",this.InvalidCanvasID],
-                    ["Layer",this.InvalidDataType],
-                    ["DataID",this.InvalidDataID],
-                ])];
-            })
-        );
+        //[{"CanvasID":CanvasID,"DataType":DataType,"DataID":DataID},...,]の形式のように、Mapの配列とする。DataType=Layerでもある。可変長入力に対応するため
+        this.CurrentSelectedCanvasInfoArray=[];//現在の(選択が変わる前の)入力の選択状況を保持する
         //MainWindowから送られてきたデータを保持しておいて、繰り返し使うところ
         //入力が2つまでしかないので、現時点では2つのみストックする
         //{CID:Volume}
@@ -101,27 +88,24 @@ class Evaluate{
             [-20,null]
         ]);
         */
-        //Stockは入力セレクターの個数分保持する
-        const NumList=Array.from({length:this.InputBlockSelecterMap.size},(_,i)=>(i+1)*(-10));
-        //VolumeStockのkeyはDataType:DataIDとする
-        this.VolumeStock=new Map(
-            NumList.map((dammyDataID)=>{
-                const dammyDataTypeDataIDKey=Evaluate.Array2String([this.InvalidDataType,dammyDataID]);
-                return [dammyDataTypeDataIDKey,null];
-            })
-        );
+        /*
+        現在指定している評価関数で必要とする個数分をストックしたい
+        しかし、可変長個数を指定できる評価関数も追加可能にしているためこれができない。
+        案1：一律で２つまでとする
+        案2：可変長は1つまで、固定の入力数はその個数で←入力数が変わった場合の動きの考慮がめんどくさい
+        12/19時点：とりあえずストックは２つまでとする。ほとんどの評価関数が2つか１つの入力で一つの評価値を出すから。多入力他出力は小数なのでシステムとしてはできるようにするけど手厚いサポートはしない
+        */
+        this.VolumeStock=new Map();
         this.originalimagewidth=99999;
         this.originalimageheight=99999;
         this.originalslidermax=99999;
+        this.UpdateInputSelectDialog();//まずはダイアログを作成する。ここのChangeCanvasButtonSelectableは不発になるけどChangeFunctionSelectでも呼ばれてしっかり動くから大丈夫
         this.ChangeFunctionSelect();
-        this.UpdateInputSelectDialog();
         //イベントの登録
         this.ElementsWithEvents=new Map();
         this.setUserEvents();
         this.setSubWindowCloseEvents();
     }
-    //DataTypeCanvasIDMapを設定する用の内部メソッド
-    //リアルタイム変更に今後対応するかもしれないのでメソッドとしておく
     setUserEvents(){
         this.FromMainProcessToSubFunctions=new Map();
         //評価指標選択
@@ -129,52 +113,6 @@ class Evaluate{
             //const SelectedFunctionName=e.target.value;
             this.ChangeFunctionSelect();
         });
-        //インプット選択
-        const InputCIDChangeFunction=(e)=>{
-            const key=e.target.id;//SelecterのIDがPreviouSelectedCIDのKeyでもある
-            let OFFCIDLayerMap=this.PreviousSelectedCID.get(key);//{CanvasID:,Layer:,DataID}
-            const ONCID=parseInt(e.target.value);//CanvasID
-            /*
-            ONCIDが選択無効の値かどうかで場合分けする。DataTypeCanvasIDMapに無効選択をあらかじめ作ることで入力欄に不要な選択肢が増えてしまったため
-            仕方なくif文を使用する
-            */
-            const ONCIDLayerMap=new Map([
-                ["CanvasID",ONCID],
-                ["Layer",this.InvalidDataType],
-                ["DataID",this.InvalidDataID]
-            ]);
-            if(ONCID>=0){
-                const SelectedFunctionName=this.PreviousSelectedFunctionName;
-                const ONDataType=this.EvaluationFunctionMap.get(SelectedFunctionName).TargetDataType;//DataType
-                const ONDataID=this.DataTypeCanvasIDMap.get(ONDataType).get(ONCID);
-                ONCIDLayerMap.set("Layer",ONDataType);
-                ONCIDLayerMap.set("DataID",ONDataID);
-            }
-            //console.log(key,OFFCID,ONCID);
-            this.PreviousSelectedCID.set(key,ONCIDLayerMap);
-            //ラッパーによりデータを送信
-            //OFFとなるCIDが別の入力で選択されている場合、それは送信しない。無効データとする
-            //まずはCIDのリストを作成
-            const SelectedCIDList=Array.from(this.PreviousSelectedCID.values().map((CIDLayerMap)=>{
-                const CanvasID=CIDLayerMap.get("CanvasID");
-                return CanvasID;
-            }));
-            //console.log(SelectedCIDList);
-            //次に、CIDリストにOFFCIDが含まれているかチェック
-            if(SelectedCIDList.includes(OFFCIDLayerMap.get("CanvasID"))){
-                OFFCIDLayerMap=new Map([
-                    ["CanvasID",this.InvalidCanvasID],
-                    ["Layer",this.InvalidDataType],
-                    ["DataID",this.InvalidDataID],
-                ]);
-            }
-            //console.log(ONCIDLayerMap);
-            //console.log(OFFCIDLayerMap);
-            this.SendTargetCanvasChange(OFFCIDLayerMap,ONCIDLayerMap);
-        }
-        for(const InputBlockSelecter of this.InputBlockSelecterMap.values()){
-            this.EventSetHelper(InputBlockSelecter,"change",InputCIDChangeFunction);
-        }
         //インプットの変更をMainWindowに通知後、あちらからサイズに関する情報が送られてくるので受け取る
         const FromMainToSubCanvasSizeFunction=(data)=>{
             const ReceiveDataBody=data.get("data");
@@ -263,7 +201,7 @@ class Evaluate{
                 }
                 */
                 //入力の走査を関数が欲する個数に絞ってもいいかもしれない
-                for(const CIDLayerMap of this.PreviousSelectedCID.values()){
+                for(const CIDLayerMap of this.CurrentSelectedCanvasInfoArray.values()){
                     const CanvasID=CIDLayerMap.get("CanvasID");
                     const DataType=CIDLayerMap.get("Layer");
                     const DataID=CIDLayerMap.get("DataID");
@@ -322,7 +260,7 @@ class Evaluate{
             const InputNum=EvaluationFunction.InputNum;
             const InputVolumeMap=new Map();//{volume1:volume,volume2:volume...}
             //const InputBlockSelecterList=Array.from(this.InputBlockSelecterMap.values());
-            const PreviouseInputInfoList=Array.from(this.PreviousSelectedCID.values());//{CanvasID,Layer,DataID}のMapのリスト
+            const PreviouseInputInfoList=Array.from(this.CurrentSelectedCanvasInfoArray.values());//{CanvasID,Layer,DataID}のMapのリスト
             const InputInfoList=[];
             const InputCIDList=[];//履歴用
             for(let i=0;i<InputNum;i++){
@@ -394,10 +332,9 @@ class Evaluate{
                 this.FocusHistoryListItem(NewCalculateID,true);
             }
         });
-        /*GridInfomation, DataTypeCanvasIDMap*/
         const UpdateMainWindowStatusFunction=(data)=>{
             const ReceivedDataBody=data.get("data");
-            this.DataTypeCanvasIDMap=ReceivedDataBody.get("DataTypeCanvasIDMap");
+            this.CanvasIDDataTypeMap=ReceivedDataBody.get("CanvasIDDataTypeMap");
             this.LayoutGridMap=ReceivedDataBody.get("LayoutGridMap");
             this.CanvasID2GridNumberMap=ReceivedDataBody.get("CanvasID2GridNumberMap");
             this.UpdateInputSelectDialog();
@@ -485,8 +422,6 @@ class Evaluate{
         const NewTargetDataType=NewSelectedFunction.TargetDataType;
         const NewInputNum=NewSelectedFunction.InputNum;
 
-        this.TargetDataTypeDisplay.textContent=`Target : ${NewTargetDataType}`;
-        this.InputNumDisplay.textContent=`Input x ${NewSelectedFunction.InputNum}`;
         //古い情報を保持(初回実行時などはないときもある)
         let OldSelectedFunctionName=this.PreviousSelectedFunctionName;
         let OldSelectedFunction=false;
@@ -497,94 +432,14 @@ class Evaluate{
             OldTargetDataType=OldSelectedFunction.TargetDataType;
             OldInputNum=OldSelectedFunction.InputNum;
         }
-
-        const TargetDataTypeChangedFlag=(OldTargetDataType!==NewTargetDataType);
-        /*入力セレクターの初期化*/
-        //選択状態の解除(MainWindow側への送信が発生する)
-        //選択候補の初期化を行う
         /*
-        処理の仕様
-        データタイプが変わる場合または入力数から漏れた場合、オプションの初期化及び選択状態の解除が行われる
+        InputSelectDialogの選択状態や選択可能状態の更新を行う
+        入力数の変化による変更はこの時点では行わず、計算処理に映れないという制約をもってユーザーに通知する
+        つまり、ターゲットデータタイプが変更された場合に限りChangeCanvasButtonSelectableを呼ぶ
         */
-        const InputBlockSelecterArray=Array.from(this.InputBlockSelecterMap.entries());//SelecterElementのArray
-        const PreviousSelectedCIDMapArray=Array.from(this.PreviousSelectedCID.entries());//[{"CanvasID":,"Layer":,"DataID":},...]
-        //SelecterElementの個数とPreviousSelectedCIDMapの個数は一致するはずent
-        const SelecterNum=InputBlockSelecterArray.length;
-        if(SelecterNum!==PreviousSelectedCIDMapArray.length){
-            throw new Error("(評価関数変更)InputSelecterとPreviousSelectedCIDMapの個数が違う");
+        if(OldTargetDataType!==NewTargetDataType){
+            this.ChangeCanvasButtonSelectable();
         }
-        const TargetCIDMap=this.DataTypeCanvasIDMap.get(NewTargetDataType);//新しく選択された関数の入力対象となるCanasID:DataIDのマップ{CanvasID:DataID,...,}
-        for(let SelecterIndex=0;SelecterIndex<SelecterNum;SelecterIndex++){
-            const [InputBlockSelecterKey,InputBlockSelecter]=InputBlockSelecterArray[SelecterIndex];
-            /*データタイプが変わっているならOptionを更新*/
-            let OptionChangedFlag=false;
-            if(TargetDataTypeChangedFlag){
-                /*Selecterのoptionの初期化*/
-                InputBlockSelecter.innerHTML="";
-                const initialoption=document.createElement("option");
-                initialoption.text="--";
-                initialoption.value=this.InvalidCanvasID;
-                //initialoption.disabled=true;
-                //initialoption.hidden=true;
-                initialoption.selected=true;
-                InputBlockSelecter.appendChild(initialoption);
-                for(const [CanvasID,DataID] of TargetCIDMap.entries()){
-                    const option=document.createElement("option");
-                    option.text=`CID: ${CanvasID}`;
-                    //この時点で各選択肢のCID,DataType,がわかるのでDataIDも特定可能
-                    //よって、選択肢のvalueはDataType：DataIDとする
-                    option.value=CanvasID;//Select時にもろもろの情報をまとめることにする
-                    InputBlockSelecter.appendChild(option);
-                }
-                OptionChangedFlag=true;
-            }
-            /*評価関数の入力数に含まれるか*/
-            /*
-            const InputDisabledFlag=!(SelecterIndex<NewInputNum);
-            InputBlockSelecter.disabled=InputDisabledFlag;
-            */
-            let InputDisabledFlag=null;
-            const InputBlockLabel=this.InputBlockLabelList[SelecterIndex];
-            if(SelecterIndex<NewInputNum){
-                InputBlockSelecter.disabled=false;
-                InputBlockLabel.classList.remove("DisabledLabel");
-                InputDisabledFlag=false;
-            }else{
-                InputBlockSelecter.disabled=true;
-                InputBlockLabel.classList.add("DisabledLabel");
-                InputDisabledFlag=true;
-            }
-            /*オプションの初期化、またはセレクタの無効化が行われたとき、このInputBlockSelecterがさしていたCanvasIDに対してMultiUseLayerModeをfalseにするよう送信する*/
-            //OFF⇒それまでのCanvasID、ON⇒無効CanvasID
-            if(OptionChangedFlag||InputDisabledFlag){
-                const [PreviouseSelectedCIDMapKey,PreviousSelectedCIDMap]=PreviousSelectedCIDMapArray[SelecterIndex];//このセレクターの、それまでの選択状態{"CanvasID":,"Layer":,"DataID":}
-                const PreviousCanvasID=PreviousSelectedCIDMap.get("CanvasID");
-                if(PreviousCanvasID>=0){//有効なCanvasIDが選択されていたら送信する
-                    const DammyONCIDLayerMap=new Map([
-                        ["CanvasID",this.InvalidCanvasID],
-                        ["Layer",this.InvalidDataType],
-                        ["DataID",this.InvalidDataID]
-                    ]);
-                    const OFFCIDLayerMap=PreviousSelectedCIDMap;//名前の命名規則がずれている
-                    const TargetCID=new Map([
-                        ["ON",DammyONCIDLayerMap],
-                        ["OFF",OFFCIDLayerMap]
-                    ]);
-                    const SendingData=new Map([
-                        ["action","ChangeTargetCanvas"],
-                        ["data",new Map([
-                            ["TargetCID",TargetCID],
-                            ["SelectedArea",null]
-                        ])]
-                    ]);
-                    //MainWindowに送信
-                    this.PassChangesToMainWindow(SendingData);
-                    //PreviousSelectedCIDを更新
-                    this.PreviousSelectedCID.set(PreviouseSelectedCIDMapKey,DammyONCIDLayerMap);//参照型だから元のほうにも変更反映されるはず
-                }
-            }
-        }
-
         //CIDの選択が初期状態に戻るので範囲選択も同様に初期値は全て0とする
         //データタイプが変わった場合のみ選択範囲の初期化を行う
         //初期データから値をセット
@@ -622,9 +477,56 @@ class Evaluate{
         //新しく選択された保持しておく
         this.PreviousSelectedFunctionName=NewSelectedFunctionName;
     }
-    UpdateInputSelectDialog(){//選択する関数が変わったときと、MainWindowに動きがあったときに呼ばれる
-        /*DataTypeCanvasIDMap,CanvasID2GridNumber、GridSizeをもとにダイアログをメインウィンドウと同じ構成に更新する*/
-        
+    UpdateInputSelectDialog(){
+        /*
+        現時点ではMainWindowStatusが変更されたときのみ呼ばれる
+        CanvasIDDataTypeMap,CanvasID2GridNumber、GridSizeをもとにダイアログをメインウィンドウと同じ構成に更新する
+        各ボタンにはCanvasIDを表示し、各ボタンにはクラスとして読み込まれているデータタイプを追加する。
+        評価指標が変更された際、受け付けるデータタイプをクラスに持つボタンのみを強調する
+        this.CanvasIDDataTypeMap=ReceivedDataBody.get("CanvasIDDataTypeMap");
+        this.LayoutGridMap=ReceivedDataBody.get("LayoutGridMap");
+        this.CanvasID2GridNumberMap=ReceivedDataBody.get("CanvasID2GridNumberMap");
+        this.GridNumber2CanvasIDArray
+        */
+        const RowsNum=this.LayoutGridMap.get("RowsNum");
+        const ColumnsNum=this.LayoutGridMap.get("ColumnsNum");
+        this.InputSelectDialog.style.setProperty("--CanvasSelectButtonGridRowsNum",RowsNum);
+        this.InputSelectDialog.style.setProperty("--CanvasSelectButtonGridColumnsNum",ColumnsNum);
+        this.CanvasSelectButtonContainer.innerHTML="";
+        const CanvasSelectButtonContainerFragment=document.createDocumentFragment();
+        /*
+        CanvasID2GridNumberMapをもとに配置したボタンに属性を付与する
+        ここではDataTypeの属性を付与し、querySelectorAllで容易に絞り込めるようにする
+        */
+        for(let i=0;i<RowsNum*ColumnsNum;i++){
+            const CanvasSelectButton=document.createElement("button");
+            const CanvasID=this.GridNumber2CanvasIDArray[i];
+            if(CanvasID>=0){//この位置にCanvasが配置されている
+                CanvasSelectButton.setAttribute("data-CanvasID",CanvasID);
+                //DataTypeクラスを付与する
+                const DataTypeMap=this.CanvasIDDataTypeMap.get(CanvasID);//{DataType:DataID,...,}
+                for(const DataType of DataTypeMap.keys()){
+                    CanvasSelectButton.classList.add(DataType);
+                }
+                CanvasSelectButton.textContent=`CanvasID : ${CanvasID}`;
+            }
+            CanvasSelectButtonContainerFragment.appendChild(CanvasSelectButton);
+        }
+        this.CanvasSelectButtonContainer.appendChild(CanvasSelectButtonContainerFragment);
+        //現在の関数選択で選択できるようにボタンの表示を制御
+        this.ChangeCanvasButtonSelectable();
+    }
+    ChangeCanvasButtonSelectable(){
+        const EvaluationFunction=this.EvaluationFunctionMap.get(this.PreviousSelectedFunctionName);
+        const TargetDataType=EvaluationFunction.TargetDataType;
+        //CanvasSelectButtonContainer直下のボタンを一度すべて非表示にする
+        this.CanvasSelectButtonContainer.querySelectorAll(":scope>button").forEach((button)=>{
+            if(button.classList.contains(TargetDataType)){
+                button.disabled=false;
+            }else{
+                button.disabled=true;
+            }
+        });
     }
     SelectedAreaChange(){
         //範囲選択が画像の範囲を超えていないかチェックする
@@ -698,7 +600,7 @@ class Evaluate{
             ["startslice",parseInt(this.StartSliceInput.value)],
             ["endslice",parseInt(this.EndSliceInput.value)],
         ]);
-        for(const CIDLayerMap of this.PreviousSelectedCID.values()){
+        for(const CIDLayerMap of this.CurrentSelectedCanvasInfoArray.values()){
             const targetCID=CIDLayerMap.get("CanvasID");
             if(targetCID>=0){//未選択CIDは-99999
                 //そのうち変更を加えたキャンバス自身にはこの変更を送らないようにするかも
@@ -739,7 +641,7 @@ class Evaluate{
             console.log("SubWindow終了準備");
             const SendDataList=[];
             //AreaSelectModeを解除
-            for(const CIDLayerMap of this.PreviousSelectedCID.values()){
+            for(const CIDLayerMap of this.CurrentSelectedCanvasInfoArray.values()){
                 //有効なCIDが選択されているものだけ送信する
                 const CanvasID=CIDLayerMap.get("CanvasID");
                 if(CanvasID>=0){//未選択状態のものは送らない
@@ -874,7 +776,7 @@ class VolumetricDSC{
         const startslice=SelectedArea.get("startslice");
         const endslice=SelectedArea.get("endslice");
 
-        const InputInfoList=structuredClone(CalculateData.get("InputInfoList"));//参照を切る。ただ代入するだけではEvaluate内のPreviousSelectedCIDまで影響することを確認した。
+        const InputInfoList=structuredClone(CalculateData.get("InputInfoList"));//参照を切る。ただ代入するだけではEvaluate内のCurrentSelectedCanvasInfoArrayまで影響することを確認した。
         const InputVolumeMap=CalculateData.get("InputVolumeMap");//{CID:{"Path",path,"Size":{width:???,height:???},"Volume":Volume}}をvalueとするMap
         const InputVolumeKeyList=InputInfoList.map((InputInfo)=>{
             const DataType=InputInfo.get("Layer");
