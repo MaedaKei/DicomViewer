@@ -12,16 +12,13 @@ class Evaluate{
         /*HTML要素を保持*/
         //評価指標選択
         this.EvaluationFunctionSelecter=document.getElementById("EvaluationFunctionSelecter");
+        //入力画像選択ダイアログ
+        this.InputSelectDialogOpenButton=document.getElementById("InputSelectDialogOpenButton");
+        this.InputSelectDialog=document.getElementById("InputSelectDialog");
         this.TargetDataTypeDisplay=document.getElementById("TargetDataTypeDisplay");
-        this.InputNumDisplay=document.getElementById("InputNumDisplay");
-        //入力画像選択
-        //this.InputBlockSelecter1=document.getElementById("InputBlockSelecter1");
-        //this.InputBlockSelecter2=document.getElementById("InputBlockSelecter2");
-        const InputBlockSelecterList=document.getElementsByClassName("InputBlockSelecter");
-        this.InputBlockSelecterMap=new Map(
-            Array.from(InputBlockSelecterList).map(InputBlockSelecter=>[InputBlockSelecter.id,InputBlockSelecter])
-        );
-        this.InputBlockLabelList=Array.from(document.getElementsByClassName("InputBlockLabel"));//Selecter無効時に文字の色を変える
+        this.TargetInputNumDisplay=document.getElementById("TargetInputNumDisplay");
+        this.CanvasSelectButtonContainer=document.getElementById("CanvasSelectButtonContainer");
+        this.InputSelectDialogCloseButton=document.getElementById("InputSelectDialogCloseButton");
         //領域選択入力欄
         this.LeftTopXInput=document.getElementById("LeftTopXInput");
         this.LeftTopYInput=document.getElementById("LeftTopYInput");
@@ -41,15 +38,23 @@ class Evaluate{
         this.ResultContainer=document.getElementById("ResultContainer");
         //渡された引数を保持する
         const ReceivedDataBody=SendingData.get("data");
-        const DataTypeCIDMap=ReceivedDataBody.get("DataTypeCIDMap");//初期化時に確定できるデータがこれしかないためこのkeyとvalueペアになっている
-        this.InvalidCanvasID=(-99999);
         this.InvalidDataType="Invalid";
         this.InvalidDataID=(-99999);
-        this.DataTypeCIDMap=this.setDataTypeCIDMap(DataTypeCIDMap);
-        console.log(this.DataTypeCIDMap);
+        /*
+        上の３つを使ってInput用のDialogを作成する
+        上の３つはメインウィンドウに変更があるとリアルタイムで通知が来る
+        そのときに更新され、そのタイミングでダイアログの再構成を行う
+        あるいは、ダイアログが開かれていないときはリアルタイムでダイアログの再生成は行わず、
+        ダイアログ展開中に変更があった場合リアルタイムで再生成する
+        とりあえずは常時リアルタイムダイアログ生成で実装
+        */
+        this.DataTypeCanvasIDMap=ReceivedDataBody.get("DataTypeCanvasIDMap");
+        this.LayoutGridMap=ReceivedDataBody.get("LayoutGridMap");
+        this.CanvasID2GridNumberMap=ReceivedDataBody.get("CanvasID2GridNumberMap");
+        console.log(this.DataTypeCanvasIDMap);
         /*
         //無効のデータを入れておく
-        this.DataTypeCIDMap.set(this.InvalidDataType,new Map([
+        this.DataTypeCanvasIDMap.set(this.InvalidDataType,new Map([
             [this.InvalidCanvasID,this.InvalidDataID]
         ]));
         */
@@ -109,27 +114,14 @@ class Evaluate{
         this.originalimageheight=99999;
         this.originalslidermax=99999;
         this.ChangeFunctionSelect();
+        this.UpdateInputSelectDialog();
         //イベントの登録
         this.ElementsWithEvents=new Map();
         this.setUserEvents();
         this.setSubWindowCloseEvents();
     }
-    //DataTypeCIDMapを設定する用の内部メソッド
+    //DataTypeCanvasIDMapを設定する用の内部メソッド
     //リアルタイム変更に今後対応するかもしれないのでメソッドとしておく
-    setDataTypeCIDMap(OriginalDataTypeCIDMap){
-        /*
-        OriginalDataTypeCIDMap={DataType:{CanvasID:DataID,...},...}のような構造のMap
-        ここに、DataType=Any,DataID=Invalid,CanvasID=-99999となるような、無効選択用のダミーを追加する
-        */
-        //const NewDataTypeCIDMap=structuredClone(OriginalDataTypeCIDMap);
-        const NewDataTypeCIDMap=OriginalDataTypeCIDMap;
-        /*
-        for(const CanvasIDDataIDMap of NewDataTypeCIDMap.values()){
-            CanvasIDDataIDMap.set(this.InvalidCanvasID,this.InvalidDataID);
-        }
-        */
-        return NewDataTypeCIDMap;
-    }
     setUserEvents(){
         this.FromMainProcessToSubFunctions=new Map();
         //評価指標選択
@@ -143,7 +135,7 @@ class Evaluate{
             let OFFCIDLayerMap=this.PreviousSelectedCID.get(key);//{CanvasID:,Layer:,DataID}
             const ONCID=parseInt(e.target.value);//CanvasID
             /*
-            ONCIDが選択無効の値かどうかで場合分けする。DataTypeCIDMapに無効選択をあらかじめ作ることで入力欄に不要な選択肢が増えてしまったため
+            ONCIDが選択無効の値かどうかで場合分けする。DataTypeCanvasIDMapに無効選択をあらかじめ作ることで入力欄に不要な選択肢が増えてしまったため
             仕方なくif文を使用する
             */
             const ONCIDLayerMap=new Map([
@@ -154,7 +146,7 @@ class Evaluate{
             if(ONCID>=0){
                 const SelectedFunctionName=this.PreviousSelectedFunctionName;
                 const ONDataType=this.EvaluationFunctionMap.get(SelectedFunctionName).TargetDataType;//DataType
-                const ONDataID=this.DataTypeCIDMap.get(ONDataType).get(ONCID);
+                const ONDataID=this.DataTypeCanvasIDMap.get(ONDataType).get(ONCID);
                 ONCIDLayerMap.set("Layer",ONDataType);
                 ONCIDLayerMap.set("DataID",ONDataID);
             }
@@ -402,6 +394,15 @@ class Evaluate{
                 this.FocusHistoryListItem(NewCalculateID,true);
             }
         });
+        /*GridInfomation, DataTypeCanvasIDMap*/
+        const UpdateMainWindowStatusFunction=(data)=>{
+            const ReceivedDataBody=data.get("data");
+            this.DataTypeCanvasIDMap=ReceivedDataBody.get("DataTypeCanvasIDMap");
+            this.LayoutGridMap=ReceivedDataBody.get("LayoutGridMap");
+            this.CanvasID2GridNumberMap=ReceivedDataBody.get("CanvasID2GridNumberMap");
+            this.UpdateInputSelectDialog();
+        }
+        this.FromMainProcessToSubFunctions.set("UpdateMainWindowStatus",UpdateMainWindowStatusFunction);
     }
     FocusHistoryListItem(NewCalculateID,transmission=true){
         if(true||NewCalculateID!==this.PreviousSelectedCalculateID){
@@ -512,7 +513,7 @@ class Evaluate{
         if(SelecterNum!==PreviousSelectedCIDMapArray.length){
             throw new Error("(評価関数変更)InputSelecterとPreviousSelectedCIDMapの個数が違う");
         }
-        const TargetCIDMap=this.DataTypeCIDMap.get(NewTargetDataType);//新しく選択された関数の入力対象となるCanasID:DataIDのマップ{CanvasID:DataID,...,}
+        const TargetCIDMap=this.DataTypeCanvasIDMap.get(NewTargetDataType);//新しく選択された関数の入力対象となるCanasID:DataIDのマップ{CanvasID:DataID,...,}
         for(let SelecterIndex=0;SelecterIndex<SelecterNum;SelecterIndex++){
             const [InputBlockSelecterKey,InputBlockSelecter]=InputBlockSelecterArray[SelecterIndex];
             /*データタイプが変わっているならOptionを更新*/
@@ -621,7 +622,10 @@ class Evaluate{
         //新しく選択された保持しておく
         this.PreviousSelectedFunctionName=NewSelectedFunctionName;
     }
-
+    UpdateInputSelectDialog(){//選択する関数が変わったときと、MainWindowに動きがあったときに呼ばれる
+        /*DataTypeCanvasIDMap,CanvasID2GridNumber、GridSizeをもとにダイアログをメインウィンドウと同じ構成に更新する*/
+        
+    }
     SelectedAreaChange(){
         //範囲選択が画像の範囲を超えていないかチェックする
         //チェック順

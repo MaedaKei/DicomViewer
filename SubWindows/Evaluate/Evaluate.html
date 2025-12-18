@@ -11,24 +11,29 @@
         <div id="InputContainer">
             <div id="EvaluationIndexSettingContainer">
                 <div id="EvaluationFunctionContainer">
-                    <label id="EvaluationIndexLabel" for="EvaluationFunctionSelecter">Evaluation Function</label>
+                    <label id="EvaluationIndexLabel" for="EvaluationFunctionSelecter">Evaluate Function</label>
                     <div class="EvaluationFunctionSelecterBlock">
                         <select id="EvaluationFunctionSelecter"></select>
-                        <div class="FunctionInfoDisplay">
-                            <div id="TargetDataTypeDisplay">Target : ???</div>
-                            <div id="InputNumDisplay">Input x 2</div>
-                        </div>
                     </div>
                 </div>
                 <div id="FunctionInputContainer">
-                    <div class="InputBlock">
-                        <label class="InputBlockLabel" for="InputBlockSelecter1">Input 1</label>
-                        <select class="InputBlockSelecter" id="InputBlockSelecter1"></select>
-                    </div>
-                    <div class="InputBlock">
-                        <label class="InputBlockLabel" for="InputBlockSelecter2">Input 2</label>
-                        <select class="InputBlockSelecter" id="InputBlockSelecter2"></select>
-                    </div>
+                    <button id="InputSelectDialogOpenButton">Select Input Canvas</button>
+                    <!--ダイアログはこのContainerを基準として表示するようにする-->
+                    <dialog id="InputSelectDialog">
+                        <div id="TargetInfoDisplayContainer">
+                            <!--入力対象となるデータタイプと入力数の条件を表示する-->
+                            <div id="TargetDataTypeDisplay"></div>
+                            <div id="TargetInputNumDisplay"></div>
+                        </div>
+                        <div id="CanvasSelectButtonContainer">
+                            <!--MainWindowのCanvasの配置と一致させてボタンを配置する-->
+                        </div>
+                        <div id="InputSelectDialogButtonContainer">
+                            <!--入力数の条件を満たしていないと閉じれないようにすると、データがない状態で開くと閉じれなくなる-->
+                            <!--閉じること自体はいつでもできるようにして、閉じたときに選択に変更があれば変更する方式とする-->
+                            <button id="InputSelectDialogCloseButton">閉じる</button>
+                        </div>
+                    </dialog>
                 </div>
             </div>
             <div id="AreaSelectContainer">

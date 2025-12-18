@@ -3846,14 +3846,14 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
     ResetLayoutStatus(LayoutGridReset=false){
         /*tureならGrid情報も初期化する*/
         if(LayoutGridReset){
-            this.currentRows=1;
-            this.currentColumns=1;
+            this.CurrentRowsNum=1;
+            this.CurrentColumnsNum=1;
             //inputの表示も変更
             this.RowsInput.value=1;
             this.ColumnsInput.value=1;
         }
-        this.LP2CanvasID=Array(this.currentRows*this.currentColumns).fill(-1);
-        this.CanvasID2LP=new Map();
+        this.GridNumber2CanvasIDArray=Array(this.CurrentRowsNum*this.CurrentColumnsNum).fill(-1);
+        this.CanvasID2GridNumberMap=new Map();
     }
     setUserEvents(){
         //共通のダイアログテンプレートを作成
@@ -3982,13 +3982,13 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
         const ConfirmFunc=()=>{
             //変更処理
             //CanvasBlockの格子配置が変更されたら、詰めて配置しなおすことにする
-            const newRows=parseInt(this.RowsInput.value)||this.currentRows;
-            const newColumns=parseInt(this.ColumnsInput.value)||this.currentColumns;
+            const newRows=parseInt(this.RowsInput.value)||this.CurrentRowsNum;
+            const newColumns=parseInt(this.ColumnsInput.value)||this.CurrentColumnsNum;
             if(newRows*newColumns<CanvasClassDictionary.size){
                 console.log(`現在のCanvasBlockの個数は ${CanvasClassDictionary.size} です。`);
                 return;
             }
-            if(!(this.currentRows==newRows&&this.currentColumns==newColumns)){
+            if(!(this.CurrentRowsNum==newRows&&this.CurrentColumnsNum==newColumns)){
                 //Grid情報を更新
                 this.UpdateCanvasPosition(newRows,newColumns);
                 //更新した情報を基にスタイル変更
@@ -4019,20 +4019,20 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
         this.EventSetHelper(this.CanvasMoveButton,"mouseup",()=>{
             //this.CanvasMovePositionButtonContainer.innerHTML="";
             //SelectorContainerの格子を更新する
-            //CanvasContainer.style.gridTemplateColumns=`repeat(${this.currentColumns},1fr)`;
-            //CanvasContainer.style.gridTemplateRows=`{repeat(${this.currentRows},1fr)}`;
-            this.CanvasMovePositionButtonContainer.style.gridTemplateColumns=`repeat(${this.currentColumns},1fr)`;
-            this.CanvasMovePositionButtonContainer.style.gridTemplateRows=`{repeat(${this.currentRows},1fr)}`;
+            //CanvasContainer.style.gridTemplateColumns=`repeat(${this.CurrentColumnsNum},1fr)`;
+            //CanvasContainer.style.gridTemplateRows=`{repeat(${this.CurrentRowsNum},1fr)}`;
+            this.CanvasMovePositionButtonContainer.style.gridTemplateColumns=`repeat(${this.CurrentColumnsNum},1fr)`;
+            this.CanvasMovePositionButtonContainer.style.gridTemplateRows=`{repeat(${this.CurrentRowsNum},1fr)}`;
             const gap=5;
             this.CanvasMovePositionButtonContainer.style.gap=`${gap}px`;
             const ButtonSize=75;//px
-            this.CanvasMovePositionButtonContainer.style.width=`${ButtonSize*this.currentColumns+gap*(this.currentColumns-1)}px`;
-            this.CanvasMovePositionButtonContainer.style.height=`${ButtonSize*this.currentRows+gap*(this.currentRows-1)}px`;
+            this.CanvasMovePositionButtonContainer.style.width=`${ButtonSize*this.CurrentColumnsNum+gap*(this.CurrentColumnsNum-1)}px`;
+            this.CanvasMovePositionButtonContainer.style.height=`${ButtonSize*this.CurrentRowsNum+gap*(this.CurrentRowsNum-1)}px`;
             const CanvasMovePositionButtonContainerFragment=document.createDocumentFragment();
             //現在のgridの状態を基にチェックボックスを配置する
-            for(let lp=0;lp<this.LP2CanvasID.length;lp++){
-                const r=Math.floor(lp/this.currentColumns)+1;
-                const c=lp%this.currentColumns+1;
+            for(let lp=0;lp<this.GridNumber2CanvasIDArray.length;lp++){
+                const r=Math.floor(lp/this.CurrentColumnsNum)+1;
+                const c=lp%this.CurrentColumnsNum+1;
                 //const label=document.createElement("MaskLabel");
                 const button=document.createElement("button");
                 button.style.width=`${ButtonSize}px`;
@@ -4041,7 +4041,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
                 CanvasMovePositionButtonContainerFragment.appendChild(button);
                 button.style.gridArea=`${r}/${c}/${r+1}/${c+1}`;
                 /*ボタンの色を決定する*/
-                const CanvasID=this.LP2CanvasID[lp];
+                const CanvasID=this.GridNumber2CanvasIDArray[lp];
                 if(CanvasID>=0){
                     //画像があるLPである
                     button.setAttribute("data-EmptyStatus","NotEmpty");
@@ -4079,17 +4079,17 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
                     });
                     const LPA=CheckedLPArray[0];
                     const LPB=CheckedLPArray[1];
-                    const CanvasIDA=this.LP2CanvasID[LPA];//-1の可能性あり。
-                    const CanvasIDB=this.LP2CanvasID[LPB];//-1の可能性あり
-                    this.LP2CanvasID[LPA]=CanvasIDB;
-                    this.LP2CanvasID[LPB]=CanvasIDA;
+                    const CanvasIDA=this.GridNumber2CanvasIDArray[LPA];//-1の可能性あり。
+                    const CanvasIDB=this.GridNumber2CanvasIDArray[LPB];//-1の可能性あり
+                    this.GridNumber2CanvasIDArray[LPA]=CanvasIDB;
+                    this.GridNumber2CanvasIDArray[LPB]=CanvasIDA;
                     let StyleUpdateFlag=false;
                     if(CanvasIDB>=0){
-                        this.CanvasID2LP.set(CanvasIDB,LPA);
+                        this.CanvasID2GridNumberMap.set(CanvasIDB,LPA);
                         StyleUpdateFlag=true;
                     }
                     if(CanvasIDA>=0){
-                        this.CanvasID2LP.set(CanvasIDA,LPB);
+                        this.CanvasID2GridNumberMap.set(CanvasIDA,LPB);
                         StyleUpdateFlag=true;
                     }
                     if(StyleUpdateFlag){
@@ -4380,7 +4380,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
                     const DataID=LayerData.get("DataID");
                     DataInfoMap.set(DataType,DataID);
                 }
-                const CanvasLP=this.CanvasID2LP.get(CanvasID);
+                const CanvasLP=this.CanvasID2GridNumberMap.get(CanvasID);
                 const CanvasIDDataMap=new Map([
                     ["DataInfoMap",DataInfoMap],
                     ["LP",CanvasLP]
@@ -4501,10 +4501,10 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
             すべて画面に配置し終わったら正しい位置に再配置する
             そのためにはCanvasIDとLPの紐づけが必要
             */
-            this.ResetLayoutStatus(false)//CanvasID2LPとLP2CanvasIDを初期化する
+            this.ResetLayoutStatus(false)//CanvasID2GridNumberMapとGridNumber2CanvasIDArrayを初期化する
             for(const [NewCanvasID,LP] of NewCanvasIDLPMap.entries()){
-                this.CanvasID2LP.set(NewCanvasID,LP);
-                this.LP2CanvasID[LP]=NewCanvasID;
+                this.CanvasID2GridNumberMap.set(NewCanvasID,LP);
+                this.GridNumber2CanvasIDArray[LP]=NewCanvasID;
             }
             this.UpdateStyle();//CanvasのDOMTreeのスタイルを書き換えて位置交換を反映する
             this.Resize();
@@ -4517,49 +4517,50 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
     UpdateCanvasPosition(newRows,newColumns){
         //初期化
         /*
-        this.LP2CanvasID=Array(newRows*newColumns).fill(-1);
+        this.GridNumber2CanvasIDArray=Array(newRows*newColumns).fill(-1);
         //埋めていく
         let newLP=0;
-        for(const cid of this.CanvasID2LP.keys()){
-            this.CanvasID2LP.set(cid,newLP);
-            this.LP2CanvasID[newLP]=cid;
+        for(const cid of this.CanvasID2GridNumberMap.keys()){
+            this.CanvasID2GridNumberMap.set(cid,newLP);
+            this.GridNumber2CanvasIDArray[newLP]=cid;
             newLP++;
         }*/
         let newLP=0;
-        for(let lp=0;lp<this.LP2CanvasID.length;lp++){
-            const cid=this.LP2CanvasID[lp];
+        for(let lp=0;lp<this.GridNumber2CanvasIDArray.length;lp++){
+            const cid=this.GridNumber2CanvasIDArray[lp];
             if(cid!=-1){
-                this.CanvasID2LP.set(cid,newLP);
+                this.CanvasID2GridNumberMap.set(cid,newLP);
                 newLP++;
             }
         }
-        this.LP2CanvasID=Array(newRows*newColumns).fill(-1);
-        for(const [cid,lp] of this.CanvasID2LP.entries()){
-            this.LP2CanvasID[lp]=cid;
+        this.GridNumber2CanvasIDArray=Array(newRows*newColumns).fill(-1);
+        for(const [cid,lp] of this.CanvasID2GridNumberMap.entries()){
+            this.GridNumber2CanvasIDArray[lp]=cid;
         }
         //inputの値、previousの値の変更
         this.RowsInput.value=newRows;
-        this.currentRows=newRows;
+        this.CurrentRowsNum=newRows;
         this.ColumnsInput.value=newColumns;
-        this.currentColumns=newColumns;
+        this.CurrentColumnsNum=newColumns;
     }
     UpdateStyle(){
+        //実際にスタイルを変更する部分
         //CanvasのLPとgridを参考にして位置を適用していく
         //styleを書き換えた時点で多分反映される
-        for(const [cid,LP] of this.CanvasID2LP.entries()){
+        for(const [cid,LP] of this.CanvasID2GridNumberMap.entries()){
             const canvas=CanvasClassDictionary.get(cid);
-            const r=Math.floor(LP/this.currentColumns)+1;
-            const c=LP%this.currentColumns+1;
+            const r=Math.floor(LP/this.CurrentColumnsNum)+1;
+            const c=LP%this.CurrentColumnsNum+1;
             //gridRow, gridColumnは1スタート
             //canvas.Block.style.gridRow=`${r+1}`;
             //canvas.Block.style.gridColumn=`${c+1}`;
             canvas.Block.style.gridArea=`${r}/${c}/${r+1}/${c+1}`;
-            //console.log(`${this.currentRows}, ${this.currentColumns}, | ${cid}, ${LP} (${r+1},${c+1})`);
+            //console.log(`${this.CurrentRowsNum}, ${this.CurrentColumnsNum}, | ${cid}, ${LP} (${r+1},${c+1})`);
         }
         CanvasContainer.style.columnGap=`${this.gridgap}px`;
         CanvasContainer.style.rowGap=`${this.gridgap}px`;
-        CanvasContainer.style.gridTemplateColumns=`repeat(${this.currentColumns},1fr)`;
-        CanvasContainer.style.gridTemplateRows=`repeat(${this.currentRows},1fr)`;
+        CanvasContainer.style.gridTemplateColumns=`repeat(${this.CurrentColumnsNum},1fr)`;
+        CanvasContainer.style.gridTemplateRows=`repeat(${this.CurrentRowsNum},1fr)`;
     }
     CreateNewCanvasBlock(DataInfoMap){
         //キャンバスの作成と登録
@@ -4569,7 +4570,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
         CanvasNextID++;
         //キャンバスの作成と、IDとgridの紐づけを行う
         //現在空いている場所はあるか？
-        if(CanvasClassDictionary.size>this.currentRows*this.currentColumns){
+        if(CanvasClassDictionary.size>this.CurrentRowsNum*this.CurrentColumnsNum){
             //空きがない状態なので、アップデートして空きを作る
             /*
             const currentbodyrect=document.body.getBoundingClientRect();
@@ -4582,16 +4583,16 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
             console.log(w,h);
             if(w>=h){
                 console.log("行を増やす");
-                this.UpdateCanvasPosition(this.currentRows+1,this.currentColumns);
+                this.UpdateCanvasPosition(this.CurrentRowsNum+1,this.CurrentColumnsNum);
             }else if(w<h){
                 console.log("列を増やす");
-                this.UpdateCanvasPosition(this.currentRows,this.currentColumns+1);
+                this.UpdateCanvasPosition(this.CurrentRowsNum,this.CurrentColumnsNum+1);
             }
         }
         //ここまでに必ず空きがある状態にする
-        const newLP=this.LP2CanvasID.indexOf(-1);
-        this.LP2CanvasID[newLP]=NewCanvasID;
-        this.CanvasID2LP.set(NewCanvasID,newLP);
+        const newLP=this.GridNumber2CanvasIDArray.indexOf(-1);
+        this.GridNumber2CanvasIDArray[newLP]=NewCanvasID;
+        this.CanvasID2GridNumberMap.set(NewCanvasID,newLP);
         //スタイルを変更する
         this.UpdateStyle();
         this.Resize();
@@ -4620,9 +4621,9 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
             CanvasClassDictionary.delete(CanvasID);//Mapから削除。これでガーベージコレクションが動くはず
             colormapformask.update();//変化がなければ何も起こらないので気軽に呼び出してOK
             //削除によるRowとColumnの変更はしないものとする。
-            const delateLP=this.CanvasID2LP.get(CanvasID);
-            this.LP2CanvasID[delateLP]=-1;
-            this.CanvasID2LP.delete(CanvasID);
+            const delateLP=this.CanvasID2GridNumberMap.get(CanvasID);
+            this.GridNumber2CanvasIDArray[delateLP]=-1;
+            this.CanvasID2GridNumberMap.delete(CanvasID);
         }
     }
     async ResetCanvas(LayoutGridReset=false){
@@ -4652,7 +4653,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
     async Resize(width=this.DisplayWidth-50,height=this.DisplayHeight-50){
         if(CanvasClassDictionary.size==0)return;//キャンバスがないなら何もしない
         //とりあえずはcolumnsの方向で増やしていく応急処理
-        //this.currentColumns=CanvasClassDictionary.size;
+        //this.CurrentColumnsNum=CanvasClassDictionary.size;
         let basewidth=-Infinity,baseheight=-Infinity;
         //基準となる高さを決める
         for(const canvasclass of CanvasClassDictionary.values()){
@@ -4662,8 +4663,8 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
             if(height>baseheight)baseheight=height;
         }
 
-        const CellWidth=(width-(this.currentColumns-1)*this.gridgap)/this.currentColumns;
-        const CellHeight=(height-(this.currentRows-1)*this.gridgap-this.menuheight)/this.currentRows;
+        const CellWidth=(width-(this.CurrentColumnsNum-1)*this.gridgap)/this.CurrentColumnsNum;
+        const CellHeight=(height-(this.CurrentRowsNum-1)*this.gridgap-this.menuheight)/this.CurrentRowsNum;
         //console.log("DisplaySize",this.DisplayWidth,this.DisplayHeight);
         //console.log("CellSize",CellWidth,CellHeight);
         const BaseCanvasWidth=basewidth;
@@ -4695,12 +4696,12 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
         /*
         CanvasContainer.style.columnGap=`${this.gridgap}px`;
         CanvasContainer.style.rowGap=`${this.gridgap}px`;
-        CanvasContainer.style.gridTemplateColumns=`repeat(${this.currentColumns},1fr)`;
-        CanvasContainer.style.gridTemplateRows=`{repeat(${this.currentRows},1fr)}`;
+        CanvasContainer.style.gridTemplateColumns=`repeat(${this.CurrentColumnsNum},1fr)`;
+        CanvasContainer.style.gridTemplateRows=`{repeat(${this.CurrentRowsNum},1fr)}`;
         */
         //Windowのコンテンツサイズを変更する
-        const WindowContentWidth=CanvasWidth*this.currentColumns+this.gridgap*(this.currentColumns-1);
-        const WindowContentHeight=this.menuheight+(CanvasHeight+this.sliderheight)*this.currentRows+this.gridgap*(this.currentRows-1);
+        const WindowContentWidth=CanvasWidth*this.CurrentColumnsNum+this.gridgap*(this.CurrentColumnsNum-1);
+        const WindowContentHeight=this.menuheight+(CanvasHeight+this.sliderheight)*this.CurrentRowsNum+this.gridgap*(this.CurrentRowsNum-1);
         document.body.style.width=WindowContentWidth;
         document.body.style.height=WindowContentHeight;
         //console.log("ContentSize",WindowContentWidth,WindowContentHeight);
@@ -4718,6 +4719,44 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
         const w=currentbodyrect.width,h=currentbodyrect.height;
         console.log(w,h);
         */
+    }
+    /*
+    現在のデータタイプとCanvasIDの関係を示すマップを返す
+    他のクラスからも使われるかもしれないのでLoadAndLayoutが担当する
+    */
+    UpdateDataTypeCanvasIDMap(){
+        const DataTypeList=Array.from(DicomDataClassDictionary.keys());
+        const DataTypeCanvasIDMap=new Map(
+            DataTypeList.map(datatypekey=>[datatypekey,new Map()])
+        );
+        for(const canvasclass of CanvasClassDictionary.values()){
+            //各キャンバスに現時点であるDataTypeを集計する
+            const CanvasID=canvasclass.id.get("CanvasID");
+            for(const [DataType,LayerData] of canvasclass.LayerDataMap.entries()){//Layerの名前はデータタイプと一致している
+                //LayerData={"Layer":, "DataID":, }
+                const DataID=LayerData.get("DataID");
+                DataTypeCanvasIDMap.get(DataType).set(CanvasID,DataID);
+            }
+        }
+        this.DataTypeCanvasIDMap=DataTypeCanvasIDMap;//{DataType:{CanvasID:DataID,CanvasID:DataID,...,}}
+    }
+    /*
+    SubWindow向けにメインウィンドウで読み込まれている画像とどこに配置されているかを送信する
+    3つの情報をまとめて送信する
+    */
+    SendMainWindowStatus(){
+        const SendingData=new Map([
+            ["action","UpdateMainWindowStatus"],
+            ["data",new Map([
+                ["DataTypeCanvasIDMap",this.DataTypeCanvasIDMap],
+                ["LayoutGridMap",new Map([
+                    ["RowsNum",this.CurrentRowsNum],
+                    ["ColumnsNum",this.CurrentColumnsNum]
+                ])],
+                ["CanvasID2GridNumberMap",this.CanvasID2GridNumberMap]
+            ])]
+        ]);
+        this.PassChangesToSubWindow(SendingData);
     }
     //もしものためにヘルパーを使う
     EventSetHelper(element,event,callback){
@@ -4829,10 +4868,10 @@ class Evaluate{
         this.FromMainProcessToMainFunctions.set("ChangeCanvasesSelectedArea",ChangeSelectedAreaFunction);
         //現存のCIDを連絡する
         const ChangeExistingCIDFunction=(data)=>{
-            const DataTypeCIDMap=this.getDataTypeCIDMap();
+            const DataTypeCanvasIDMap=this.getDataTypeCanvasIDMap();
             const SendingData=new Map([
                 ["action","UpdateExistingCID"],
-                ["data",DataTypeCIDMap]
+                ["data",DataTypeCanvasIDMap]
             ]);
             this.PassChangesToSubWindow(SendingData);
         };
@@ -4953,9 +4992,10 @@ class Evaluate{
         }
         this.FromMainProcessToMainFunctions.set("EvaluateStart",EvaluateStartFunction);
     }
-    getDataTypeCIDMap(){
+    /*
+    getDataTypeCanvasIDMap(){
         const DataTypeList=Array.from(DicomDataClassDictionary.keys());
-        const DataTypeCIDMap=new Map(
+        const DataTypeCanvasIDMap=new Map(
             DataTypeList.map(datatypekey=>[datatypekey,new Map()])
         );
         for(const canvasclass of CanvasClassDictionary.values()){
@@ -4964,17 +5004,23 @@ class Evaluate{
             for(const [DataType,LayerData] of canvasclass.LayerDataMap.entries()){//Layerの名前はデータタイプと一致している
                 //LayerData={"Layer":, "DataID":, }
                 const DataID=LayerData.get("DataID");
-                DataTypeCIDMap.get(DataType).set(CanvasID,DataID);
+                DataTypeCanvasIDMap.get(DataType).set(CanvasID,DataID);
             }
         }
-        return DataTypeCIDMap;
+        return DataTypeCanvasIDMap;//{DataType:{CanvasID:DataID,CanvasID:DataID,...,}}
     }
+    */
     OrderEvaluateWindowOpen(){
         //body データタイプごとのCIDの入れ子Mapとする
         //BGのデータに対する評価はなしとする。つまり、評価指標に投げたい場合はメインとしてロードする必要がある
-        const DataTypeCIDMap=this.getDataTypeCIDMap();
+        const DataTypeCanvasIDMap=LoadAndLayoutFunctions.DataTypeCanvasIDMap;
         const SendingDataBody=new Map([
-            ["DataTypeCIDMap",DataTypeCIDMap],
+            ["DataTypeCanvasIDMap",DataTypeCanvasIDMap],//{DataType:{CanvasID:DataID,...,},...,}
+            ["LayoutGridMap",new Map([
+                ["RowsNum",LoadAndLayoutFunctions.CurrentRowsNum],
+                ["ColumnsNum",LoadAndLayoutFunctions.CurrentColumnsNum],
+            ])],//現在の画像を配置する枠組み
+            ["CanvasID2GridNumberMap",LoadAndLayoutFunctions.CanvasID2GridNumberMap]//現在の画像配置枠組みのうち、どこに画像が配置されているか
             ["windowsize",[800,600]],
         ]);
         const SendingData=new Map([
