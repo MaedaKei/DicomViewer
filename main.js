@@ -1,8 +1,9 @@
 const {app,BrowserWindow,dialog,ipcMain,screen} = require('electron');
 const path = require('path');
 const fs = require('fs');
-const detach=false;
+const detach=true;
 const WindowManager=new Map();
+let AllowAddOrDeleteFlag=true;//データの追加・削除をしていい状態にあるか
 //メインウィンドウの作成
 function createMainWindow(){
     const MainWindow = new BrowserWindow({
@@ -134,7 +135,9 @@ function createSubWindow(SendingData){
     //const header=SendingData.get("header");
     const actionName=SendingData.get("action");
     const HTMLfileName=actionName+".html";
-    const windowsize=SendingData.get("data").get("windowsize");
+    const ReceivedDataBody=SendingData.get("data");
+    const windowsize=ReceivedDataBody.get("windowsize");
+    AllowAddOrDeleteFlag=ReceivedDataBody.get("AllowAddOrDeleteFlag");//サブウィンドウごとに設定された許可状態に変更
     const SubWindow = new BrowserWindow({
         width: windowsize[0],
         height: windowsize[1],
@@ -221,6 +224,8 @@ function createSubWindow(SendingData){
         //サブウィンドウに最終通知
         const dammydata=true;
         SubWindow.webContents.send("CloseSubWindowFromMainProcessToSub",dammydata);
+        //データの追加・削除が許可できる状態であるかのフラグを許可状態に
+        AllowAddOrDeleteFlag=true;
         //サブウィンドウからの最後のデータをメインレンダラーに送信する
         //CloseSubWindowFromMainProcessToSubを受けたサブウィンドウが
         //データをCloseSubWindowFromSubToMainProcessに送る。
@@ -247,14 +252,12 @@ ipcMain.on("OrderSubWindowOpen",async (event,SendingData)=>{
 });
 //MainWindowに、何かしらのSubWindowが開かれている状態か教える。
 //SubWindowが開かれるとWindowManegerにSubWindowが登録され、消えるときにdeleteされることを利用してチェックしている。
-ipcMain.handle("CheckSubWindowOpened",()=>{
-    console.log("SubWindowCheck");
-    const SubWindowOpenedFlag=WindowManager.has("SubWindow");
-    if(SubWindowOpenedFlag){
-        console.log("SubWindow Opend",SubWindowOpenedFlag);
-        console.log(Array.from(WindowManager.keys()));
+ipcMain.handle("CheckAllowAddOrDelete",()=>{
+    console.log("CheckAllowAddOrDelete");
+    if(AllowAddOrDeleteFlag){
+        console.log("Able to Add or Delete Data.")
     }else{
-        console.log("SubWindow Nothing",SubWindowOpenedFlag);
+        console.log("Unable to Add or Delete Data.");
     }
-    return SubWindowOpenedFlag;
+    return AllowAddOrDeleteFlag;
 });

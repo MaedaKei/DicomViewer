@@ -2568,12 +2568,14 @@ class Canvas{
                 const DicomDataClass=DicomDataInfoMap.get("Data");
                 //const MultiUseLayerModeMap=false;//falseかMapか。MultiLayerModeMap={"Mode":,"Activate":true or false}
                 const windowsize=[400,300];
+                const AllowAddOrDeleteFlag=false;//このサブウィンドウが開いている間、データの追加・削除を許可するか
                 const data=new Map([
                     ["vMin",DicomDataClass.vMin],
                     ["vMax",DicomDataClass.vMax],
                     ["histgram",DicomDataClass.histgram],
 
                     ["windowsize",windowsize],
+                    ["AllowAddOrDeleteFlag",AllowAddOrDeleteFlag],
                     ["Layer",Layer],
                 ]);
                 const initializedata=new Map([
@@ -2617,6 +2619,7 @@ class Canvas{
                 const DicomDataClass=DicomDataInfoMap.get("Data");
                 //const MultiUseLayerMode="AreaSelect";//範囲選択モード
                 const windowsize=[300,400];
+                const AllowAddOrDeleteFlag=false;
                 const SelectedArea=new Map([
                     //初期表示用の値を送る
                     ["w0",this.SelectedAreaStatus.get("w0")],
@@ -2638,6 +2641,7 @@ class Canvas{
                     ["MaskLabel",colormapformask.label],
 
                     ["windowsize",windowsize],
+                    ["AllowAddOrDeleteFlag",AllowAddOrDeleteFlag],
                     //["MultiUseLayerMode",MultiUseLayerMode],
                     ["Layer",Layer],
                 ]);
@@ -2684,6 +2688,7 @@ class Canvas{
                 //const MultiUseLayerMode=false;
                 //const windowsize=[300,400];//ROINameの最長＆ROIの個数を基に動的に変える必要がある
                 const windowsize=[300,400];//とりあえずのサイズ
+                const AllowAddOrDeleteFlag=false;
                 //console.log(windowsize);
                 const data=new Map([
                     ["ROINameColorMap",DicomDataClass.ContourColorMap],//{ROIName:Hex} ROI名と色の表示に必要
@@ -2692,6 +2697,7 @@ class Canvas{
                     /*["ROISelectWindowStyleMap",DicomDataClass.ROISelectWindowStyleMap],*/ //ボタンサイズなどの諸設定
                     
                     ["windowsize",windowsize],
+                    ["AllowAddOrDeleteFlag",AllowAddOrDeleteFlag],
                     //["MultiUseLayerMode",MultiUseLayerMode],
                     ["Layer",Layer],
                 ]);
@@ -3798,23 +3804,21 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
             //console.log(DicomDataClassDictionary);
         }
     }
-    static async CheckSubWindowOpened(){
+    static async CheckAllowAddOrDelete(){
         /*SubWindowが開かれている状態か確認する*/
         //現時点では、サブウィンドウが開かれている状態ではDicomDataの増減に関わる処理はさせないようにしたい
         //ファイルの読み込み、Canvasの
-        const CheckResult= await window.MainWindowRendererMainProcessAPI.CheckSubWindowOpened();
+        const CheckResult= await window.MainWindowRendererMainProcessAPI.CheckAllowAddOrDelete();
         //console.log(CheckResult);
         return CheckResult
     }
     static async CheckPossibilityLoadORDelete(){
-        const SubWindowOpendResult=await this.CheckSubWindowOpened();
+        const AllowAddOrDeleteFlag=await this.CheckAllowAddOrDelete();
         //console.log(SubWindowOpendResult);
-        if(SubWindowOpendResult){
-            conslole.log("サブウィンドウが開かれているため、データの追加・削除はできません");
-            return false;
-        }else{
-            return true;
+        if(!AllowAddOrDeleteFlag){
+            console.log("データの追加・削除を許可しないサブウィンドウが展開中です");
         }
+        return AllowAddOrDeleteFlag;
     }
     constructor(){
         //共通の情報をまとめておく
@@ -3994,6 +3998,8 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
                 //更新した情報を基にスタイル変更
                 this.UpdateStyle();
                 this.Resize();
+                //新しい位置情報を送信する
+                this.SendMainWindowStatus();
             }
             this.GridChangeDialog.close();
         }
@@ -4094,6 +4100,8 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
                     }
                     if(StyleUpdateFlag){
                         this.UpdateStyle();
+                        //新しい位置情報を送信する
+                        this.SendMainWindowStatus();
                     }
                     /*見た目の更新*/
                     //ボタンに表示している情報など
@@ -4338,6 +4346,8 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
                 this.CreateNewCanvasBlock(DataInfoMap);
             }
         }
+        /*読み込まれた状態を更新*/
+        this.UpdateCanvasIDDataTypeMap();
     }
     async ChangeAndLoad(){
         const ConfirmConduct=false;
@@ -4509,6 +4519,8 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
             this.UpdateStyle();//CanvasのDOMTreeのスタイルを書き換えて位置交換を反映する
             this.Resize();
             console.log("パス変更＆読み込み完了");
+            /*データの読み込み状況を更新*/
+            this.UpdateCanvasIDDataTypeMap();
         }
         //console.log("読み込み＆再配置が完了しました。");
     }
@@ -4561,6 +4573,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
         CanvasContainer.style.rowGap=`${this.gridgap}px`;
         CanvasContainer.style.gridTemplateColumns=`repeat(${this.CurrentColumnsNum},1fr)`;
         CanvasContainer.style.gridTemplateRows=`repeat(${this.CurrentRowsNum},1fr)`;
+        //
     }
     CreateNewCanvasBlock(DataInfoMap){
         //キャンバスの作成と登録
@@ -4598,7 +4611,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
         this.Resize();
         return NewCanvasID;//とりあえず新しいCanvasIDを返す
     }
-    async delateCanvas(CanvasID){
+    async delateCanvas(CanvasID,UpdateCanvasIDDataTypeMapFlag=true){
         if(await LoadAndLayout.CheckPossibilityLoadORDelete()){
             console.log("delateCanvas");
             const CanvasClass=CanvasClassDictionary.get(CanvasID);
@@ -4624,14 +4637,18 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
             const delateLP=this.CanvasID2GridNumberMap.get(CanvasID);
             this.GridNumber2CanvasIDArray[delateLP]=-1;
             this.CanvasID2GridNumberMap.delete(CanvasID);
+            /*データの読み込み状況を更新*/
+            if(UpdateCanvasIDDataTypeMapFlag){//単独削除時はここで更新がかかる
+                this.UpdateCanvasIDDataTypeMap();
+            }
         }
     }
     async ResetCanvas(LayoutGridReset=false){
         if(await LoadAndLayout.CheckPossibilityLoadORDelete()){
             //Canvasを消す
             //console.log(CanvasClassDictionary);
-            for(const cid of CanvasClassDictionary.keys()){
-                await this.delateCanvas(cid);
+            for(const CanvasID of CanvasClassDictionary.keys()){
+                await this.delateCanvas(CanvasID,false);//この後まとめてUpdateCanvaIDDataTypeMapを行う
             }
             //DicomDataClassもリセットする
             //ここでBGCTもリセットされる
@@ -4646,6 +4663,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
             //Layoutでは、画像を削除してもgridは変更しないようにしているため、それを初期化する
             this.ResetLayoutStatus(LayoutGridReset);
             //console.log(document.activeElement);
+            this.UpdateCanvasIDDataTypeMap();
         }
     }
     //余裕を持たせるためにディスプレイサイズから少しだけ小さい値をデフォルトにする。
@@ -4742,7 +4760,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
         this.DataTypeCanvasIDMap=DataTypeCanvasIDMap;//{DataType:{CanvasID:DataID,CanvasID:DataID,...,}}
     }
     */
-    UpdateCanvasIDDataTypeMap(){
+    UpdateCanvasIDDataTypeMap(){//これはデータが削除されたり読み込まれたタイミングで都度呼び出す必要がある。
         const CanvasIDDataTypeMap=new Map();//{CanvasID:{DataType:DataID,...,},...}
         for(const [CanvasID,CanvasClass] of CanvasClassDictionary.entries()){
             const LoadedDataTypeDataIDMap=new Map();
@@ -4753,12 +4771,14 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
             CanvasIDDataTypeMap.set(CanvasID,LoadedDataTypeDataIDMap);
         }
         this.CanvasIDDataTypeMap=CanvasIDDataTypeMap;
+        //サブウィンドウが展開されていなくても空送信する
+        this.SendMainWindowStatus();
     }
     /*
     SubWindow向けにメインウィンドウで読み込まれている画像とどこに配置されているかを送信する
     3つの情報をまとめて送信する
     */
-    SendMainWindowStatus(){
+    SendMainWindowStatus(){//データの追加削除が発生したとき、Canvasの移動が発生したときに呼び出す必要がある。
         /*CanvasIDごとに何が読み込まれているかまとめたデータを作成*/
         const SendingData=new Map([
             ["action","UpdateMainWindowStatus"],
@@ -4772,7 +4792,11 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
                 ["GridNumber2CanvasIDArray",this.GridNumber2CanvasIDArray]
             ])]
         ]);
+        //console.log("MainWindowの状態を送るよ")
         this.PassChangesToSubWindow(SendingData);
+    }
+    PassChangesToSubWindow(data){
+        window.MainWindowRendererMainProcessAPI.FromMainToMainProcess(data);
     }
     //もしものためにヘルパーを使う
     EventSetHelper(element,event,callback){
@@ -5030,6 +5054,7 @@ class Evaluate{
             ["CanvasID2GridNumberMap",LoadAndLayoutFunctions.CanvasID2GridNumberMap],//現在の画像配置枠組みのうち、どこに画像が配置されているか
             ["GridNumber2CanvasIDArray",LoadAndLayoutFunctions.GridNumber2CanvasIDArray],
             ["windowsize",[800,600]],
+            ["AllowAddOrDeleteFlag",true],
         ]);
         const SendingData=new Map([
             ["action","Evaluate"],

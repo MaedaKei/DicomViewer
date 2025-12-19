@@ -13,11 +13,115 @@ html, body {
 
 body{
     display: flex;
+    position:relative;
     flex-direction: row;
     --InputContainerWidth:30%;
     --ResultContainerWidth:calc(100% - var(--InputContainerWidth));
     background-color: rgb(67, 67, 67);
 }
+dialog#InputSelectDialog{
+    /*CanvasSelectButtonContainerのサイズ*/
+    --CanvasSelectButtonWidth:50px;
+    --CanvasSelectButtonHeight:50px;
+    --CanvasSelectButtonGridRowsNum:2;
+    --CanvasSelectButtonGridColumnsNum:2;
+    --CanvasSelectButtonGridGap:5px;
+    --CanvasSelectButtonContainerWidth:calc((var(--CanvasSelectButtonWidth) + var(--CanvasSelectButtonGridGap)) * var(--CanvasSelectButtonGridColumnsNum) - var(--CanvasSelectButtonGridGap) + 2 * var(--CanvasSelectButtonGridGap));
+    --CanvasSelectButtonContainerHeight:calc((var(--CanvasSelectButtonHeight) + var(--CanvasSelectButtonGridGap)) * var(--CanvasSelectButtonGridRowsNum) - var(--CanvasSelectButtonGridGap) + 2 * var(--CanvasSelectButtonGridGap));
+    /*TargetinfoDisplayContainerのサイズ*/
+    --TargetInfoDisplayContainerHeight:40px;
+    /*ButtonContainerのサイズ*/
+    --ButtonContainerHeight:30px;
+}
+dialog#InputSelectDialog[open]{
+    width:var(--CanvasSelectButtonContainerWidth);
+    height:calc(var(--TargetInfoDisplayContainerHeight) + var(--CanvasSelectButtonContainerHeight) + var(--ButtonContainerHeight));
+    position:absolute;
+    display:flex;
+    flex-direction: column;
+    /*ちょうどよく重なるように調整した*/
+    top:5%;
+    left:25%;
+    background-color: black;
+}
+dialog#InputSelectDialog[open]>div#TargetInfoDisplayContainer{
+    width:100%;
+    height:var(--TargetInfoDisplayContainerHeight);
+    display: flex;
+    flex-direction: column;
+}
+dialog#InputSelectDialog[open]>div#TargetInfoDisplayContainer>div#TargetDataTypeDisplay{
+    width:100%;
+    height:50%;
+    font:bold 10px sans-serif;
+    text-align: center;
+    padding:2px;
+    background-color: black;
+    color:white;
+    border:1px solid white;
+}
+dialog#InputSelectDialog[open]>div#TargetInfoDisplayContainer>div#TargetInputNumDisplay{
+    width:100%;
+    height:50%;
+    font:bold 10px sans-serif;
+    text-align:center;
+    padding:2px;
+    background-color: black;
+    color:white;
+    border:1px solid white;
+}
+dialog#InputSelectDialog[open]>div#CanvasSelectButtonContainer{
+    width:100%;
+    height:var(--CanvasSelectButtonContainerHeight);
+    display: grid;
+    grid-template-rows: repeat(var(--CanvasSelectButtonGridRowsNum),1fr);
+    grid-template-columns: repeat(var(--CanvasSelectButtonGridColumnsNum),1fr);
+    gap:var(--CanvasSelectButtonGridGap);
+    padding:var(--CanvasSelectButtonGridGap);
+}
+
+dialog#InputSelectDialog[open]>div#CanvasSelectButtonContainer>button{
+    /*このボタンはCanvasIDのみを表示させる*/
+    width:var(--CanvasSelectButtonWidth);
+    height:var(--CanvasSelectButtonHeight);
+    text-align: center;
+    border:1px solid gray;
+    background-color: white;
+    font:bold 10px sans-serif;
+    color:black;
+}
+dialog#InputSelectDialog[open]>div#CanvasSelectButtonContainer>button:not(:disabled):hover{
+    border:1px solid red;
+}
+dialog#InputSelectDialog[open]>div#CanvasSelectButtonContainer>button:not(:disabled).Selected{
+    background-color: rgb(196, 121, 250);
+}
+dialog#InputSelectDialog[open]>div#CanvasSelectButtonContainer>button:disabled{
+    background-color: black;
+    color:gray;
+}
+dialog#InputSelectDialog[open]>div#InputSelectDialogButtonContainer{
+    width:100%;
+    height:var(--ButtonContainerHeight);
+    display:flex;
+    flex-direction: row;
+    padding:2px;
+}
+dialog#InputSelectDialog[open]>div#InputSelectDialogButtonContainer>button#InputSelectDialogCloseButton{
+    width:100%;
+    height:100%;
+    font:bold 15px sans-serif;
+    text-align: center;
+    background-color: blue;
+    color:white;
+}
+dialog#InputSelectDialog[open]>div#InputSelectDialogButtonContainer>button#InputSelectDialogCloseButton:hover{
+    background-color: rgb(94, 94, 239);
+}
+dialog#InputSelectDialog[open]>div#InputSelectDialogButtonContainer>button#InputSelectDialogCloseButton:active{
+    color:black;
+}
+
 div#InputContainer{
     width:var(--InputContainerWidth);
     height:100%;
@@ -69,7 +173,6 @@ div#EvaluationIndexSettingContainer>div#FunctionInputContainer{
     display:flex;
     flex-direction: row;
     padding:2px;
-    position:relative;
 }
 div#EvaluationIndexSettingContainer>div#FunctionInputContainer>button#InputSelectDialogOpenButton{
     width:100%;
@@ -85,87 +188,7 @@ div#EvaluationIndexSettingContainer>div#FunctionInputContainer>button#InputSelec
     background-color: blue;
     color:black;
 }
-div#EvaluationIndexSettingContainer>div#FunctionInputContainer>dialog#InputSelectDialog{
-    /*CanvasSelectButtonContainerのサイズ*/
-    --CanvasSelectButtonWidth:20px;
-    --CanvasSelectButtonHeight:20px;
-    --CanvasSelectButtonGridRowsNum:2;
-    --CanvasSelectButtonGridColumnsNum:2;
-    --CanvasSelectButtonGridGap:2px;
-    --CanvasSelectButtonContainerWidth:calc((var(--CanvasSelectButtonWidth) + var(--CanvasSelectButtonGridGap)) * var(--CanvasSelectButtonGridColumnsNum) - var(--CanvasSelectButtonGridGap) + 2 * 2px);
-    --CanvasSelectButtonContainerHeight:calc((var(--CanvasSelectButtonHeight) + var(--CanvasSelectButtonGridGap)) * var(--CanvasSelectButtonGridRowsNum) - var(--CanvasSelectButtonGridGap) + 2 * 2px);
-    /*TargetinfoDisplayContainerのサイズ*/
-    --TargetInfoDisplayContainerHeight:60px;
-    /*ButtonContainerのサイズ*/
-    --ButtonContainerHeight:40px;
-}
-div#EvaluationIndexSettingContainer>div#FunctionInputContainer>dialog#InputSelectDialog[open]{
-    width:var(--CanvasSelectButtonContainerWidth);
-    height:calc(var(--TargetInfoDisplayContainerHeight) + var(--CanvasSelectButtonContainerHeight) + var(--ButtonContainerHeight));
-    position:absolute;
-    display:flex;
-    flex-direction: column;
-    top:50%;
-    left:50%;
-}
-dialog#InputSelectDialog[open]>div#TargetInfoDisplayContainer{
-    width:100%;
-    height:var(--TargetInfoDisplayContainerHeight);
-    display: flex;
-    flex-direction: column;
-}
-dialog#InputSelectDialog[open]>div#TargetInfoDisplayContainer>div#TargetDataTypeDisplay{
-    width:100%;
-    height:50%;
-    font:bold 18px sans-serif;
-    text-align: center;
-    padding:2px;
-}
-dialog#InputSelectDialog[open]>div#TargetInfoDisplayContainer>div#TargetInputNumDisplay{
-    width:100%;
-    height:50%;
-    font:bold 18px sans-serif;
-    text-align:center;
-    padding:2px;
-}
-dialog#InputSelectDialog[open]>div#CanvasSelectButtonContainer{
-    width:100%;
-    height:var(--CanvasSelectButtonContainerHeight);
-    display: grid;
-    grid-template-rows: repeat(var(--CanvasSelectButtonGridRowsNum),1fr);
-    grid-template-columns: repeat(var(--CanvasSelectButtonGridColumnsNum),1fr);
-    gap:var(--CanvasSelectButtonGridGap);
-    padding:2px;
-}
 
-dialog#InputSelectDialog[open]>div#CanvasSelectButtonContainer>button{
-    /*このボタンはCanvasIDのみを表示させる*/
-    width:var(--CanvasSelectButtonWidth);
-    height:var(--CanvasSelectButtonHeight);
-    text-align: center;
-}
-
-dialog#InputSelectDialog[open]>div#InputSelectDialogButtonContainer{
-    width:100%;
-    height:var(--ButtonContainerHeight);
-    display:flex;
-    flex-direction: row;
-    padding:2px;
-}
-dialog#InputSelectDialog[open]>div#InputSelectDialogButtonContainer>button#InputSelectDialogCloseButton{
-    width:100%;
-    height:100%;
-    font:bold 15px sans-serif;
-    text-align: center;
-    background-color: blue;
-    color:white;
-}
-dialog#InputSelectDialog[open]>div#InputSelectDialogButtonContainer>button#InputSelectDialogCloseButton:hover{
-    background-color: rgb(94, 94, 239);
-}
-dialog#InputSelectDialog[open]>div#InputSelectDialogButtonContainer>button#InputSelectDialogCloseButton:active{
-    color:black;
-}
 /*AreaSelectContainer*/
 div#InputContainer>div#AreaSelectContainer{
     width:100%;

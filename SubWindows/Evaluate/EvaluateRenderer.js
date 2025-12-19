@@ -62,8 +62,6 @@ class Evaluate{
             [VolumetricDSC.EvaluateName,new VolumetricDSC()],
             [dammyFunction.EvaluateName,new dammyFunction()],
         ]);
-        //一応一つ前の評価関数名を保持しておく
-        this.PreviousSelectedFunctionName=false;
         //関数セレクト周辺への反映
         this.EvaluationFunctionSelecter.innerHTML="";
         for(const EvaluateName of this.EvaluationFunctionMap.keys()){
@@ -74,6 +72,8 @@ class Evaluate{
         }
         //一番最初に追加した要素をデフォルト選択とする
         this.EvaluationFunctionSelecter.selectedIndex=0;
+        //一応一つ前の評価関数名を保持しておく
+        this.CurrentSelectedFunctionName=this.EvaluationFunctionSelecter.value;
         //OFFにする時に必要になる
         //その他でも必要になることになったので、Selecterの選択変化時にCanvasID,Layer=DataType,DataIDを保持させる
         //CIDとターゲットレイヤーをセットで保持する
@@ -113,6 +113,30 @@ class Evaluate{
             //const SelectedFunctionName=e.target.value;
             this.ChangeFunctionSelect();
         });
+        /*CanvasSelectInputDialogOpen*/
+        this.EventSetHelper(this.InputSelectDialogOpenButton,"mouseup",(e)=>{
+            if(e.button===0){
+                this.InputSelectDialog.showModal();
+            }
+        });
+        this.EventSetHelper(this.InputSelectDialogCloseButton,"mouseup",(e)=>{
+            if(e.button===0){
+                this.InputSelectDialog.close();
+            }
+        });
+        this.EventSetHelper(this.CanvasSelectButtonContainer,"mouseup",(e)=>{
+            if(e.button===0){
+                if(e.target.tagName==="BUTTON"){
+                    const CanvasButton=e.target;
+                    //Select状態の切り替え
+                    if(CanvasButton.classList.contains("Selected")){
+                        CanvasButton.classList.remove("Selected");
+                    }else{
+                        CanvasButton.classList.add("Selected");
+                    }
+                }
+            }
+        })
         //インプットの変更をMainWindowに通知後、あちらからサイズに関する情報が送られてくるので受け取る
         const FromMainToSubCanvasSizeFunction=(data)=>{
             const ReceiveDataBody=data.get("data");
@@ -204,11 +228,11 @@ class Evaluate{
                 InputSelectDialogによってCurrentSelectedCanvasInfoArrayには必要となる情報が{CanvasID:,DataType:,DataID}という単位で入っている。
                 これをもとにストックに存在しているもの、存在していないものを決定する
                 */
-                const CurrentSelectedCanvasInfoArrayLength=this.CurrentSelectedCanvasInfoArray.length;//これが今回のストック個数となる
+                //const CurrentSelectedCanvasInfoArrayLength=this.CurrentSelectedCanvasInfoArray.length;//これが今回のストック個数となる
                 for(const CurrentSelectedCanvasInfoMap of this.CurrentSelectedCanvasInfoArray){
                     const DataType=CurrentSelectedCanvasInfoMap.get("DataType");
                     const DataID=CurrentSelectedCanvasInfoMap.get("DataID");
-                    const DataTypeDataIDString=`${DataType}:${DataID}`;//VolumeStockでは集合による存在判定を行っているため、一意に決まる文字列を生成する
+                    const DataTypeDataIDString=Evaluate.Array2String([DataType,DataID]);//VolumeStockでは集合による存在判定を行っているため、一意に決まる文字列を生成する
                     if(CurrentStockedDataList.includes(DataTypeDataIDString)){
                         NoLoadDataList.push(DataTypeDataIDString);
                     }else{
@@ -218,21 +242,6 @@ class Evaluate{
                         CurrentStockedDataList.push(DataTypeDataIDString);
                     }
 
-                }
-                //入力の走査を関数が欲する個数に絞ってもいいかもしれない
-                for(const CIDLayerMap of this.CurrentSelectedCanvasInfoArray.values()){
-                    const CanvasID=CIDLayerMap.get("CanvasID");
-                    const DataType=CIDLayerMap.get("Layer");
-                    const DataID=CIDLayerMap.get("DataID");
-                    const DataListKey=Evaluate.Array2String([DataType,DataID]);//"DataType:DataID"
-                    if(CurrentStockedDataList.includes(DataListKey)){
-                        //ストックにあるので読み込まなくても大丈夫
-                        NoLoadDataList.push(DataListKey);
-                    }else{
-                        //ストックにないので読み込み必要
-                        LoadDataList.push(DataListKey);
-                        CurrentStockedDataList.push(DataListKey);
-                    }
                 }
                 
                 //最終的に必要となるデータはNoloadDataListとloadDataListの個数となり、これらのデータのみをストック対象とする
@@ -282,7 +291,7 @@ class Evaluate{
             //評価関数に渡す用のデータを成形
             //CalculateID,VolumeMap,SelectedAreaの3つを渡す
             //CanvasID,DataType,DataIDの情報もまとめて渡す
-            const EvaluationFunctionName=this.PreviousSelectedFunctionName;
+            const EvaluationFunctionName=this.CurrentSelectedFunctionName;
             const EvaluationFunction=this.EvaluationFunctionMap.get(EvaluationFunctionName);
             const InputNum=this.CurrentSelectedCanvasInfoArray.length;//ダイアログで選択するときに厳密に制限する
             const InputVolumeMap=new Map();//{volume1:volume,volume2:volume...}
@@ -364,6 +373,7 @@ class Evaluate{
             this.CanvasIDDataTypeMap=ReceivedDataBody.get("CanvasIDDataTypeMap");
             this.LayoutGridMap=ReceivedDataBody.get("LayoutGridMap");
             this.CanvasID2GridNumberMap=ReceivedDataBody.get("CanvasID2GridNumberMap");
+            this.GridNumber2CanvasIDArray=ReceivedDataBody.get("GridNumber2CanvasIDArray");
             this.UpdateInputSelectDialog();
         }
         this.FromMainProcessToSubFunctions.set("UpdateMainWindowStatus",UpdateMainWindowStatusFunction);
@@ -447,24 +457,25 @@ class Evaluate{
         const NewSelectedFunctionName=this.EvaluationFunctionSelecter.value;
         const NewSelectedFunction=this.EvaluationFunctionMap.get(NewSelectedFunctionName);
         const NewTargetDataType=NewSelectedFunction.TargetDataType;
-        const NewInputNum=NewSelectedFunction.InputNum;
+        //const NewInputNum=NewSelectedFunction.InputNum;
 
         //古い情報を保持(初回実行時などはないときもある)
-        let OldSelectedFunctionName=this.PreviousSelectedFunctionName;
+        let OldSelectedFunctionName=this.CurrentSelectedFunctionName;
         let OldSelectedFunction=false;
         let OldTargetDataType=false
-        let OldInputNum=false;
+        //let OldInputNum=false;
         if(OldSelectedFunctionName&&this.EvaluationFunctionMap.has(OldSelectedFunctionName)){
             OldSelectedFunction=this.EvaluationFunctionMap.get(OldSelectedFunctionName);
             OldTargetDataType=OldSelectedFunction.TargetDataType;
-            OldInputNum=OldSelectedFunction.InputNum;
+            //OldInputNum=OldSelectedFunction.InputNum;
         }
         /*
         InputSelectDialogの選択状態や選択可能状態の更新を行う
         入力数の変化による変更はこの時点では行わず、計算処理に映れないという制約をもってユーザーに通知する
         つまり、ターゲットデータタイプが変更された場合に限りChangeCanvasButtonSelectableを呼ぶ
         */
-        if(OldTargetDataType!==NewTargetDataType){
+        const TargetDataTypeChangedFlag=(OldTargetDataType!==NewTargetDataType)
+        if(TargetDataTypeChangedFlag){
             this.ChangeCanvasButtonSelectable();
         }
         //CIDの選択が初期状態に戻るので範囲選択も同様に初期値は全て0とする
@@ -502,7 +513,7 @@ class Evaluate{
         }
         
         //新しく選択された保持しておく
-        this.PreviousSelectedFunctionName=NewSelectedFunctionName;
+        this.CurrentSelectedFunctionName=NewSelectedFunctionName;
     }
     UpdateInputSelectDialog(){
         /*
@@ -525,8 +536,11 @@ class Evaluate{
         CanvasID2GridNumberMapをもとに配置したボタンに属性を付与する
         ここではDataTypeの属性を付与し、querySelectorAllで容易に絞り込めるようにする
         */
+        console.log(this.GridNumber2CanvasIDArray);
+        console.log(this.CanvasIDDataTypeMap);
         for(let i=0;i<RowsNum*ColumnsNum;i++){
             const CanvasSelectButton=document.createElement("button");
+            CanvasSelectButton.tabIndex="-1";//タブによるフォーカスの対象外とする
             const CanvasID=this.GridNumber2CanvasIDArray[i];
             if(CanvasID>=0){//この位置にCanvasが配置されている
                 CanvasSelectButton.setAttribute("data-CanvasID",CanvasID);
@@ -544,16 +558,26 @@ class Evaluate{
         this.ChangeCanvasButtonSelectable();
     }
     ChangeCanvasButtonSelectable(){
-        const EvaluationFunction=this.EvaluationFunctionMap.get(this.PreviousSelectedFunctionName);
+        //データタイプが変わり、押せるCanvasButtonを更新する
+        //この時、Select状態をリセットする
+        const EvaluationFunctionName=this.CurrentSelectedFunctionName;
+        const EvaluationFunction=this.EvaluationFunctionMap.get(EvaluationFunctionName);
         const TargetDataType=EvaluationFunction.TargetDataType;
+        const InputNumConditionText=EvaluationFunction.InputNumConditionText;
+        //Dialog内の入力条件等のテキストを更新する
+        this.TargetDataTypeDisplay.textContent=`${TargetDataType}`;
+        this.TargetInputNumDisplay.textContent=`N${InputNumConditionText}`;
         //CanvasSelectButtonContainer直下のボタンを一度すべて非表示にする
         this.CanvasSelectButtonContainer.querySelectorAll(":scope>button").forEach((button)=>{
+            button.classList.remove("Selected");
             if(button.classList.contains(TargetDataType)){
                 button.disabled=false;
+                console.log("disabled False");
             }else{
                 button.disabled=true;
             }
         });
+        console.log("ChangeCanvasButtonSelectable");
     }
     SelectedAreaChange(){
         //範囲選択が画像の範囲を超えていないかチェックする
@@ -731,7 +755,7 @@ class Evaluate{
 class dammyFunction{
     static EvaluateName="dammy";
     constructor(){
-        this.InputNum=1;
+        //this.InputNum=1;
         this.TargetDataType="CT";
         this.CalculateHistory=new Map();
     }
@@ -741,12 +765,21 @@ class VolumetricDSC{
     constructor(){
         //名前。基本的には自身のクラス名を名前とする
         //this.EvaluatonName=this.constructor.name
-        this.InputNum=2;
+        //this.InputNum=2;
         this.TargetDataType="MASK";
         this.CalculateHistory=new Map();//{ID:{Result,SelectedArea}}
-
+        this.InputNumConditionText="=2";//可変長の場合は>=1のようにする。この条件はInputNumConditionCheckで表現する
         this.setResultTemplate();
         this.setUserEvents();
+    }
+    //この評価関数が受け付ける入力数の条件をチェックしてtrueかfalseで返す。これはすべての評価関数でもたなければならない
+    InputNumConditionCheck(InputNum){
+        //この評価関数は入力数2のときに計算可能である。
+        if(InputNum===2){
+            return true;
+        }else{
+            return false;
+        }
     }
     setResultTemplate(){
         this.VolumetricDSCResultContainer=document.createElement("div");
@@ -775,8 +808,8 @@ class VolumetricDSC{
         ResultTable.appendChild(this.TableBody);
     }
     setUserEvents(){
-        console.log("VolumetricDSCからイベントを設定2");
-        console.log(this.TableBody);
+        //console.log("VolumetricDSCからイベントを設定2");
+        //console.log(this.TableBody);
         this.TableBody.addEventListener("click",(e)=>{
             //console.log("イベント発火");
             const TargetTR=e.target.closest("tr");
