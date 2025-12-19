@@ -95,7 +95,7 @@ class Evaluate{
         案2：可変長は1つまで、固定の入力数はその個数で←入力数が変わった場合の動きの考慮がめんどくさい
         12/19時点：とりあえずストックは２つまでとする。ほとんどの評価関数が2つか１つの入力で一つの評価値を出すから。多入力他出力は小数なのでシステムとしてはできるようにするけど手厚いサポートはしない
         */
-        this.VolumeStock=new Map();
+        this.VolumeStock=new Map();//KeyはDataType:DataIDとする
         this.originalimagewidth=99999;
         this.originalimageheight=99999;
         this.originalslidermax=99999;
@@ -200,6 +200,25 @@ class Evaluate{
                     }
                 }
                 */
+                /*
+                InputSelectDialogによってCurrentSelectedCanvasInfoArrayには必要となる情報が{CanvasID:,DataType:,DataID}という単位で入っている。
+                これをもとにストックに存在しているもの、存在していないものを決定する
+                */
+                const CurrentSelectedCanvasInfoArrayLength=this.CurrentSelectedCanvasInfoArray.length;//これが今回のストック個数となる
+                for(const CurrentSelectedCanvasInfoMap of this.CurrentSelectedCanvasInfoArray){
+                    const DataType=CurrentSelectedCanvasInfoMap.get("DataType");
+                    const DataID=CurrentSelectedCanvasInfoMap.get("DataID");
+                    const DataTypeDataIDString=`${DataType}:${DataID}`;//VolumeStockでは集合による存在判定を行っているため、一意に決まる文字列を生成する
+                    if(CurrentStockedDataList.includes(DataTypeDataIDString)){
+                        NoLoadDataList.push(DataTypeDataIDString);
+                    }else{
+                        //ストックにないので読み込みが必要
+                        LoadDataList.push(DataTypeDataIDString);
+                        //仮想的に読み込まれた状態にする
+                        CurrentStockedDataList.push(DataTypeDataIDString);
+                    }
+
+                }
                 //入力の走査を関数が欲する個数に絞ってもいいかもしれない
                 for(const CIDLayerMap of this.CurrentSelectedCanvasInfoArray.values()){
                     const CanvasID=CIDLayerMap.get("CanvasID");
