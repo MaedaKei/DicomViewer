@@ -234,12 +234,19 @@ class Evaluate{
                         CurrentStockedDataList.push(DataListKey);
                     }
                 }
-
-                //CurrentStockedCIDListとNoLoadDataList | LoadDataListの集合を比較して
-                //前者の要素の中で後者に含まれていないCIDのストックを削除する
-                //ただし、この処理は新しくLoadする必要があるときのみ行う
-                //また、削除する個数は読み込む個数と一致させる
-                //例えば、[2,3]から[1,1]=[1]を読み込むとき、[2,3]両方消すのではなく該当するCIDを先頭から個数分だけ削除する
+                
+                //最終的に必要となるデータはNoloadDataListとloadDataListの個数となり、これらのデータのみをストック対象とする
+                //現在のStockにあるデータのうち、NoloadDataListにないストックは消す
+                //不要なストックの削除はLoadDataListが0でも行う必要がある。可変長引数で大量にデータを読み込んだ時、何かしらのストックで済む可能性が高い
+                //そのとき、LoadDataListがない場合にストックの削除を行わないとすると、いつまでも大量のデータがストックされた状態になる
+                const NoLoadDataSet=new Set(NoLoadDataList);
+                const CurrentStockedDataSet=new Set(CurrentStockedDataList);
+                const DeleteTargetDataList=[...CurrentStockedDataSet].filter(dtypedataidString=>(!NoLoadDataSet.has(dtypedataidString)));
+                //ストックを削除
+                for(const DeleteTargetData of DeleteTargetDataList){
+                    this.VolumeStock.delete(DeleteTargetData);//ストックされているデータのうち、今回の計算で使わないものは削除される。
+                }
+                /*
                 if(LoadDataList.length>0){
                     const LoadNoLoadUnionDataSet=new Set(NoLoadDataList.concat(LoadDataList));
                     const CurrentStockedDataSet=new Set(CurrentStockedDataList);//ないとは思うが一応重複を消す
@@ -252,6 +259,7 @@ class Evaluate{
                         this.VolumeStock.delete(DelateTargetData);
                     }
                 }
+                */
                 //MainWindowにLoadDataListのデータを要求
                 this.SendTargetDataList(LoadDataList);//ラッパー
             }
@@ -276,20 +284,20 @@ class Evaluate{
             //CanvasID,DataType,DataIDの情報もまとめて渡す
             const EvaluationFunctionName=this.PreviousSelectedFunctionName;
             const EvaluationFunction=this.EvaluationFunctionMap.get(EvaluationFunctionName);
-            const InputNum=EvaluationFunction.InputNum;
+            const InputNum=this.CurrentSelectedCanvasInfoArray.length;//ダイアログで選択するときに厳密に制限する
             const InputVolumeMap=new Map();//{volume1:volume,volume2:volume...}
             //const InputBlockSelecterList=Array.from(this.InputBlockSelecterMap.values());
-            const PreviouseInputInfoList=Array.from(this.CurrentSelectedCanvasInfoArray.values());//{CanvasID,Layer,DataID}のMapのリスト
+            const CurrentInputInfoList=Array.from(this.CurrentSelectedCanvasInfoArray.values());//{CanvasID,Layer,DataID}のMapのリスト
             const InputInfoList=[];
-            const InputCIDList=[];//履歴用
+            const InputCanvasIDList=[];//履歴用
             for(let i=0;i<InputNum;i++){
                 //InputVolumeMapにボリューム自体の本来の大きさを表すデータが必須である。
                 //深さの情報は必要ないが、widthとheightの最大値がないと選択エリアから正しいインデックス算出ができない
-                const PreviousInputInfo=PreviouseInputInfoList[i];
-                const InputVolumeMapKey=Evaluate.Array2String([PreviousInputInfo.get("Layer"),PreviousInputInfo.get("DataID")]);
-                InputVolumeMap.set(InputVolumeMapKey,this.VolumeStock.get(InputVolumeMapKey));//複数入力で同じCIDを選択した場合、ここは入力個数と一致しなくなる
-                InputInfoList.push(PreviousInputInfo);
-                InputCIDList.push(PreviousInputInfo.get("CanvasID"));
+                const CurrentInputInfo=CurrentInputInfoList[i];
+                const InputVolumeMapKey=Evaluate.Array2String([CurrentInputInfo.get("Layer"),CurrentInputInfo.get("DataID")]);
+                InputVolumeMap.set(InputVolumeMapKey,this.VolumeStock.get(InputVolumeMapKey));//複数入力で同じDataTypeDataIDを指している場合、同じところに同じものが上書きされる
+                InputInfoList.push(CurrentInputInfo);
+                InputCanvasIDList.push(CurrentInputInfo.get("CanvasID"));
             }
             const CalculateID=this.CalculateID;
             this.CalculateID++;//IDの更新
@@ -330,7 +338,7 @@ class Evaluate{
             FunctionNameArea.textContent=EvaluationFunctionName;
             const InputCIDArea=document.createElement("div");
             InputCIDArea.className="CalculateHistoryListItemInputCIDArea";
-            InputCIDArea.textContent=`[ ${InputCIDList.join(",")} ]`;
+            InputCIDArea.textContent=`[ ${InputCanvasIDList.join(",")} ]`;
             ListItem.appendChild(CalculateIDArea);
             ListItem.appendChild(FunctionNameArea);
             ListItem.appendChild(InputCIDArea);
