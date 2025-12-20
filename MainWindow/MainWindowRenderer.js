@@ -4913,9 +4913,44 @@ class Evaluate{
             //TargetCID={"ON":CID,"OFF":CID}
             //SelectedArea
             const ReceiveDataBody=data.get("data");
-            //console.log(ReceiveDataBody);
-            const ChangeTarget=ReceiveDataBody.get("TargetCID");
-            /*CIDはONもOFFも[選択しない状態]で連絡されることもある*/
+            const TargetCanvasIDSet=ReceiveDataBody.get("TargetCanvasIDSet");
+            const SelectedArea=ReceiveDataBody.get("SelectedArea");
+            for(const [CanvasID,CanvasClass] of CanvasClassDictionary.entries()){
+                let Activate=false;
+                if(TargetCanvasIDSet.has(CanvasID)){//このCanvasは選択されているか
+                    //選択されているので選択範囲の情報をまず送る。ModeSwitchingとの順番はどちらが先でもいいはず
+                    const SelectedAreaData=new Map([
+                        ["action","ChangeSelectedArea"],
+                        ["data",new Map([
+                            ["SelectedArea",SelectedArea]
+                        ])]
+                    ]);
+                    CanvasClass.ReceiveChangesFromSubWindow(SelectedAreaData);
+                    //選択されたCanvasのサイズを送って、入力欄の境界判定に利用する
+                    //共通のサイズの画像を比較することは前提条件だが、念のため通知しておくこととする
+                    //MultiUseLayerのサイズは実際の画像サイズより大きく設定されることがあるため
+                    //DrawStatusのoriginalimagewidth,heightを元々のサイズとして扱う
+                    const SendingData=new Map([
+                        ["action","FromMainToSubCanvasSize"],
+                        ["data",new Map([
+                            ["originalimagewidth",CanvasClass.DrawStatus.get("originalimagewidth")],//Xサイズ
+                            ["originalimageheight",CanvasClass.DrawStatus.get("originalimageheight")],//Yサイズ
+                            ["originalslidermax",CanvasClass.DrawStatus.get("originalslidermax")]//Zサイズ-1
+                        ])]
+                    ]);
+                    this.PassChangesToSubWindow(SendingData);//SubWindowに送る
+                    Activate=true;
+                }
+                const ModeSwitchingData=new Map([
+                    ["action","AreaSelectModeSwitching"],
+                    ["data",new Map([
+                        ["CanvasID",CanvasID],
+                        ["Activate",Activate],
+                    ])]
+                ]);
+                CanvasClass.ReceiveChangesFromSubWindow(ModeSwitchingData);
+            }
+            /*
             //OFFにする
             const OFFCIDLayerMap=ChangeTarget.get("OFF");
             const OFFCID=OFFCIDLayerMap.get("CanvasID");
@@ -4971,8 +5006,8 @@ class Evaluate{
                     ])]
                 ]);
                 this.PassChangesToSubWindow(SendingData);
-                
             }
+            */
         }
         this.FromMainProcessToMainFunctions.set("ChangeTargetCanvas",ChangeTargetCanvasFunction);
         /*計算確定ボタンが押されたときに、対象のボリュームを送信する*/

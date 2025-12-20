@@ -126,7 +126,8 @@ class Evaluate{
             }
         });
         this.EventSetHelper(this.InputSelectDialog,"close",()=>{//どんな方法であれ、ダイアログが閉じられたときの処理
-            
+            //選択されたCanvasIDを送信する
+            this.SendTargetCanvasChange();
         });
         this.EventSetHelper(this.CanvasSelectButtonContainer,"mouseup",(e)=>{
             if(e.button===0){
@@ -251,7 +252,6 @@ class Evaluate{
                         //仮想的に読み込まれた状態にする
                         CurrentStockedDataList.push(DataTypeDataIDString);
                     }
-
                 }
                 
                 //最終的に必要となるデータはNoloadDataListとloadDataListの個数となり、これらのデータのみをストック対象とする
@@ -385,6 +385,7 @@ class Evaluate{
             this.CanvasID2GridNumberMap=ReceivedDataBody.get("CanvasID2GridNumberMap");
             this.GridNumber2CanvasIDArray=ReceivedDataBody.get("GridNumber2CanvasIDArray");
             this.UpdateInputSelectDialog();
+
         }
         this.FromMainProcessToSubFunctions.set("UpdateMainWindowStatus",UpdateMainWindowStatusFunction);
     }
@@ -408,7 +409,7 @@ class Evaluate{
             //console.log(typeof(CalculateID),CalculateID);
             const history=SelectedFunction.CalculateHistory.get(CalculateID);
             const SelectedAreaData=history.get("SelectedArea");
-            const InputInfoList=history.get("InputInfoList");//Map
+            const SelectedCanvasInfoMapWithPath=history.get("SelectedCanvasInfoMap");//Map
             //console.log(SelectArea);
             //console.log(InputCIDList);
             /*選択した履歴の情報を反映する*/
@@ -420,8 +421,24 @@ class Evaluate{
             if(transmission){
                 //1. 選択した関数にする
                 this.EvaluationFunctionSelecter.value=FunctionName;
-                this.EvaluationFunctionSelecter.dispatchEvent(new Event("change"));
-                //2. InputCIDを反映
+                //this.EvaluationFunctionSelecter.dispatchEvent(new Event("change"));
+                this.ChangeFunctionSelect();
+                //2. 計算時のCanvasIDの選択の復元を試みる
+                const CalculatedCanvasInfoMap=new Map(Array.from(SelectedCanvasInfoMapWithPath.entries()).map(([CanvasID,CanvasInfoMapWithPath])=>{
+                    const DataType=CanvasInfoMapWithPath.get("DataType");
+                    const DataID=CanvasInfoMapWithPath.get("DataID");
+                    return [CanvasID,new Map([
+                        ["DataType",DataType],
+                        ["DataID",DataID]
+                    ])];
+                }));
+                this.CurrentSelectedCanvasInfoMap=CalculatedCanvasInfoMap;
+                //計算時のCanvasIDと現在のメインウィンドウの状態を比較し、選択状態にできるものを選択する。このメソッドは本来メインウィンドウの状態が変化したときに呼び出す関数で、選択状態のCanvasが増える状況のものではない
+                //選択状態ではなくなった＝削除されたCanvasに対してはAreaSelectModeをOFFする必要すらないため、この関数内では現在の選択をメインウィンドウに通知する処理を行っていない。
+                //ここでは、計算当時のCanvasがあるかチェックし、あればそれを選択状態にするという動きにこの関数が流用できるので使用しており、メインウィンドウに通知する必要があるができていない。
+                //そのため、別途通知関数を呼び出す必要がある。
+                this.UpdateInputSelectDialog();
+                this.SendTargetCanvasChange();
                 //評価時に有効だった入力個数分だけ順番に変更する
                 /*
                 const InputBlockSelecterList=Array.from(this.InputBlockSelecterMap.values());//indexでアクセスするため
@@ -488,6 +505,8 @@ class Evaluate{
         */
         const TargetDataTypeChangedFlag=(OldTargetDataType!==NewTargetDataType)
         if(TargetDataTypeChangedFlag){
+            this.CurrentSelectedCanvasInfoMap.clear();//選択をリセット
+            this.SendTargetCanvasChange();
             this.ChangeCanvasButtonSelectable();
         }
         //CIDの選択が初期状態に戻るので範囲選択も同様に初期値は全て0とする
@@ -548,8 +567,9 @@ class Evaluate{
         CanvasID2GridNumberMapをもとに配置したボタンに属性を付与する
         ここではDataTypeの属性を付与し、querySelectorAllで容易に絞り込めるようにする
         */
-        console.log(this.GridNumber2CanvasIDArray);
-        console.log(this.CanvasIDDataTypeMap);
+        //console.log(this.GridNumber2CanvasIDArray);
+        //console.log(this.CanvasIDDataTypeMap);
+        const KeepSelectedCanvasIDButtonMap=new Map();
         for(let i=0;i<RowsNum*ColumnsNum;i++){
             const CanvasSelectButton=document.createElement("button");
             CanvasSelectButton.tabIndex="-1";//タブによるフォーカスの対象外とする
@@ -562,12 +582,29 @@ class Evaluate{
                     CanvasSelectButton.classList.add(DataType);
                 }
                 CanvasSelectButton.textContent=`CanvasID : ${CanvasID}`;
+                //現在選択中のボタンがまだある
+                if(this.CurrentSelectedCanvasInfoMap.has(CanvasID)){
+                    KeepSelectedCanvasIDButtonMap.set(CanvasID,CanvasSelectButton);
+                }
             }
             CanvasSelectButtonContainerFragment.appendChild(CanvasSelectButton);
         }
         this.CanvasSelectButtonContainer.appendChild(CanvasSelectButtonContainerFragment);
-        //現在の関数選択で選択できるようにボタンの表示を制御
+        //ボタンをすべてリセットしたうえで配置しなおしているため、現在選択されている関数で選択できる情報などが破棄されている。
+        //そのため、ChangeCanvasButtonSelectableを呼び出して再びセットする。しかし、Selected状態は解除されている。
         this.ChangeCanvasButtonSelectable();
+        //KeepSelectedCanvasIDButtonMapとCurretnSelectedCanvasInfoMapのKey＝CanvasIDを比較して、ないものを削除する。
+        //まずは削除
+        for(const CanvasID of this.CurrentSelectedCanvasInfoMap.keys()){
+            if(KeepSelectedCanvasIDButtonMap.has(CanvasID)){
+                //あるボタンなのでSelectedを付与
+                const SelectedButton=KeepSelectedCanvasIDButtonMap.get(CanvasID);
+                SelectedButton.classList.add("Selected");
+            }else{
+                //なくなったことが分かったのでCurrentSelectedCanvasInfoMapからも削除。なくなったCanvasIDのボタンはもともと作られていない
+                this.CurrentSelectedCanvasInfoMap.delete(CanvasID);
+            }
+        }
     }
     ChangeCanvasButtonSelectable(){
         //データタイプが変わり、押せるCanvasButtonを更新する
@@ -584,12 +621,12 @@ class Evaluate{
             button.classList.remove("Selected");
             if(button.classList.contains(TargetDataType)){
                 button.disabled=false;
-                console.log("disabled False");
+                //console.log("disabled False");
             }else{
                 button.disabled=true;
             }
         });
-        console.log("ChangeCanvasButtonSelectable");
+        //console.log("ChangeCanvasButtonSelectable");
     }
     SelectedAreaChange(){
         //範囲選択が画像の範囲を超えていないかチェックする
@@ -629,6 +666,26 @@ class Evaluate{
         //値を確定後、メインウィンドウに通知
         this.SendSelectedArea();//ラッパー。ここでは、選択されたCIDそれぞれにデータを送る
     }
+    //現在選択所唱にあるCanvasをメインウィンドウに通知し、それらだけをAreaSelectModeに変更する処理を行わせる
+    SendTargetCanvasChange(){
+        const TargetCanvasIDSet=new Set(this.CurrentSelectedCanvasInfoMap.keys());
+        const SendingData=new Map([
+            ["action","ChangeTargetCanvas"],
+            ["data",new Map([
+                ["TargetCanvasIDSet",TargetCanvasIDSet],
+                ["SelectedArea",new Map([
+                    ["w0",parseInt(this.LeftTopXInput.value)],
+                    ["h0",parseInt(this.LeftTopYInput.value)],
+                    ["width",parseInt(this.RectangleWidthInput.value)],
+                    ["height",parseInt(this.RectangleHeightInput.value)],
+                    ["startslice",parseInt(this.StartSliceInput.value)],
+                    ["endslice",parseInt(this.EndSliceInput.value)]
+                ])]
+            ])]
+        ]);
+        this.PassChangesToMainWindow(SendingData);
+    }
+    /*
     SendTargetCanvasChange(OFFCIDLayerMap,ONCIDLayerMap){//ラッパー
         //適切なデータを形成して送る
         //const action="ChangeTargetCanvas";
@@ -653,7 +710,7 @@ class Evaluate{
         ]);
         this.PassChangesToMainWindow(SendingData);
     }
-
+    */
     SendSelectedArea(){//ラッパー
         const SelectedArea=new Map([
             ["w0",parseInt(this.LeftTopXInput.value)],
