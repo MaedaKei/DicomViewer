@@ -145,7 +145,7 @@ class Evaluate{
                         //CurrentSelectedCanvasInfoMapを更新
                         const DataType=this.EvaluationFunctionMap.get(this.CurrentSelectedFunctionName).TargetDataType;
                         const DataID=this.CanvasIDDataTypeMap.get(CanvasID).get(DataType);
-                        this.CurrentSelectedCanvasInfoMap.set(CanvasID,new Map([[DataType,DataID]]));//{CanvasID:{DataType:???,DataID:???}}
+                        this.CurrentSelectedCanvasInfoMap.set(CanvasID,new Map([["DataType",DataType],["DataID",DataID]]));//{CanvasID:{DataType:???,DataID:???}}
                     }
                 }
             }
@@ -463,6 +463,7 @@ class Evaluate{
             表示形式、表示対象となる履歴は各評価関数に設計を任せる
             */
             //console.log("最新結果を表示");
+            //console.log("ここまでいったよ");
             const ResultDomTree=SelectedFunction.FocusResult(CalculateID);//イベント設定用にthisも渡す
             this.ResultContainer.innerHTML="";
             this.ResultContainer.appendChild(ResultDomTree);
@@ -863,14 +864,15 @@ class VolumetricDSC{
         //this.InputNum=2;
         this.TargetDataType="MASK";
         this.CalculateHistory=new Map();//{ID:{Result,SelectedArea}}
-        this.InputNumConditionText="=2";//可変長の場合は>=1のようにする。この条件はInputNumConditionCheckで表現する
+        this.InputNum=2;//可変数の入力を受け付ける関数は下限値、上限値などの境界値を表す変数とする。
+        this.InputNumConditionText=`=${this.InputNum}`;//可変長の場合は>=1のようにする。この条件はInputNumConditionCheckで表現する
         this.setResultTemplate();
         this.setUserEvents();
     }
     //この評価関数が受け付ける入力数の条件をチェックしてtrueかfalseで返す。これはすべての評価関数でもたなければならない
     CheckCalculatable(InputNum){
         //この評価関数は入力数2のときに計算可能である。
-        if(InputNum===2){
+        if(InputNum===this.InputNum){
             return true;
         }else{
             return false;
@@ -887,6 +889,7 @@ class VolumetricDSC{
             InfoText.className="InfoText";
             this.InfoTextContainer.appendChild(InfoText);
         }
+        console.log(Array.from(this.InfoTextContainer.children));
         this.VolumetricDSCResultContainer.appendChild(this.InfoTextContainer);
         /*tableの外枠だけは持っておく*/
         const ResultTableContainer=document.createElement("div");
@@ -1114,9 +1117,10 @@ class VolumetricDSC{
         */
         /*フォーカスしているCalculateIDに関する情報を表示*/
         const FocusedResult=this.CalculateHistory.get(FocusCalculateID);
-        const SelectedCanvasInfoMap=FocusedResult.get("SelectedCanvasInfoMap");
+        const SelectedCanvasInfoArray=Array.from(FocusedResult.get("SelectedCanvasInfoMap").entries());//{CanvasID:{DataType:,DataID:,Path:},...} => [[],...,]
         const InfoTextList=Array.from(this.InfoTextContainer.children);
-        for(const [CanvasID,SelectedCanvasInfo] of SelectedCanvasInfoMap.entries()){//{CanvasID:{DataType:,DataID:,Path:},...}
+        for(let i=0;i<SelectedCanvasInfoArray.length;i++){
+            const [CanvasID,SelectedCanvasInfo]=SelectedCanvasInfoArray[i];
             const Path=SelectedCanvasInfo.get("Path");
             //console.log(InfoTextList[i].tagName);
             const text=`Input ${i} : CanvasID = ${CanvasID}\n${Path}`;

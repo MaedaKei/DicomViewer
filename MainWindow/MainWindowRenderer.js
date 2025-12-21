@@ -4951,64 +4951,6 @@ class Evaluate{
                 ]);
                 CanvasClass.ReceiveChangesFromSubWindow(ModeSwitchingData);
             }
-            /*
-            //OFFにする
-            const OFFCIDLayerMap=ChangeTarget.get("OFF");
-            const OFFCID=OFFCIDLayerMap.get("CanvasID");
-            const OFFLayer=OFFCIDLayerMap.get("Layer");//もしかしたらLayer注目も実装されるかもしれない
-            if(OFFCID>=0){//初期状態からの選択はOFFがないことがある
-                const ModeSwitchingData=new Map([
-                    ["action","AreaSelectModeSwitching"],
-                    ["data",new Map([
-                        ["CanvasID",OFFCID],
-                        ["Activate",false],
-                    ])]
-                ])
-                const OFFTargetCanvas=CanvasClassDictionary.get(OFFCID);
-                OFFTargetCanvas.ReceiveChangesFromSubWindow(ModeSwitchingData);
-            }
-            
-            //ONにする
-            //1. MultiUseLayerModeをONにする
-            //2. 現在のSelectedAreaを渡して描画させる
-            const ONCIDLayerMap=ChangeTarget.get("ON");
-            const ONCID=ONCIDLayerMap.get("CanvasID");
-            const ONLayer=ONCIDLayerMap.get("Layer");
-            if(ONCID>=0){
-                const ModeSwitchingData=new Map([
-                    ["action","AreaSelectModeSwitching"],
-                    ["data",new Map([
-                        ["CanvasID",ONCID],
-                        ["Activate",true]
-                    ])]
-                ]);
-                const ONTargetCanvas=CanvasClassDictionary.get(ONCID);
-                ONTargetCanvas.ReceiveChangesFromSubWindow(ModeSwitchingData);//dammydataを作成してReceiveChangeを経由してもいい
-                const SelectedArea=ReceivedDataBody.get("SelectedArea");
-                const dammydata=new Map([
-                    ["action","ChangeSelectedArea"],
-                    ["data",new Map([
-                        ["SelectedArea",SelectedArea]
-                    ])]
-                ]);
-                
-                ONTargetCanvas.ReceiveChangesFromSubWindow(dammydata);//SelectedAreaを同期する
-                
-                //選択されたCanvasのサイズを送って、入力欄の境界判定に利用する
-                //共通のサイズの画像を比較することは前提条件だが、念のため通知しておくこととする
-                //MultiUseLayerのサイズは実際の画像サイズより大きく設定されることがあるため
-                //DrawStatusのoriginalimagewidth,heightを元々のサイズとして扱う
-                const SendingData=new Map([
-                    ["action","FromMainToSubCanvasSize"],
-                    ["data",new Map([
-                        ["originalimagewidth",ONTargetCanvas.DrawStatus.get("originalimagewidth")],//Xサイズ
-                        ["originalimageheight",ONTargetCanvas.DrawStatus.get("originalimageheight")],//Yサイズ
-                        ["originalslidermax",ONTargetCanvas.DrawStatus.get("originalslidermax")]//Zサイズ-1
-                    ])]
-                ]);
-                this.PassChangesToSubWindow(SendingData);
-            }
-            */
         }
         this.FromMainProcessToMainFunctions.set("ChangeTargetCanvas",ChangeTargetCanvasFunction);
         /*計算確定ボタンが押されたときに、対象のボリュームを送信する*/
