@@ -536,8 +536,8 @@ class MaskModifingClass{
         }
         this.FromMainProcessToSubFunctions=new Map();
         const ChangeSelectedAreaFunction=(data)=>{
-            const ReceiveDataBody=data.get("data");
-            const SelectedAreaData=ReceiveDataBody.get("SelectedArea");
+            const ReceivedDataBody=data.get("data");
+            const SelectedAreaData=ReceivedDataBody.get("SelectedArea");
             this.LeftTopXInput.value=SelectedAreaData.get("w0");
             this.LeftTopYInput.value=SelectedAreaData.get("h0");
             this.RectangleWidthInput.value=SelectedAreaData.get("width");

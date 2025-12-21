@@ -208,8 +208,8 @@ class ROISelectClass{
             //ROIClickStatusSetを更新する
             //ClickPointsInROIAreaこのクラスは、SelectROIが一つでも変わるタイミングですべて消す
             this.RemoveClickPointsInROIAreaClass();//button要素からクラスを削除する関数
-            const ReceiveDataBody=data.get("data");
-            this.ROIClickStatusSet=ReceiveDataBody.get("ClickedROISet");
+            const ReceivedDataBody=data.get("data");
+            this.ROIClickStatusSet=ReceivedDataBody.get("ClickedROISet");
             console.log(this.ROIClickStatusSet);
             for(const ROIName of this.ROIClickStatusSet){
                 const ROIButton=this.ROIButtonMap.get(ROIName);

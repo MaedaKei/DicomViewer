@@ -2952,8 +2952,8 @@ class Canvas{
         */
         //AreaSelectモードアクティベーター
         const AreaSelectModeSwitchingFunction=(data)=>{
-            const ReceiveDataBody=data.get("data");
-            const Activate=ReceiveDataBody.get("Activate");//True or False
+            const ReceivedDataBody=data.get("data");
+            const Activate=ReceivedDataBody.get("Activate");//True or False
             const ModeFlagName="AreaSelect"
             if(Activate){
                 this.MultiUseLayer.style.display="";
@@ -3014,8 +3014,8 @@ class Canvas{
         //CONTOURROIClickモードアクティベーター
         //MultiUseLayerは使わなくてもいいのでここでは操作しないかも
         const CONTOURROIClickModeSwitchingFunction=(data)=>{
-            const ReceiveDataBody=data.get("data");
-            const Activate=ReceiveDataBody.get("Activate");//True or False
+            const ReceivedDataBody=data.get("data");
+            const Activate=ReceivedDataBody.get("Activate");//True or False
             const ModeFlagName="CONTOURROIClick";
             if(Activate){
                 //this.MultiUseLayer.style.display="";
@@ -3031,8 +3031,8 @@ class Canvas{
         this.FromMainProcessToMainFunctions.set("CONTOURROIClickModeSwitching",CONTOURROIClickModeSwitchingFunction);
         this.setCONTOURROIClick();
         const MASKClickModeSwitchingFunction=(data)=>{
-            const ReceiveDataBody=data.get("data");
-            const Activate=ReceiveDataBody.get("Activate");
+            const ReceivedDataBody=data.get("data");
+            const Activate=ReceivedDataBody.get("Activate");
             const ModeFlagName="MASKClick";
             if(Activate){
                 this.MultiUseLayerModeFlagSet.add(ModeFlagName);
@@ -4891,9 +4891,9 @@ class Evaluate{
         //評価ウィンドウからの入力や、一方の選択同期のときに共通で使われる
         //前者の際はEvaluateが複数回送ることになる
         const ChangeSelectedAreaFunction=(data)=>{
-            const ReceiveDataBody=data.get("data");
-            const targetCID=ReceiveDataBody.get("targetCID");
-            const SelectedArea=ReceiveDataBody.get("SelectedArea");//この中身はMaskModifyの形式と同じになるようにする
+            const ReceivedDataBody=data.get("data");
+            const targetCID=ReceivedDataBody.get("targetCID");
+            const SelectedArea=ReceivedDataBody.get("SelectedArea");//この中身はMaskModifyの形式と同じになるようにする
             //CanvasClassのReceiveSubWindowChangeに投げる用のデータを形成する
             //CanvasClassは通常通りSubWindowからの通信の様に振る舞う
             const dammydata=new Map([
@@ -4912,9 +4912,10 @@ class Evaluate{
             //body⇒data
             //TargetCID={"ON":CID,"OFF":CID}
             //SelectedArea
-            const ReceiveDataBody=data.get("data");
-            const TargetCanvasIDSet=ReceiveDataBody.get("TargetCanvasIDSet");
-            const SelectedArea=ReceiveDataBody.get("SelectedArea");
+            const ReceivedDataBody=data.get("data");
+            const TargetCanvasIDSet=ReceivedDataBody.get("TargetCanvasIDSet");
+            console.log(TargetCanvasIDSet);
+            const SelectedArea=ReceivedDataBody.get("SelectedArea");
             for(const [CanvasID,CanvasClass] of CanvasClassDictionary.entries()){
                 let Activate=false;
                 if(TargetCanvasIDSet.has(CanvasID)){//このCanvasは選択されているか
@@ -4983,7 +4984,7 @@ class Evaluate{
                 ]);
                 const ONTargetCanvas=CanvasClassDictionary.get(ONCID);
                 ONTargetCanvas.ReceiveChangesFromSubWindow(ModeSwitchingData);//dammydataを作成してReceiveChangeを経由してもいい
-                const SelectedArea=ReceiveDataBody.get("SelectedArea");
+                const SelectedArea=ReceivedDataBody.get("SelectedArea");
                 const dammydata=new Map([
                     ["action","ChangeSelectedArea"],
                     ["data",new Map([
