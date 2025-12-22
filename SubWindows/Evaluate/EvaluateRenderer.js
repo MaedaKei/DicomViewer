@@ -60,6 +60,7 @@ class Evaluate{
         //評価関数の登録
         this.EvaluationFunctionMap=new Map([
             [VolumetricDSC.EvaluateName,new VolumetricDSC()],
+            //[HausedorffDistance95.EvaluateName,new HausedorffDistance95()],
             [dammyFunction.EvaluateName,new dammyFunction()],
         ]);
         //関数セレクト周辺への反映
@@ -344,6 +345,7 @@ class Evaluate{
                 ["extradata",extradatamap],
             ]);
             //console.log("これで計算\n",CalculateData);
+            //console.log(this.CurrentSelectedFunctionName,"で計算する");
             EvaluationFunction.Calculate(CalculateData);
             //CalculateHistoriListに要素を追加
             const ListItem=document.createElement("li");
@@ -500,16 +502,16 @@ class Evaluate{
             OldTargetDataType=OldSelectedFunction.TargetDataType;
             //OldInputNum=OldSelectedFunction.InputNum;
         }
+        this.CurrentSelectedFunctionName=NewSelectedFunctionName;
         /*
         InputSelectDialogの選択状態や選択可能状態の更新を行う
         入力数の変化による変更はこの時点では行わず、計算処理に映れないという制約をもってユーザーに通知する
         つまり、ターゲットデータタイプが変更された場合に限りChangeCanvasButtonSelectableを呼ぶ
         */
         const TargetDataTypeChangedFlag=(OldTargetDataType!==NewTargetDataType);
-        console.log(OldTargetDataType,NewTargetDataType,TargetDataTypeChangedFlag);
+        //console.log(OldTargetDataType,NewTargetDataType,TargetDataTypeChangedFlag);
         if(TargetDataTypeChangedFlag){
             //新しく選択された保持しておく
-            this.CurrentSelectedFunctionName=NewSelectedFunctionName;
             this.ResetInputSelect();//現在の選択をリセット
             this.ChangeCanvasButtonSelectable();//Disabledを更新して、適切なCanvasIDだけ選択できるようにする。
             this.SendTargetCanvasChange();//送信
@@ -833,7 +835,11 @@ class Evaluate{
     }
 }
 
-/*--- ここから評価指標定義エリア ----------------------------------------------------------------------------------*/
+/*
+----------------------------------------------------------------------------------
+ここから評価指標定義エリア 
+----------------------------------------------------------------------------------
+*/
 
 /*
 評価指標クラスが持っていなければならない情報
@@ -1080,22 +1086,35 @@ class VolumetricDSC{
             const tr=document.createElement("tr");
             tr.setAttribute("data-CalculateID",CalculateID);//クリックイベント用のデータ
             let count=0;//マスクが評価された個数をカウント
-            let vdscsum=0;
-            for(let maskvalue=0;maskvalue<this.ColorMapLabelList.length;maskvalue++){
+            let EvaluateValueSum=0;
+            //0だけ外に出して平均値に含めない
+            let maskvalue=0;
+            const td=document.createElement("td");
+            if(ResultMap.get("Result").has(maskvalue)){
+                const EvaluateValue=ResultMap.get("Result").get(maskvalue);
+                td.textContent=EvaluateValue;
+            }else{
+                td.textContent="";
+            }
+            const trFragment=document.createDocumentFragment();
+            trFragment.appendChild(td);
+            //BG以外のマスク
+            for(let maskvalue=1;maskvalue<this.ColorMapLabelList.length;maskvalue++){
                 const td=document.createElement("td");
                 if(ResultMap.get("Result").has(maskvalue)){
-                    const vdsc=ResultMap.get("Result").get(maskvalue);
-                    td.textContent=vdsc;
-                    vdscsum+=vdsc;
+                    const EvaluateValue=ResultMap.get("Result").get(maskvalue);
+                    td.textContent=EvaluateValue;
+                    EvaluateValueSum+=EvaluateValue;
                     count+=1;
                 }else{
                     td.textContent="";
                 }
-                tr.appendChild(td);
+                trFragment.appendChild(td);
             }
+            tr.appendChild(trFragment);
             //平均欄
             const averagetd=document.createElement("td");
-            averagetd.textContent=(vdscsum+1e-5)/count;
+            averagetd.textContent=EvaluateValueSum/(count+1e-6);
             tr.prepend(averagetd);//平均は行の最初に
             const CalculateIDcell=document.createElement("th");
             CalculateIDcell.textContent=CalculateID;
@@ -1144,7 +1163,343 @@ class VolumetricDSC{
     }
 }
 
-/*--- ここまで評価指標定義エリア ----------------------------------------------------------------------------------*/
+class HausedorffDistance95{
+    static EvaluateName="HauseDorffDistance95";
+    constructor(){
+        //名前。基本的には自身のクラス名を名前とする
+        //this.EvaluatonName=this.constructor.name
+        //this.InputNum=2;
+        this.TargetDataType="MASK";
+        this.CalculateHistory=new Map();//{ID:{Result,SelectedArea}}
+        this.InputNum=2;//可変数の入力を受け付ける関数は下限値、上限値などの境界値を表す変数とする。
+        this.InputNumConditionText=`=${this.InputNum}`;//可変長の場合は>=1のようにする。この条件はInputNumConditionCheckで表現する
+        this.Parcentile=0.95;//HDX
+        this.setResultTemplate();
+        this.setUserEvents();
+    }
+    //この評価関数が受け付ける入力数の条件をチェックしてtrueかfalseで返す。これはすべての評価関数でもたなければならない
+    CheckCalculatable(InputNum){
+        //この評価関数は入力数2のときに計算可能である。
+        if(InputNum===this.InputNum){
+            return true;
+        }else{
+            return false;
+        }
+    }
+    setResultTemplate(){
+        this.VolumetricDSCResultContainer=document.createElement("div");
+        this.VolumetricDSCResultContainer.class="HausedorffDistanceResultContainer";
+        /*InfoText部はテンプレートとして持っておく*/
+        this.InfoTextContainer=document.createElement("div");
+        this.InfoTextContainer.class="HausedorffDistanceInfoTextContainer";
+        for(let i=0;i<this.InputNum;i++){
+            const InfoText=document.createElement("div");
+            InfoText.className="InfoText";
+            this.InfoTextContainer.appendChild(InfoText);
+        }
+        console.log(Array.from(this.InfoTextContainer.children));
+        this.VolumetricDSCResultContainer.appendChild(this.InfoTextContainer);
+        /*tableの外枠だけは持っておく*/
+        const ResultTableContainer=document.createElement("div");
+        ResultTableContainer.class="HausedorffDistanceResultTableContainer";
+        const ResultTable=document.createElement("table");
+        ResultTable.class="HausedorffDistanceResultTable";
+        this.TableHead=document.createElement("thead");
+        this.TableHead.className="TableHead";
+        this.TableBody=document.createElement("tbody");
+        this.TableBody.className="TableBody";
+        this.VolumetricDSCResultContainer.appendChild(ResultTableContainer);
+        ResultTableContainer.appendChild(ResultTable);
+        ResultTable.appendChild(this.TableHead);
+        ResultTable.appendChild(this.TableBody);
+    }
+    setUserEvents(){
+        //console.log("VolumetricDSCからイベントを設定2");
+        //console.log(this.TableBody);
+        this.TableBody.addEventListener("click",(e)=>{
+            //console.log("イベント発火");
+            const TargetTR=e.target.closest("tr");
+            if(TargetTR){
+                const CalculateID=parseInt(TargetTR.getAttribute("data-CalculateID"));
+                console.log(CalculateID);
+                EvaluateObject.FocusHistoryListItem(CalculateID);
+            }
+        });
+    }
+    Calculate(CalculateData){
+        /*
+        SelectedAreaはどの関数でも共通の引数として、
+        w0,h0,width,height,startslice,endsliceについて定めたMapとする
+        */
+        //console.log(CalculateData);
+        const CalculateID=CalculateData.get("CalculateID");
+
+        const SelectedArea=CalculateData.get("SelectedArea");
+        const w0=SelectedArea.get("w0");
+        const h0=SelectedArea.get("h0");
+        const width=SelectedArea.get("width");
+        const height=SelectedArea.get("height");
+        const startslice=SelectedArea.get("startslice");
+        const endslice=SelectedArea.get("endslice");
+
+        const SelectedCanvasInfoMap=structuredClone(CalculateData.get("SelectedCanvasInfoMap"));//参照を切る。ただ代入するだけではEvaluate内のCurrentSelectedCanvasInfoMapまで影響することを確認した。
+        //SelectedCanvasInfoMap={CanvasID:{DataType:???,DataID:???},...}
+        const InputVolumeMap=CalculateData.get("InputVolumeMap");//{CID:{"Path",path,"Size":{width:???,height:???},"Volume":Volume}}をvalueとするMap
+        const InputVolumeKeyList=Array.from(SelectedCanvasInfoMap.values()).map((DataTypeDataIDMap)=>{
+            const DataType=DataTypeDataIDMap.get("DataType");
+            const DataID=DataTypeDataIDMap.get("DataID");
+            const InputVolumeKey=Evaluate.Array2String([DataType,DataID]);
+            DataTypeDataIDMap.set("Path",InputVolumeMap.get(InputVolumeKey).get("Path"));
+            return InputVolumeKey;
+        });
+        
+        const extradata=CalculateData.get("extradata");
+        
+        if(extradata){//存在するときに新しく代入するよ
+            this.ColorMapLabelList=extradata.get("ColorMapLabelList");//表示するときにこのラベルを使う
+        }
+        //2つのボリュームの輪郭点を集計する
+        /*
+        {
+            InputVolumeKey:{
+                maskvalue:[[],[],[],...]
+                maskvalue:,
+            }
+        }
+        これに対してInputVolumeKeyでアクセスして距離を計算していく。こうすれば同じデータを指しているときに無駄に輪郭集計をしなくて済む
+        重要：輪郭点集合A,Bのどちらかが空集合の場合、無限とする。この実装上では、どちらかでmaskvalueの座標リスト自体がない場合が起こりえる。この場合はそのmaskvalueの評価値は無限大とする
+        この実装ではmaskvalueが出現したタイミングで新たにmaskvalueをkeyとする領域が作られるため、どちらも空集合ということは起こりえないので気にする必要はない
+        また、maskvalueのkeyがある＝一度は画像内に出現していることになるため、keyのみがあり配列自体は空ということも起こらない
+        */
+        const InputVolumeKeyContourPointsMap=new Map();
+        for(const [InputVolumeKey,InputVolume] of InputVolumeMap.entries()){
+            const FlattenVolume=InputVolume.get("Volume");
+            const OriginalSize=InputVolume.get("Size");
+            const OriginalWidth=OriginalSize.get("width");
+            const OriginalHeight=OriginalSize.get("height");
+            //ここから、このボリュームの切り取り範囲を走査して輪郭点を抽出する
+            const ContourPointsMap=new Map();
+            const starth=h0,endh=h0+height-1;
+            const startw=w0,endw=w0+width-1;
+            console.log(InputVolumeKey);
+            for(let z=startslice;z<=endslice;z++){
+                for(let h=starth;h<=endh;h++){
+                    for(let w=startw;w<=endw;w++){
+                        //const Index1=(z*volume1OriginalHeight+h)*volume1OriginalWidth+w;
+                        const FocusPointsIndex=(z*OriginalHeight+h)*OriginalWidth+w;//(Z,H,W)⇒indexに読み替え
+                        const FocusPointMaskValue=FlattenVolume[FocusPointsIndex];//注目点のマスク値を記録
+                        if(!ContourPointsMap.has(FocusPointMaskValue)){
+                            ContourPointsMap.set(FocusPointMaskValue,[]);
+                        }
+                        /*
+                        26近傍の画素を確認
+                        流れ、z,w,hそれぞれを+-1下座標について、切り取り範囲内にあるか確認する。切り取り範囲がボリュームの範囲を超えることはないため、切り取り範囲内の存在確認のみでOK
+                        ６近傍のマスク値にどれかが注目しているマスク値と異なれば境界に位置する画素とする
+                        */
+                        //まずは選択領域の端点でないか確認する
+                        const FocasPoint=[z,h,w];
+                        if((z===startslice||z===endslice)||(h===starth||h===endh)||(w===startw||w===endw)){
+                            //選択領域の端っこにあるので境界点として登録
+                            ContourPointsMap.get(FocusPointMaskValue).push(FocasPoint);
+                        }else{
+                            //そうじゃないみたいなので26近傍走査
+                            let FocusPointContourFlag=false;
+                            const OffsetArray=[-1,0,1];
+                            const OffsetArrayLength=OffsetArray.length;
+                            for(let ZOffsetIndex=0;!FocusPointContourFlag&&ZOffsetIndex<OffsetArrayLength;ZOffsetIndex++){
+                                const NeiborZ=z+OffsetArray[ZOffsetIndex];
+                                for(let HOffsetIndex=0;!FocusPointContourFlag&&HOffsetIndex<OffsetArrayLength;HOffsetIndex++){   
+                                    const NeiborH=h+OffsetArray[HOffsetIndex];
+                                    for(let WOffsetIndex=0;!FocusPointContourFlag&&WOffsetIndex<OffsetArrayLength;WOffsetIndex++){
+                                        const NeiborW=w+OffsetArray[WOffsetIndex];
+                                        const NeiborPointIndex=(NeiborZ*OriginalHeight+NeiborH)*OriginalWidth+NeiborW;
+                                        const NeiborPointMaskValue=FlattenVolume[NeiborPointIndex];
+                                        if(FocusPointMaskValue!==NeiborPointMaskValue){
+                                            FocusPointContourFlag=true;//これ以上26近傍の走査はいらない
+                                            ContourPointsMap.get(FocusPointMaskValue).push(FocasPoint);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            InputVolumeKeyContourPointsMap.set(InputVolumeKey,ContourPointsMap);
+        }
+        console.log("境界点集合抽出完了");
+        /*輪郭点集合が完成したので計算していく*/
+        //このとき、片方のInputVolumeにしか出現していないMaskValueがある点に留意すること
+        /*
+        InputKeyListHDMap={
+            InputKey:{
+                maskvalue:Distance,
+            }
+        }
+        */
+        const [InputVolumeKey1,InputVolumeKey2]=InputVolumeKeyList;
+        const ContourPointsMap1=InputVolumeKeyContourPointsMap.get(InputVolumeKey1);
+        const ContourPointsMap2=InputVolumeKeyContourPointsMap.get(InputVolumeKey2);
+        const ApparaedMaskValue=new Set([...ContourPointsMap1.keys(),...ContourPointsMap2.keys()].sort((a,b)=>a-b));//これで2つの入力で出現するマスク値の和集合できる。マスクの値は昇順ソート済み
+        //1=>2への最短距離の最大値を求める
+        const HDMap=new Map();
+        for(const MaskValue of ApparaedMaskValue){
+            //まずはこのマスクの境界点集合を両方で持っているか
+            if(MaskValue===0||!(ContourPointsMap1.has(MaskValue)&&ContourPointsMap2.has(MaskValue))){
+                //どちらかにしかないので評価値を無限大とする
+                HDMap.set(MaskValue,Infinity);
+            }else{
+                //どちらにも境界点集合があるので計算開始
+                const MaskValueContourPointArray1=ContourPointsMap1.get(MaskValue);
+                const MaskValueContourPointArray2=ContourPointsMap2.get(MaskValue);
+                const ContourPointArray1Length=MaskValueContourPointArray1.length;
+                const ContourPointArray2Length=MaskValueContourPointArray2.length;
+                const ContourPointsMap1MinArray=new Array(ContourPointArray1Length).fill(999999999);//Input1の境界点集合からの最短距離をまとめたもの
+                const ContourPointsMap2MinArray=new Array(ContourPointArray2Length).fill(999999999);//Input2の境界点集合からの最短距離をまとめたもの
+                console.log(MaskValue,ContourPointArray1Length,ContourPointArray2Length);
+                //総当たりで求めてその都度最小値を更新する
+                for(let ContourPoint1Index=0;ContourPoint1Index<ContourPointArray1Length;ContourPoint1Index++){
+                    const ContourPoint1=MaskValueContourPointArray1[ContourPoint1Index];
+                    for(let ContourPoint2Index=0;ContourPoint2Index<ContourPointArray2Length;ContourPoint2Index++){
+                        const ContourPoint2=MaskValueContourPointArray2[ContourPoint2Index];
+                        //2つの距離を計算
+                        const Distance=Math.hypot(ContourPoint1.map((p1,index)=>{
+                            const p2=ContourPoint2[index];
+                            return p1-p2;
+                        }));
+                        //関わったそれぞれの座標からの距離を更新する
+                        ContourPointsMap1MinArray[ContourPoint1Index]=Math.min(ContourPointsMap1MinArray[ContourPoint1Index],Distance);
+                        ContourPointsMap2MinArray[ContourPoint2Index]=Math.min(ContourPointsMap2MinArray[ContourPoint2Index],Distance);
+                    }
+                }
+                //2つの最短距離関数の和集合を作成
+                const MinDistanceUnion=new Set([...ContourPointsMap1MinArray,...ContourPointsMap2MinArray].sort((a,b)=>a-b));//昇順
+                const EvaluationValueIndex=Math.floor(MinDistanceUnion.size*this.Parcentile);
+                HDMap.set(MaskValue,Array.from(MinDistanceUnion)[EvaluationValueIndex]);
+            }
+        }
+        this.CalculateHistory.set(CalculateID,new Map([
+            ["SelectedCanvasInfoMap",SelectedCanvasInfoMap],//このメソッド内で、あらたにPathという項目をVolumeMapから避難させるような形で追加している。よって{CanvasID:{Layer:,DataID:,Path:}}という感じ
+            ["SelectedArea",SelectedArea],
+            ["Result",HDMap]
+        ]));
+        console.log(`${HausedorffDistance95.EvaluateName}の計算終了`);
+        this.CreateResultDisplay();
+    }
+    //この評価指標はこれまでの計算履歴を一覧表示し、
+    //指定されたCalculateIDの結果をハイライト強調する
+    CreateResultDisplay(FocusCalculateID=null){
+        //ハイライト強調なしの結果画面を新しく作成する
+        //この関数が呼ばれるのはCalculateが呼ばれて新しく計算結果が増えたときのみ
+        /*表部分を作成する*/
+        //最初の行を設定
+        //最初の行、列はthだけの予定
+        const theadtr=document.createElement("tr");//行の入れ物
+        const emptycell=document.createElement("th");//行タイトル用のセル
+        const InitialRowClassName="InitialRow";
+        const InitialColumnClassName="InitialColumn";
+        emptycell.textContent="";
+        emptycell.classList.add(InitialRowClassName);
+        emptycell.classList.add(InitialColumnClassName);
+        theadtr.appendChild(emptycell);
+        for(const label of ["average",...this.ColorMapLabelList]){
+            const cell=document.createElement("th");
+            cell.textContent=label;
+            cell.classList.add(InitialRowClassName);//先頭行
+            theadtr.appendChild(cell);
+        }
+        this.TableHead.innerHTML="";
+        this.TableHead.appendChild(theadtr);
+        //データを挿入
+        const TableBody=this.TableBody;
+        TableBody.innerHTML="";
+        for(const [CalculateID,ResultMap] of this.CalculateHistory.entries()){
+            const tr=document.createElement("tr");
+            tr.setAttribute("data-CalculateID",CalculateID);//クリックイベント用のデータ
+            let count=0;//マスクが評価された個数をカウント
+            let EvaluateValueSum=0;
+            //0だけ外に出して平均値に含めない
+            let maskvalue=0;
+            const td=document.createElement("td");
+            if(ResultMap.get("Result").has(maskvalue)){
+                const EvaluateValue=ResultMap.get("Result").get(maskvalue);
+                td.textContent=EvaluateValue;
+            }else{
+                td.textContent="";
+            }
+            const trFragment=document.createDocumentFragment();
+            trFragment.appendChild(td);
+            //BG以外のマスク
+            for(let maskvalue=1;maskvalue<this.ColorMapLabelList.length;maskvalue++){
+                const td=document.createElement("td");
+                if(ResultMap.get("Result").has(maskvalue)){
+                    const EvaluateValue=ResultMap.get("Result").get(maskvalue);
+                    td.textContent=EvaluateValue;
+                    EvaluateValueSum+=EvaluateValue;
+                    count+=1;
+                }else{
+                    td.textContent="";
+                }
+                trFragment.appendChild(td);
+            }
+            tr.appendChild(trFragment);
+            //平均欄
+            const averagetd=document.createElement("td");
+            averagetd.textContent=EvaluateValueSum/(count+1e-6);
+            tr.prepend(averagetd);//平均は行の最初に
+            const CalculateIDcell=document.createElement("th");
+            CalculateIDcell.textContent=CalculateID;
+            CalculateIDcell.classList.add(InitialColumnClassName);//先頭列
+            tr.prepend(CalculateIDcell);
+            //データ領域に行を追加
+            TableBody.appendChild(tr);
+        }
+        //returnはしない
+    }
+    //指定されたFocusCalculateIDを表示するために
+    //値を入れなおす。
+    FocusResult(FocusCalculateID){
+        //要求されたCalculateIDの結果を構成したDOMツリーを返す
+        /*
+        この評価指標では、それまでの履歴をすべて画面に表示する
+        しかし、CalculateID(フォーカスしたいもの)を赤枠で囲み、空きスペースに情報を表示するようにする
+        CalculateIDごとの列をdivで囲み、その中に各値を格納する。div列ごとににクリックイベントを設定する
+        */
+        /*フォーカスしているCalculateIDに関する情報を表示*/
+        const FocusedResult=this.CalculateHistory.get(FocusCalculateID);
+        const SelectedCanvasInfoArray=Array.from(FocusedResult.get("SelectedCanvasInfoMap").entries());//{CanvasID:{DataType:,DataID:,Path:},...} => [[],...,]
+        const InfoTextList=Array.from(this.InfoTextContainer.children);
+        for(let i=0;i<SelectedCanvasInfoArray.length;i++){
+            const [CanvasID,SelectedCanvasInfo]=SelectedCanvasInfoArray[i];
+            const Path=SelectedCanvasInfo.get("Path");
+            //console.log(InfoTextList[i].tagName);
+            const text=`Input ${i} : CanvasID = ${CanvasID}\n${Path}`;
+            InfoTextList[i].textContent=text;
+        }
+        //trの中からclass名で検索をかけ、そこからそのクラスを除外する
+        //tbody直下でSelectedClassにある行を抽出
+        //今後複数選択実装に備える
+        const SelectedTRList=this.TableBody.querySelectorAll(`:scope > tr.Selected`);
+        for(const tr of SelectedTRList){
+            tr.classList.remove("Selected");
+        }
+        //CalculateIDと一致する行を抽出
+        //CalculateIDが重複することはないので必ず単一のエレメントとなる
+        //複数選択の際も選択したCalculateIDをforで回して空リストに突っ込んでいくという方針になると思うので
+        //ここはquerySelectorのままでOK
+        const NewSelectTR=this.TableBody.querySelector(`:scope > tr[data-CalculateID=\"${FocusCalculateID}\"]`);
+        NewSelectTR.classList.add("Selected");
+        //できたものを送信
+        return this.VolumetricDSCResultContainer;
+    }
+}
+
+
+/*
+----------------------------------------------------------------------------------
+ここまで評価指標定義エリア 
+----------------------------------------------------------------------------------
+*/
 window.SubWindowMainProcessAPI.initializeSubWindow((event,SendingData)=>{
     EvaluateObject=new Evaluate(SendingData);
     window.SubWindowMainProcessAPI.FromMainProcessToSub((event,data)=>{
