@@ -60,7 +60,7 @@ class Evaluate{
         //評価関数の登録
         this.EvaluationFunctionMap=new Map([
             [VolumetricDSC.EvaluateName,new VolumetricDSC()],
-            //[HausedorffDistance95.EvaluateName,new HausedorffDistance95()],
+            [HausedorffDistance95.EvaluateName,new HausedorffDistance95()],
             [dammyFunction.EvaluateName,new dammyFunction()],
         ]);
         //関数セレクト周辺への反映
@@ -1302,8 +1302,28 @@ class HausedorffDistance95{
                             //選択領域の端っこにあるので境界点として登録
                             ContourPointsMap.get(FocusPointMaskValue).push(FocasPoint);
                         }else{
-                            //そうじゃないみたいなので26近傍走査
+                            //6近傍走査
                             let FocusPointContourFlag=false;
+                            const OffsetArray=[
+                                [-1,0,0],[1,0,0],//z
+                                [0,-1,0],[0,1,0],//h
+                                [0,0,-1],[0,0,1]
+                            ]
+                            const OffsetArrayLength=OffsetArray.length;
+                            for(let i=0;!FocusPointContourFlag&&i<OffsetArrayLength;i++){
+                                const Offset=OffsetArray[i];
+                                const NeiborZ=z+Offset[0];
+                                const NeiborH=h+Offset[1];
+                                const NeiborW=w+Offset[2];
+                                const NeiborPointIndex=(NeiborZ*OriginalHeight+NeiborH)*OriginalWidth+NeiborW;
+                                const NeiborPointMaskValue=FlattenVolume[NeiborPointIndex];
+                                if(FocusPointMaskValue!==NeiborPointMaskValue){
+                                    FocusPointContourFlag=true;
+                                    ContourPointsMap.get(FocusPointMaskValue).push(FocasPoint);
+                                }
+                            }
+                            /*
+                            //そうじゃないみたいなので26近傍走査
                             const OffsetArray=[-1,0,1];
                             const OffsetArrayLength=OffsetArray.length;
                             for(let ZOffsetIndex=0;!FocusPointContourFlag&&ZOffsetIndex<OffsetArrayLength;ZOffsetIndex++){
@@ -1321,6 +1341,7 @@ class HausedorffDistance95{
                                     }
                                 }
                             }
+                            */
                         }
                     }
                 }
