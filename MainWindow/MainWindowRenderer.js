@@ -4958,14 +4958,12 @@ class Evaluate{
         const EvaluateStartFunction=(ReceiveData)=>{
             const ReceivedDataBody=ReceiveData.get("data");
             const TargetDataList=ReceivedDataBody.get("TargetDataList");
+            const TargetDataType=ReceivedDataBody.get("TargetDataType");
             //評価対象になっているボリュームのサイズは選択されたときに送られているのでボリュームだけ送る
             const data=new Map();
             const volumemap=new Map();
             //メインレイヤーのデータを送る
             //CID:{"Path":path,"Volume",Volume}
-            const SendingDataTypeMap=new Map(
-                /*Array.from(DicomDataClassDictionary.keys()).map(datatype=>[datatype,false])*/
-            );
             for(const TargetDataKey of TargetDataList){
                 //targetData="DataType:DataID"になっているはずなのでこれを翻訳
                 const TargetDataKeyList=Evaluate.String2Array(TargetDataKey);
@@ -4975,7 +4973,6 @@ class Evaluate{
                 //console.log(DataType);
                 //DataTypeにチェックをする
                 //Dataによってはプラスアルファで必要なものがあるかもしれないのでそれ用にチェックしておく
-                SendingDataTypeMap.set(DataType,true);
                 const targetDicomData=DicomDataClassDictionary.get(DataType).get(DataID).get("Data");
                 const targetVolume=targetDicomData.ImageVolume;
                 volumemap.set(TargetDataKey,new Map([
@@ -4987,12 +4984,12 @@ class Evaluate{
             data.set("VolumeMap",volumemap);
             //プラスアルファのデータを送る
             /*マスク用*/
-            if(SendingDataTypeMap.get("MASK")){
+            const ExtraDataMap=new Map();
+            if(TargetDataType==="MASK"){
                 //console.log("MASK用の追加データをセット");
-                const ExtraDataMap=new Map();
-                ExtraDataMap.set("ColorMapLabelList",colormapformask.label);
-                data.set("extradata",ExtraDataMap);
+                ExtraDataMap.set("ColorMapLabelArray",colormapformask.label);
             }
+            data.set("ExtraDataMap",ExtraDataMap);
             const SendingData=new Map([
                 ["action","FromMainToSubTargetVolume"],
                 ["data",data]

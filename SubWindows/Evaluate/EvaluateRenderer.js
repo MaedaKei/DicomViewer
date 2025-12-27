@@ -60,8 +60,8 @@ class Evaluate{
         //評価関数の登録
         this.EvaluationFunctionMap=new Map([
             [VolumetricDSC.EvaluateName,new VolumetricDSC()],
-            [HausedorffDistance95.EvaluateName,new HausedorffDistance95()],
-            [HausedorffDistance100.EvaluateName,new HausedorffDistance100()],
+            [HausdorffDistance95.EvaluateName,new HausdorffDistance95()],
+            [HausdorffDistance100.EvaluateName,new HausdorffDistance100()],
             [dammyFunction.EvaluateName,new dammyFunction()],
         ]);
         //関数セレクト周辺への反映
@@ -285,7 +285,14 @@ class Evaluate{
                 }
                 */
                 //MainWindowにLoadDataListのデータを要求
-                this.SendTargetDataList(LoadDataList);//ラッパー
+                /*
+                LoadDataListが空の配列のとき、
+                MainWindow側は何のデータタイプに対して評価が行われるかわからず
+                データタイプごとに共通で必要となるデータを送れない(例えばMaskLabelとか)。
+                そこで、DataTypeも別で送ることにする
+                */
+                const TargetDataType=this.EvaluationFunctionMap.get(this.CurrentSelectedFunctionName).TargetDataType;
+                this.SendTargetDataList(TargetDataType,LoadDataList);//ラッパー
             }
         });
         //2.データ受け取り→計算
@@ -294,7 +301,7 @@ class Evaluate{
         const FromMainToSubTargetVolumeFunction=(data)=>{
             const ReceivedDataBody=data.get("data");
             const VolumeMap=ReceivedDataBody.get("VolumeMap");//{CID:{"Path",path,"Size":{width:???,height:???},"Volume":Volume}}
-            const extradatamap=ReceivedDataBody.get("extradata");
+            const ExtraDataMap=ReceivedDataBody.get("ExtraDataMap");
             //SelectArea, input順のvolume, を関数に送る
             //console.log("イメージボリューム受信");
             //console.log(Array.from(VolumeMap.keys()));
@@ -344,7 +351,7 @@ class Evaluate{
                 場合によってはundifinedの可能性ある。関数側で存在判定する必要がある.
                 というか、DataTypeによっては空のときもあるから普通に存在判定したほう安全
                 */
-                ["extradata",extradatamap],
+                ["ExtraDataMap",ExtraDataMap],
             ]);
             //console.log("これで計算\n",CalculateData);
             //console.log(this.CurrentSelectedFunctionName,"で計算する");
@@ -768,11 +775,12 @@ class Evaluate{
             }
         }
     }
-    SendTargetDataList(TargetDataList){//ラッパー
+    SendTargetDataList(TargetDataType,TargetDataList){//ラッパー
         const SendingData=new Map([
             ["action","EvaluateStart"],
             ["data",new Map([
-                ["TargetDataList",TargetDataList]
+                ["TargetDataList",TargetDataList],
+                ["TargetDataType",TargetDataType],
             ])]
         ])
         //console.log(TargetCIDList);
@@ -971,10 +979,9 @@ class VolumetricDSC{
         const volume2OriginalHeight=InputVolume2.get("Size").get("height");
         //PathTextList.push(InputVolume2.get("Path"));
         
-        const extradata=CalculateData.get("extradata");
-        
-        if(extradata){//存在するときに新しく代入するよ
-            this.ColorMapLabelList=extradata.get("ColorMapLabelList");//表示するときにこのラベルを使う
+        const ExtraDataMap=CalculateData.get("ExtraDataMap");
+        if(ExtraDataMap.has("ColorMapLabelArray")){//存在するときに新しく代入するよ
+            this.ColorMapLabelList=ExtraDataMap.get("ColorMapLabelArray");//表示するときにこのラベルを使う
         }
 
         //この評価指標ではflattenされたものに対して計算を行う
@@ -1165,9 +1172,9 @@ class VolumetricDSC{
     }
 }
 
-class HausedorffDistance95{
+class HausdorffDistance95{
     static Parcentile=0.95;
-    static EvaluateName=`HauseDorffDistance${this.Parcentile*100}`;
+    static EvaluateName=`HausdorffDistance${this.Parcentile*100}`;
     constructor(){
         //名前。基本的には自身のクラス名を名前とする
         //this.EvaluatonName=this.constructor.name
@@ -1223,7 +1230,7 @@ class HausedorffDistance95{
             const TargetTR=e.target.closest("tr");
             if(TargetTR){
                 const CalculateID=parseInt(TargetTR.getAttribute("data-CalculateID"));
-                console.log(CalculateID);
+                //console.log(CalculateID);
                 EvaluateObject.FocusHistoryListItem(CalculateID);
             }
         });
@@ -1255,10 +1262,9 @@ class HausedorffDistance95{
             return InputVolumeKey;
         });
         
-        const extradata=CalculateData.get("extradata");
-        
-        if(extradata){//存在するときに新しく代入するよ
-            this.ColorMapLabelList=extradata.get("ColorMapLabelList");//表示するときにこのラベルを使う
+        const ExtraDataMap=CalculateData.get("ExtraDataMap");
+        if(ExtraDataMap.has("ColorMapLabelArray")){//存在するときに新しく代入するよ
+            this.ColorMapLabelList=ExtraDataMap.get("ColorMapLabelArray");//表示するときにこのラベルを使う
         }
         //2つのボリュームの輪郭点を集計する
         /*
@@ -1380,7 +1386,7 @@ class HausedorffDistance95{
             ["SelectedArea",SelectedArea],
             ["Result",HDMap]
         ]));
-        console.log(`${HausedorffDistance95.EvaluateName}の計算終了`);
+        console.log(`${this.constructor.EvaluateName}の計算終了`);
         console.log(HDMap);
         this.CreateResultDisplay();
     }
@@ -1709,7 +1715,7 @@ class HausedorffDistance95{
         return DistanceMapVolume;
     }
 }
-class HausedorffDistance100 extends HausedorffDistance95{
+class HausdorffDistance100 extends HausdorffDistance95{
     static Parcentile=1;
     static EvaluateName=`HauseDorffDistance${this.Parcentile*100}`;
 }
