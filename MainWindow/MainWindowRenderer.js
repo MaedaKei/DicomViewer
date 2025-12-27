@@ -3596,11 +3596,19 @@ class Canvas{
             const startslice=this.SelectedAreaStatus.get("startslice");
             const endslice=this.SelectedAreaStatus.get("endslice");
             const currentslice=parseInt(this.slider.value);
+            /*現在のスライスが選択範囲内なら塗りつぶし*/
+            //まずは全部黒めにつぶす
+            ctx.fillStyle="rgba(0,0,0,0.5)";
+            ctx.beginPath();
+            ctx.rect(dx,dy,dWidth,dHeight);
             if(startslice<=currentslice&&currentslice<=endslice){
-                //現在のスライスが選択範囲内なら塗りつぶし
-                ctx.fillStyle="rgba(255, 135, 135, 0.36)";
+                /*
+                ctx.fillStyle="rgba(255, 137, 137, 0.36)";
                 ctx.fillRect(w0,h0,width,height);
+                */
+                ctx.rect(w0,h0,width,height);
             }
+            ctx.fill("evenodd");//選択された部分だけしっかり見える
             ctx.strokeStyle="rgba(255,0,0,0.95)";
             ctx.lineWidth=0.5;
             ctx.strokeRect(w0-0.5,h0-0.5,width+1,height+1);
