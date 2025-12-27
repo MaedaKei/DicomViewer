@@ -1297,7 +1297,8 @@ class HausedorffDistance95{
                         ６近傍のマスク値にどれかが注目しているマスク値と異なれば境界に位置する画素とする
                         */
                         //まずは選択領域の端点でないか確認する
-                        const FocasPoint=[z,h,w];
+                        //輪郭点として保存する座標は切り取り後の座標に変換する
+                        const FocasPoint=[z-startslice,h-starth,w-starth];
                         if((z===startslice||z===endslice)||(h===starth||h===endh)||(w===startw||w===endw)){
                             //選択領域の端っこにあるので境界点として登録
                             ContourPointsMap.get(FocusPointMaskValue).push(FocasPoint);
@@ -1322,26 +1323,6 @@ class HausedorffDistance95{
                                     ContourPointsMap.get(FocusPointMaskValue).push(FocasPoint);
                                 }
                             }
-                            /*
-                            //そうじゃないみたいなので26近傍走査
-                            const OffsetArray=[-1,0,1];
-                            const OffsetArrayLength=OffsetArray.length;
-                            for(let ZOffsetIndex=0;!FocusPointContourFlag&&ZOffsetIndex<OffsetArrayLength;ZOffsetIndex++){
-                                const NeiborZ=z+OffsetArray[ZOffsetIndex];
-                                for(let HOffsetIndex=0;!FocusPointContourFlag&&HOffsetIndex<OffsetArrayLength;HOffsetIndex++){   
-                                    const NeiborH=h+OffsetArray[HOffsetIndex];
-                                    for(let WOffsetIndex=0;!FocusPointContourFlag&&WOffsetIndex<OffsetArrayLength;WOffsetIndex++){
-                                        const NeiborW=w+OffsetArray[WOffsetIndex];
-                                        const NeiborPointIndex=(NeiborZ*OriginalHeight+NeiborH)*OriginalWidth+NeiborW;
-                                        const NeiborPointMaskValue=FlattenVolume[NeiborPointIndex];
-                                        if(FocusPointMaskValue!==NeiborPointMaskValue){
-                                            FocusPointContourFlag=true;//これ以上26近傍の走査はいらない
-                                            ContourPointsMap.get(FocusPointMaskValue).push(FocasPoint);
-                                        }
-                                    }
-                                }
-                            }
-                            */
                         }
                     }
                 }
@@ -1349,54 +1330,46 @@ class HausedorffDistance95{
             InputVolumeKeyContourPointsMap.set(InputVolumeKey,ContourPointsMap);
         }
         console.log("境界点集合抽出完了");
-        /*輪郭点集合が完成したので計算していく*/
-        //このとき、片方のInputVolumeにしか出現していないMaskValueがある点に留意すること
-        /*
-        InputKeyListHDMap={
-            InputKey:{
-                maskvalue:Distance,
-            }
-        }
-        */
         const [InputVolumeKey1,InputVolumeKey2]=InputVolumeKeyList;
         const ContourPointsMap1=InputVolumeKeyContourPointsMap.get(InputVolumeKey1);
         const ContourPointsMap2=InputVolumeKeyContourPointsMap.get(InputVolumeKey2);
         const ApparaedMaskValue=new Set([...ContourPointsMap1.keys(),...ContourPointsMap2.keys()].sort((a,b)=>a-b));//これで2つの入力で出現するマスク値の和集合できる。マスクの値は昇順ソート済み
         //1=>2への最短距離の最大値を求める
         const HDMap=new Map();
+        const TargetZSize=endslice-startslice+1;
+        const TargetHSize=height;
+        const TargetWSize=width;
         for(const MaskValue of ApparaedMaskValue){
             //まずはこのマスクの境界点集合を両方で持っているか
+            console.log(MaskValue,"評価開始");
             if(MaskValue===0||!(ContourPointsMap1.has(MaskValue)&&ContourPointsMap2.has(MaskValue))){
                 //どちらかにしかないので評価値を無限大とする
                 HDMap.set(MaskValue,Infinity);
             }else{
-                //どちらにも境界点集合があるので計算開始
-                const MaskValueContourPointArray1=ContourPointsMap1.get(MaskValue);
-                const MaskValueContourPointArray2=ContourPointsMap2.get(MaskValue);
-                const ContourPointArray1Length=MaskValueContourPointArray1.length;
-                const ContourPointArray2Length=MaskValueContourPointArray2.length;
-                const ContourPointsMap1MinArray=new Array(ContourPointArray1Length).fill(999999999);//Input1の境界点集合からの最短距離をまとめたもの
-                const ContourPointsMap2MinArray=new Array(ContourPointArray2Length).fill(999999999);//Input2の境界点集合からの最短距離をまとめたもの
-                console.log(MaskValue,ContourPointArray1Length,ContourPointArray2Length);
-                //総当たりで求めてその都度最小値を更新する
-                for(let ContourPoint1Index=0;ContourPoint1Index<ContourPointArray1Length;ContourPoint1Index++){
-                    const ContourPoint1=MaskValueContourPointArray1[ContourPoint1Index];
-                    for(let ContourPoint2Index=0;ContourPoint2Index<ContourPointArray2Length;ContourPoint2Index++){
-                        const ContourPoint2=MaskValueContourPointArray2[ContourPoint2Index];
-                        //2つの距離を計算
-                        const Distance=Math.hypot(ContourPoint1.map((p1,index)=>{
-                            const p2=ContourPoint2[index];
-                            return p1-p2;
-                        }));
-                        //関わったそれぞれの座標からの距離を更新する
-                        ContourPointsMap1MinArray[ContourPoint1Index]=Math.min(ContourPointsMap1MinArray[ContourPoint1Index],Distance);
-                        ContourPointsMap2MinArray[ContourPoint2Index]=Math.min(ContourPointsMap2MinArray[ContourPoint2Index],Distance);
-                    }
+                //まずはこのマスクの距離マップを作成しよう
+                const MaskContourArray1=ContourPointsMap1.get(MaskValue);
+                const DistanceMapVolume1=this.EDT_3D(MaskContourArray1,TargetZSize,TargetHSize,TargetWSize);//切り取られたサイズのFlattenが返ってくる。Originalのサイズではないことに注意
+                const MaskContourArray2=ContourPointsMap2.get(MaskValue);
+                const DistanceMapVolume2=this.EDT_3D(MaskContourArray2,TargetZSize,TargetHSize,TargetWSize);
+                const DistanceSet=new Set();//ここに距離を集約する
+                //1. 1⇒2の距離を集計する
+                for(const [z,h,w] of MaskContourArray1){
+                    //この座標でDistanceMapVolume2を参照する
+                    const index=(z*TargetHSize+h)*TargetWSize+w;
+                    DistanceSet.add(DistanceMapVolume2[index]);
                 }
-                //2つの最短距離関数の和集合を作成
-                const MinDistanceUnion=new Set([...ContourPointsMap1MinArray,...ContourPointsMap2MinArray].sort((a,b)=>a-b));//昇順
-                const EvaluationValueIndex=Math.floor(MinDistanceUnion.size*this.Parcentile);
-                HDMap.set(MaskValue,Array.from(MinDistanceUnion)[EvaluationValueIndex]);
+                //2⇒1の距離を集計する
+                for(const [z,h,w] of MaskContourArray2){
+                    const index=(z*TargetHSize+h)*TargetWSize+w;
+                    DistanceSet.add(DistanceMapVolume1[index]);
+                }
+                //集約した距離の中から所望の位置の距離を持ってくる
+                const EvaluateValueIndex=Math.floor(DistanceSet.size*this.Parcentile);
+                //console.log(DistanceSet.size,this.Parcentile,EvaluateValueIndex);
+                const SortedDistanceArray=Array.from(DistanceSet).sort((a,b)=>a-b);
+                //console.log(SortedDistanceArray);
+                const EvaluateValue=Math.sqrt(SortedDistanceArray[EvaluateValueIndex]);
+                HDMap.set(MaskValue,EvaluateValue);
             }
         }
         this.CalculateHistory.set(CalculateID,new Map([
@@ -1405,8 +1378,10 @@ class HausedorffDistance95{
             ["Result",HDMap]
         ]));
         console.log(`${HausedorffDistance95.EvaluateName}の計算終了`);
+        console.log(HDMap);
         this.CreateResultDisplay();
     }
+    
     //この評価指標はこれまでの計算履歴を一覧表示し、
     //指定されたCalculateIDの結果をハイライト強調する
     CreateResultDisplay(FocusCalculateID=null){
@@ -1512,6 +1487,223 @@ class HausedorffDistance95{
         NewSelectTR.classList.add("Selected");
         //できたものを送信
         return this.VolumetricDSCResultContainer;
+    }
+    /*
+    Calculate用に必要になる関数
+    この評価指標独自のもの
+    */
+    EDT_3D(ContourPointArray,Z,H,W){
+        /*
+        境界点の集合と、ボリュームのサイズが渡される
+        前景を境界点、光景をそれ以外として、各位置から最も近い前景までの距離を要素として持つ距離マップをもどす
+        戻り値は１次元配列である。
+        詳しくは1D EDTや、1D パラボラ法 HD95 3次元拡張で検索
+        */
+        //3Dボリュームを初期化
+        const BigValue=10e+8;//この直方体の最大距離
+        const VolumeSize=Z*H*W;
+        const DistanceMapVolume=new Array(VolumeSize).fill(BigValue);//境界点だけ0、それ以外はとても大きい数字が入っている
+        for(const [z,h,w] of ContourPointArray ){
+            //境界点のみに0を入れる
+            const index=(z*H+h)*W+w;
+            DistanceMapVolume[index]=0
+        }
+        //W方向に1D EDT
+        for(let z=0;z<Z;z++){
+            for(let h=0;h<H;h++){
+                //ここから1D EDT
+                //まずは最初の包絡線を入れる
+                const EnvelopeArray=new Array(W);//包絡線のインデックス＝度の座標を中心とする包絡線を使うか
+                const IntervalEndpointArray=new Array(W+1);//各包絡線の支配領域。k番目の包絡線はk~k+1の間で最小値となる
+                EnvelopeArray[0]=0;
+                IntervalEndpointArray[0]=(-Infinity);
+                IntervalEndpointArray[1]=(+Infinity);
+                let EDTCurrentStackPoint=0;//現在どこを指しているか
+                //z,wを固定したvolumeの一次元配列を用意してここからのループのインデックス計算を削減する
+                const VolumeParts=new Array(W);
+                for(let w=0;w<W;w++){
+                    VolumeParts[w]=DistanceMapVolume[(z*H+h)*W+w];
+                }
+                //包絡線を構築
+                for(let CurrentPoint=1;CurrentPoint<W;CurrentPoint++){
+                    //新たに取り出した包絡線について、直前との包絡線との交点をチェックしていく
+                    //最後の包絡線との交点を計算
+                    /*
+                    let LatestEnvelopePoint=EnvelopeArray[EDTCurrentStackPoint];
+                    let s=((LatestEnvelopePoint*LatestEnvelopePoint+VolumeParts[LatestEnvelopePoint])-(CurrentPoint*CurrentPoint+VolumeParts[CurrentPoint]))/(2*(LatestEnvelopePoint-CurrentPoint));
+                    while(s<=IntervalEndpointArray[EDTCurrentStackPoint]){
+                        EDTCurrentStackPoint--;
+                        //包絡線との交点を更新
+                        LatestEnvelopePoint=EnvelopeArray[EDTCurrentStackPoint];
+                        s=((LatestEnvelopePoint*LatestEnvelopePoint+VolumeParts[LatestEnvelopePoint])-(CurrentPoint*CurrentPoint+VolumeParts[CurrentPoint]))/(2*(LatestEnvelopePoint-CurrentPoint));
+                    }
+                    */
+                    let s;
+                    while(true){
+                        const LatestEnvelopePoint=EnvelopeArray[EDTCurrentStackPoint];
+                        const num=(CurrentPoint*CurrentPoint+VolumeParts[CurrentPoint])-(LatestEnvelopePoint*LatestEnvelopePoint+VolumeParts[LatestEnvelopePoint]);
+                        const den=2*(CurrentPoint-LatestEnvelopePoint);
+                        s=num/den;//一番最後に追加された放物線との交点
+                        if(s>IntervalEndpointArray[EDTCurrentStackPoint]){
+                            //この放物線は食われない
+                            break;
+                        }
+                        //最後に追加された放物線は必要ないことがわかった
+                        if(EDTCurrentStackPoint===0){//これが最後今追加された中で最後の放物線だった。
+                            break;
+                        }
+                        EDTCurrentStackPoint--;
+                    }
+                    EDTCurrentStackPoint++;
+                    EnvelopeArray[EDTCurrentStackPoint]=CurrentPoint;
+                    IntervalEndpointArray[EDTCurrentStackPoint]=s;
+                    IntervalEndpointArray[EDTCurrentStackPoint+1]=(+Infinity);
+                }
+                //完成した包絡線をもとにVolumeを更新
+                let EnvelopeAndEndpointStackPoint=0;//最大でもW+1
+                for(let w=0;w<W;w++){
+                    //このwがどの区間端点に属するかチェック
+                    while(IntervalEndpointArray[EnvelopeAndEndpointStackPoint+1]<w){//どの左端に収まるか
+                        EnvelopeAndEndpointStackPoint++;
+                    }
+                    //このwに使う放物線の特定が完了したので値を算出し、Volumeにその値を格納する
+                    const EnvelopePoint=EnvelopeArray[EnvelopeAndEndpointStackPoint];
+                    const diff=w-EnvelopePoint;
+                    DistanceMapVolume[(z*H+h)*W+w]=diff*diff+VolumeParts[EnvelopePoint];//(x-i)^2+f(i)
+                }
+            }
+        }
+        //H方向に1D EDT
+        for(let z=0;z<Z;z++){
+            for(let w=0;w<W;w++){
+                //ここから1D EDT
+                //まずは最初の包絡線を入れる
+                const EnvelopeArray=new Array(H);//包絡線のインデックス＝度の座標を中心とする包絡線を使うか
+                const IntervalEndpointArray=new Array(H+1);//各包絡線の支配領域。k番目の包絡線はk~k+1の間で最小値となる
+                EnvelopeArray[0]=0
+                IntervalEndpointArray[0]=(-BigValue);
+                IntervalEndpointArray[1]=(BigValue);
+                let EDTCurrentStackPoint=0;//現在どこを指しているか
+                //z,wを固定したvolumeの一次元配列を用意してここからのループのインデックス計算を削減する
+                const VolumeParts=new Array(H);
+                for(let h=0;h<H;h++){
+                    VolumeParts[h]=DistanceMapVolume[(z*H+h)*W+w];
+                }
+                //包絡線を構築
+                for(let CurrentPoint=1;CurrentPoint<H;CurrentPoint++){
+                    //新たに取り出した包絡線について、直前との包絡線との交点をチェックしていく
+                    //最後の包絡線との交点を計算
+                    /*
+                    let LatestEnvelopePoint=EnvelopeArray[EDTCurrentStackPoint];
+                    let s=((LatestEnvelopePoint*LatestEnvelopePoint+VolumeParts[LatestEnvelopePoint])-(CurrentPoint*CurrentPoint+VolumeParts[CurrentPoint]))/(2*(LatestEnvelopePoint-CurrentPoint));
+                    while(s<=IntervalEndpointArray[EDTCurrentStackPoint]){
+                        EDTCurrentStackPoint--;
+                        //包絡線との交点を更新
+                        LatestEnvelopePoint=EnvelopeArray[EDTCurrentStackPoint];
+                        s=((LatestEnvelopePoint*LatestEnvelopePoint+VolumeParts[LatestEnvelopePoint])-(CurrentPoint*CurrentPoint+VolumeParts[CurrentPoint]))/(2*(LatestEnvelopePoint-CurrentPoint));
+                    }
+                    */
+                    let s;
+                    while(true){
+                        const LatestEnvelopePoint=EnvelopeArray[EDTCurrentStackPoint];
+                        const num=(CurrentPoint*CurrentPoint+VolumeParts[CurrentPoint])-(LatestEnvelopePoint*LatestEnvelopePoint+VolumeParts[LatestEnvelopePoint]);
+                        const den=2*(CurrentPoint-LatestEnvelopePoint);
+                        s=num/den;//一番最後に追加された放物線との交点
+                        if(s>IntervalEndpointArray[EDTCurrentStackPoint]){
+                            //この放物線は食われない
+                            break;
+                        }
+                        //最後に追加された放物線は必要ないことがわかった
+                        if(EDTCurrentStackPoint===0){//これが最後今追加された中で最後の放物線だった。
+                            break;
+                        }
+                        EDTCurrentStackPoint--;
+                    }
+                    EDTCurrentStackPoint++;
+                    EnvelopeArray[EDTCurrentStackPoint]=CurrentPoint;
+                    IntervalEndpointArray[EDTCurrentStackPoint]=s;
+                    IntervalEndpointArray[EDTCurrentStackPoint+1]=(+Infinity);
+                }
+                //完成した包絡線をもとにVolumeを更新
+                let EnvelopeAndEndpointStackPoint=0;//最大でもW+1
+                for(let h=0;h<H;h++){
+                    //このwがどの区間端点に属するかチェック
+                    while(IntervalEndpointArray[EnvelopeAndEndpointStackPoint+1]<h){//どの左端に収まるか
+                        EnvelopeAndEndpointStackPoint++;
+                    }
+                    //このwに使う放物線の特定が完了したので値を算出し、Volumeにその値を格納する
+                    const EnvelopePoint=EnvelopeArray[EnvelopeAndEndpointStackPoint];
+                    const diff=h-EnvelopePoint;
+                    DistanceMapVolume[(z*H+h)*W+w]=diff*diff+VolumeParts[EnvelopePoint];//(x-i)^2+f(i)
+                }
+            }
+        }
+        //Z方向に1D EDT
+        for(let h=0;h<H;h++){
+            for(let w=0;w<W;w++){
+                //ここから1D EDT
+                //まずは最初の包絡線を入れる
+                const EnvelopeArray=new Array(Z);//包絡線のインデックス＝度の座標を中心とする包絡線を使うか
+                const IntervalEndpointArray=new Array(Z+1);//各包絡線の支配領域。k番目の包絡線はk~k+1の間で最小値となる
+                EnvelopeArray[0]=0
+                IntervalEndpointArray[0]=(-BigValue);
+                IntervalEndpointArray[1]=(BigValue);
+                let EDTCurrentStackPoint=0;//現在どこを指しているか
+                //z,wを固定したvolumeの一次元配列を用意してここからのループのインデックス計算を削減する
+                const VolumeParts=new Array(Z);
+                for(let z=0;z<Z;z++){
+                    VolumeParts[z]=DistanceMapVolume[(z*H+h)*W+w];
+                }
+                //包絡線を構築
+                for(let CurrentPoint=1;CurrentPoint<Z;CurrentPoint++){
+                    //新たに取り出した包絡線について、直前との包絡線との交点をチェックしていく
+                    //最後の包絡線との交点を計算
+                    /*
+                    let LatestEnvelopePoint=EnvelopeArray[EDTCurrentStackPoint];
+                    let s=((LatestEnvelopePoint*LatestEnvelopePoint+VolumeParts[LatestEnvelopePoint])-(CurrentPoint*CurrentPoint+VolumeParts[CurrentPoint]))/(2*(LatestEnvelopePoint-CurrentPoint));
+                    while(s<=IntervalEndpointArray[EDTCurrentStackPoint]){
+                        EDTCurrentStackPoint--;
+                        //包絡線との交点を更新
+                        LatestEnvelopePoint=EnvelopeArray[EDTCurrentStackPoint];
+                        s=((LatestEnvelopePoint*LatestEnvelopePoint+VolumeParts[LatestEnvelopePoint])-(CurrentPoint*CurrentPoint+VolumeParts[CurrentPoint]))/(2*(LatestEnvelopePoint-CurrentPoint));
+                    }
+                    */
+                    let s;
+                    while(true){
+                        const LatestEnvelopePoint=EnvelopeArray[EDTCurrentStackPoint];
+                        const num=(CurrentPoint*CurrentPoint+VolumeParts[CurrentPoint])-(LatestEnvelopePoint*LatestEnvelopePoint+VolumeParts[LatestEnvelopePoint]);
+                        const den=2*(CurrentPoint-LatestEnvelopePoint);
+                        s=num/den;//一番最後に追加された放物線との交点
+                        if(s>IntervalEndpointArray[EDTCurrentStackPoint]){
+                            //この放物線は食われない
+                            break;
+                        }
+                        //最後に追加された放物線は必要ないことがわかった
+                        if(EDTCurrentStackPoint===0){//これが最後今追加された中で最後の放物線だった。
+                            break;
+                        }
+                        EDTCurrentStackPoint--;
+                    }
+                    EDTCurrentStackPoint++;
+                    EnvelopeArray[EDTCurrentStackPoint]=CurrentPoint;
+                    IntervalEndpointArray[EDTCurrentStackPoint]=s;
+                    IntervalEndpointArray[EDTCurrentStackPoint+1]=(+Infinity);
+                }
+                //完成した包絡線をもとにVolumeを更新
+                let EnvelopeAndEndpointStackPoint=0;//最大でもW+1, Envelopeのポインタも兼任
+                for(let z=0;z<Z;z++){
+                    //このwがどの区間端点に属するかチェック
+                    while(IntervalEndpointArray[EnvelopeAndEndpointStackPoint+1]<z){//どの左端に収まるか
+                        EnvelopeAndEndpointStackPoint++;
+                    }
+                    //このwに使う放物線の特定が完了したので値を算出し、Volumeにその値を格納する
+                    const EnvelopePoint=EnvelopeArray[EnvelopeAndEndpointStackPoint];
+                    const diff=z-EnvelopePoint;
+                    DistanceMapVolume[(z*H+h)*W+w]=diff*diff+VolumeParts[EnvelopePoint];//(x-i)^2+f(i)
+                }
+            }
+        }
+        return DistanceMapVolume;
     }
 }
 
