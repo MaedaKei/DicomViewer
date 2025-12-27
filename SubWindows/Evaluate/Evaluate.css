@@ -424,6 +424,7 @@ table#VolumetricDSCResultTable th,td{
     text-overflow: ellipsis;/*はみ出たら...で表示*/
     white-space: nowrap;/*折り返し禁止*/
     z-index:-1;
+    text-align: center;
 }
 /*行と列の固定設定*/
 table#VolumetricDSCResultTable th.InitialRow{
@@ -536,6 +537,7 @@ table.HausdorffDistanceResultTable th,td{
     text-overflow: ellipsis;/*はみ出たら...で表示*/
     white-space: nowrap;/*折り返し禁止*/
     z-index:-1;
+    text-align: center;
 }
 /*行と列の固定設定*/
 table.HausdorffDistanceResultTable th.InitialRow{

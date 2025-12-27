@@ -61,14 +61,16 @@ class Evaluate{
         this.EvaluationFunctionMap=new Map([
             [VolumetricDSC.EvaluateName,new VolumetricDSC()],
             [HausedorffDistance95.EvaluateName,new HausedorffDistance95()],
+            [HausedorffDistance100.EvaluateName,new HausedorffDistance100()],
             [dammyFunction.EvaluateName,new dammyFunction()],
         ]);
         //関数セレクト周辺への反映
         this.EvaluationFunctionSelecter.innerHTML="";
-        for(const EvaluateName of this.EvaluationFunctionMap.keys()){
+        for(const [EvaluateName,EvaluationInstance] of this.EvaluationFunctionMap.entries()){
             const option=document.createElement("option");
             option.value=EvaluateName;
-            option.text=EvaluateName;
+            const OptionText=`${EvaluateName} [ ${EvaluationInstance.TargetDataType} ]`;
+            option.text=OptionText;
             this.EvaluationFunctionSelecter.appendChild(option);
         }
         //一番最初に追加した要素をデフォルト選択とする
@@ -1164,7 +1166,8 @@ class VolumetricDSC{
 }
 
 class HausedorffDistance95{
-    static EvaluateName="HauseDorffDistance95";
+    static Parcentile=0.95;
+    static EvaluateName=`HauseDorffDistance${this.Parcentile*100}`;
     constructor(){
         //名前。基本的には自身のクラス名を名前とする
         //this.EvaluatonName=this.constructor.name
@@ -1173,7 +1176,6 @@ class HausedorffDistance95{
         this.CalculateHistory=new Map();//{ID:{Result,SelectedArea}}
         this.InputNum=2;//可変数の入力を受け付ける関数は下限値、上限値などの境界値を表す変数とする。
         this.InputNumConditionText=`=${this.InputNum}`;//可変長の場合は>=1のようにする。この条件はInputNumConditionCheckで表現する
-        this.Parcentile=0.95;//HDX
         this.setResultTemplate();
         this.setUserEvents();
     }
@@ -1187,28 +1189,28 @@ class HausedorffDistance95{
         }
     }
     setResultTemplate(){
-        this.VolumetricDSCResultContainer=document.createElement("div");
-        this.VolumetricDSCResultContainer.class="HausedorffDistanceResultContainer";
+        this.HausdorffDistanceResultContainer=document.createElement("div");
+        this.HausdorffDistanceResultContainer.className="HausdorffDistanceResultContainer";
         /*InfoText部はテンプレートとして持っておく*/
         this.InfoTextContainer=document.createElement("div");
-        this.InfoTextContainer.class="HausedorffDistanceInfoTextContainer";
+        this.InfoTextContainer.className="HausdorffDistanceInfoTextContainer";
         for(let i=0;i<this.InputNum;i++){
             const InfoText=document.createElement("div");
             InfoText.className="InfoText";
             this.InfoTextContainer.appendChild(InfoText);
         }
         console.log(Array.from(this.InfoTextContainer.children));
-        this.VolumetricDSCResultContainer.appendChild(this.InfoTextContainer);
+        this.HausdorffDistanceResultContainer.appendChild(this.InfoTextContainer);
         /*tableの外枠だけは持っておく*/
         const ResultTableContainer=document.createElement("div");
-        ResultTableContainer.class="HausedorffDistanceResultTableContainer";
+        ResultTableContainer.className="HausdorffDistanceResultTableContainer";
         const ResultTable=document.createElement("table");
-        ResultTable.class="HausedorffDistanceResultTable";
+        ResultTable.className="HausdorffDistanceResultTable";
         this.TableHead=document.createElement("thead");
         this.TableHead.className="TableHead";
         this.TableBody=document.createElement("tbody");
         this.TableBody.className="TableBody";
-        this.VolumetricDSCResultContainer.appendChild(ResultTableContainer);
+        this.HausdorffDistanceResultContainer.appendChild(ResultTableContainer);
         ResultTableContainer.appendChild(ResultTable);
         ResultTable.appendChild(this.TableHead);
         ResultTable.appendChild(this.TableBody);
@@ -1364,7 +1366,8 @@ class HausedorffDistance95{
                     DistanceSet.add(DistanceMapVolume1[index]);
                 }
                 //集約した距離の中から所望の位置の距離を持ってくる
-                const EvaluateValueIndex=Math.floor(DistanceSet.size*this.Parcentile);
+                console.log(this.constructor.Parcentile);
+                const EvaluateValueIndex=Math.ceil(DistanceSet.size*this.constructor.Parcentile)-1;//this.constructorはこのインスタンスを作ったクラス自体を指している。つまり、静的プロパティを参照している
                 //console.log(DistanceSet.size,this.Parcentile,EvaluateValueIndex);
                 const SortedDistanceArray=Array.from(DistanceSet).sort((a,b)=>a-b);
                 //console.log(SortedDistanceArray);
@@ -1486,7 +1489,7 @@ class HausedorffDistance95{
         const NewSelectTR=this.TableBody.querySelector(`:scope > tr[data-CalculateID=\"${FocusCalculateID}\"]`);
         NewSelectTR.classList.add("Selected");
         //できたものを送信
-        return this.VolumetricDSCResultContainer;
+        return this.HausdorffDistanceResultContainer;
     }
     /*
     Calculate用に必要になる関数
@@ -1706,7 +1709,10 @@ class HausedorffDistance95{
         return DistanceMapVolume;
     }
 }
-
+class HausedorffDistance100 extends HausedorffDistance95{
+    static Parcentile=1;
+    static EvaluateName=`HauseDorffDistance${this.Parcentile*100}`;
+}
 
 /*
 ----------------------------------------------------------------------------------
