@@ -60,6 +60,7 @@ class MaskModifingClass{
             const LabelName=MaskLabel[MaskValue];
             const MaskButton=document.createElement("button");
             MaskButton.className="MaskButton";
+            MaskButton.tabIndex="-1";
             MaskButton.value=MaskValue;
             const ColorBoxSpan=document.createElement("span");
             ColorBoxSpan.className="MaskColorBoxSpan";

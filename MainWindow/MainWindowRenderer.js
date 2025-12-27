@@ -508,20 +508,20 @@ class CTclass{
         );
         //座標系の境界値を取得
         const PixelSpacing=loadedData[0]["dataset"].string("x00280030")?.split('\\').map(parseFloat) || [1,1];
-        const rowSpacing=PixelSpacing[0];
-        const colSpacing=PixelSpacing[1];
+        const ySpacing=PixelSpacing[0];
+        const xSpacing=PixelSpacing[1];
         const ipp0=loadedData[0]["dataset"].string("x00200032")?.split("\\").map(parseFloat);
         this.xMin=ipp0?ipp0[0]:0;
-        this.xMax=this.xMin+(this.width-1)*colSpacing;
+        this.xMax=this.xMin+(this.width-1)*xSpacing;
         this.yMin=ipp0?ipp0[1]:0;
-        this.yMax=this.yMin+(this.height-1)*rowSpacing;
+        this.yMax=this.yMin+(this.height-1)*ySpacing;
         this.zMin=this.i2p.get(0);
         this.zMax=this.i2p.get(this.depth-1);
         this.imagesize=this.width*this.height;
         this.vMin=vMin;
         this.vMax=vMax;
-        this.rowSpacing=rowSpacing;
-        this.colSpacing=colSpacing;
+        this.ySpacing=ySpacing;
+        this.xSpacing=xSpacing;
         //console.log(vMin,"~",vMax);
         //一時保存用の変数
         this.currentImageBitmap=null;
@@ -1041,20 +1041,20 @@ class MASKclass{
         );
         //座標系の境界値を取得
         const PixelSpacing=loadedData[0]["dataset"].string("x00280030")?.split('\\').map(parseFloat) || [1,1];
-        const rowSpacing=PixelSpacing[0];
-        const colSpacing=PixelSpacing[1];
+        const ySpacing=PixelSpacing[0];
+        const xSpacing=PixelSpacing[1];
         const ipp0=loadedData[0]["dataset"].string("x00200032")?.split("\\").map(parseFloat);
         this.xMin=ipp0?ipp0[0]:0;
-        this.xMax=this.xMin+(this.width-1)*colSpacing;
+        this.xMax=this.xMin+(this.width-1)*xSpacing;
         this.yMin=ipp0?ipp0[1]:0;
-        this.yMax=this.yMin+(this.height-1)*rowSpacing;
+        this.yMax=this.yMin+(this.height-1)*ySpacing;
         this.zMin=this.i2p.get(0);
         this.zMax=this.i2p.get(this.depth-1);
         this.imagesize=this.width*this.height;
         this.vMin=vMin;
         this.vMax=vMax;
-        this.rowSpacing=rowSpacing;
-        this.colSpacing=colSpacing;
+        this.ySpacing=ySpacing;
+        this.xSpacing=xSpacing;
         //console.log(vMin,"~",vMax);
         //一時保存用の変数
         this.currentImageBitmap=null;
@@ -1566,8 +1566,8 @@ class MASKDIFFclass{
         this.imagesize=this.width*this.height;
         this.vMin=vMin;
         this.vMax=vMax;
-        this.rowSpacing=MASKA.rowSpacing;
-        this.colSpacing=MASKA.colSpacing;
+        this.ySpacing=MASKA.ySpacing;
+        this.xSpacing=MASKA.xSpacing;
         //console.log(vMin,"~",vMax);
         this.currentImageBitmap=null;
     }
@@ -4969,7 +4969,7 @@ class Evaluate{
             const TargetDataType=ReceivedDataBody.get("TargetDataType");
             //評価対象になっているボリュームのサイズは選択されたときに送られているのでボリュームだけ送る
             const data=new Map();
-            const volumemap=new Map();
+            const VolumeMap=new Map();
             //メインレイヤーのデータを送る
             //CID:{"Path":path,"Volume",Volume}
             for(const TargetDataKey of TargetDataList){
@@ -4983,13 +4983,20 @@ class Evaluate{
                 //Dataによってはプラスアルファで必要なものがあるかもしれないのでそれ用にチェックしておく
                 const targetDicomData=DicomDataClassDictionary.get(DataType).get(DataID).get("Data");
                 const targetVolume=targetDicomData.ImageVolume;
-                volumemap.set(TargetDataKey,new Map([
+                //そのうち、Volumeデータじゃないものに対しても評価が必要になるかもしれない
+                //その場合、以下のプロパティすべてを持っている保証はないのでゆくゆくは安全策をとる必要がある
+                VolumeMap.set(TargetDataKey,new Map([
                     ["Path",targetDicomData.Path],
                     ["Size",new Map([["width",targetDicomData.width],["height",targetDicomData.height]])],
-                    ["Volume",targetVolume]
+                    ["SpacingDataMap",new Map([
+                        ["xSpacing",targetDicomData.xSpacing],//W方向用
+                        ["ySpacing",targetDicomData.ySpacing],//H方向用
+                        ["i2pMap",targetDicomData.i2p],//Index⇒PositionPatient変換する用のMap, Z方向用に使う
+                    ])],
+                    ["Volume",targetVolume],
                 ]));
             }
-            data.set("VolumeMap",volumemap);
+            data.set("VolumeMap",VolumeMap);
             //プラスアルファのデータを送る
             /*マスク用*/
             const ExtraDataMap=new Map();

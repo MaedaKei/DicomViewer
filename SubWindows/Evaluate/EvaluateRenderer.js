@@ -1280,16 +1280,19 @@ class HausdorffDistance95{
         また、maskvalueのkeyがある＝一度は画像内に出現していることになるため、keyのみがあり配列自体は空ということも起こらない
         */
         const InputVolumeKeyContourPointsMap=new Map();
+        const InputVolumeKeySpacingDataMap=new Map();
         for(const [InputVolumeKey,InputVolume] of InputVolumeMap.entries()){
             const FlattenVolume=InputVolume.get("Volume");
             const OriginalSize=InputVolume.get("Size");
             const OriginalWidth=OriginalSize.get("width");
             const OriginalHeight=OriginalSize.get("height");
+            //SpacingDataを格納
+            InputVolumeKeySpacingDataMap.set(InputVolumeKey,InputVolume.get("SpacingDataMap"));
             //ここから、このボリュームの切り取り範囲を走査して輪郭点を抽出する
             const ContourPointsMap=new Map();
             const starth=h0,endh=h0+height-1;
             const startw=w0,endw=w0+width-1;
-            console.log(InputVolumeKey);
+            //console.log(InputVolumeKey);
             for(let z=startslice;z<=endslice;z++){
                 for(let h=starth;h<=endh;h++){
                     for(let w=startw;w<=endw;w++){
@@ -1341,10 +1344,12 @@ class HausdorffDistance95{
         const [InputVolumeKey1,InputVolumeKey2]=InputVolumeKeyList;
         const ContourPointsMap1=InputVolumeKeyContourPointsMap.get(InputVolumeKey1);
         const ContourPointsMap2=InputVolumeKeyContourPointsMap.get(InputVolumeKey2);
+        const SpacingDataMap1=InputVolumeKeySpacingDataMap.get(InputVolumeKey1);
+        const SpacingDataMap2=InputVolumeKeySpacingDataMap.get(InputVolumeKey2);
         const ApparaedMaskValue=new Set([...ContourPointsMap1.keys(),...ContourPointsMap2.keys()].sort((a,b)=>a-b));//これで2つの入力で出現するマスク値の和集合できる。マスクの値は昇順ソート済み
         //1=>2への最短距離の最大値を求める
         const HDMap=new Map();
-        const TargetZSize=endslice-startslice+1;
+        //const TargetZSize=endslice-startslice+1;
         const TargetHSize=height;
         const TargetWSize=width;
         for(const MaskValue of ApparaedMaskValue){
@@ -1356,9 +1361,9 @@ class HausdorffDistance95{
             }else{
                 //まずはこのマスクの距離マップを作成しよう
                 const MaskContourArray1=ContourPointsMap1.get(MaskValue);
-                const DistanceMapVolume1=this.EDT_3D(MaskContourArray1,TargetZSize,TargetHSize,TargetWSize);//切り取られたサイズのFlattenが返ってくる。Originalのサイズではないことに注意
+                const DistanceMapVolume1=this.EDT_3D(MaskContourArray1,startslice,endslice,TargetHSize,TargetWSize,SpacingDataMap1);//切り取られたサイズのFlattenが返ってくる。Originalのサイズではないことに注意
                 const MaskContourArray2=ContourPointsMap2.get(MaskValue);
-                const DistanceMapVolume2=this.EDT_3D(MaskContourArray2,TargetZSize,TargetHSize,TargetWSize);
+                const DistanceMapVolume2=this.EDT_3D(MaskContourArray2,startslice,endslice,TargetHSize,TargetWSize,SpacingDataMap2);
                 const DistanceSet=new Set();//ここに距離を集約する
                 //1. 1⇒2の距離を集計する
                 for(const [z,h,w] of MaskContourArray1){
@@ -1372,7 +1377,7 @@ class HausdorffDistance95{
                     DistanceSet.add(DistanceMapVolume1[index]);
                 }
                 //集約した距離の中から所望の位置の距離を持ってくる
-                console.log(this.constructor.Parcentile);
+                //console.log(this.constructor.Parcentile);
                 const EvaluateValueIndex=Math.ceil(DistanceSet.size*this.constructor.Parcentile)-1;//this.constructorはこのインスタンスを作ったクラス自体を指している。つまり、静的プロパティを参照している
                 //console.log(DistanceSet.size,this.Parcentile,EvaluateValueIndex);
                 const SortedDistanceArray=Array.from(DistanceSet).sort((a,b)=>a-b);
@@ -1501,7 +1506,7 @@ class HausdorffDistance95{
     Calculate用に必要になる関数
     この評価指標独自のもの
     */
-    EDT_3D(ContourPointArray,Z,H,W){
+    EDT_3D(ContourPointArray,StartZ,EndZ,H,W,SpacingDataMap){
         /*
         境界点の集合と、ボリュームのサイズが渡される
         前景を境界点、光景をそれ以外として、各位置から最も近い前景までの距離を要素として持つ距離マップをもどす
@@ -1510,6 +1515,7 @@ class HausdorffDistance95{
         */
         //3Dボリュームを初期化
         const BigValue=10e+8;//この直方体の最大距離
+        const Z=EndZ-StartZ+1;
         const VolumeSize=Z*H*W;
         const DistanceMapVolume=new Array(VolumeSize).fill(BigValue);//境界点だけ0、それ以外はとても大きい数字が入っている
         for(const [z,h,w] of ContourPointArray ){
@@ -1518,6 +1524,7 @@ class HausdorffDistance95{
             DistanceMapVolume[index]=0
         }
         //W方向に1D EDT
+        const WSpacing=SpacingDataMap.get("xSpacing");
         for(let z=0;z<Z;z++){
             for(let h=0;h<H;h++){
                 //ここから1D EDT
@@ -1577,12 +1584,13 @@ class HausdorffDistance95{
                     }
                     //このwに使う放物線の特定が完了したので値を算出し、Volumeにその値を格納する
                     const EnvelopePoint=EnvelopeArray[EnvelopeAndEndpointStackPoint];
-                    const diff=w-EnvelopePoint;
+                    const diff=(w-EnvelopePoint)*WSpacing;//Pixel距離をmmに変換する
                     DistanceMapVolume[(z*H+h)*W+w]=diff*diff+VolumeParts[EnvelopePoint];//(x-i)^2+f(i)
                 }
             }
         }
         //H方向に1D EDT
+        const HSpacing=SpacingDataMap.get("ySpacing");
         for(let z=0;z<Z;z++){
             for(let w=0;w<W;w++){
                 //ここから1D EDT
@@ -1642,12 +1650,13 @@ class HausdorffDistance95{
                     }
                     //このwに使う放物線の特定が完了したので値を算出し、Volumeにその値を格納する
                     const EnvelopePoint=EnvelopeArray[EnvelopeAndEndpointStackPoint];
-                    const diff=h-EnvelopePoint;
+                    const diff=(h-EnvelopePoint)*HSpacing;//Pixel距離をmmに変換する
                     DistanceMapVolume[(z*H+h)*W+w]=diff*diff+VolumeParts[EnvelopePoint];//(x-i)^2+f(i)
                 }
             }
         }
         //Z方向に1D EDT
+        const Index2PositionMap=SpacingDataMap.get("i2pMap");
         for(let h=0;h<H;h++){
             for(let w=0;w<W;w++){
                 //ここから1D EDT
@@ -1707,7 +1716,9 @@ class HausdorffDistance95{
                     }
                     //このwに使う放物線の特定が完了したので値を算出し、Volumeにその値を格納する
                     const EnvelopePoint=EnvelopeArray[EnvelopeAndEndpointStackPoint];
-                    const diff=z-EnvelopePoint;
+                    //Z方向は不均一の可能性もあるようだ
+                    //とりあえずは、Pixel基準で最短距離を求めた後、これをmmに変換する
+                    const diff=Index2PositionMap.get(StartZ+z)-Index2PositionMap.get(StartZ+EnvelopePoint);
                     DistanceMapVolume[(z*H+h)*W+w]=diff*diff+VolumeParts[EnvelopePoint];//(x-i)^2+f(i)
                 }
             }
