@@ -353,125 +353,17 @@ div#ResultContainer{
     background-color: rgb(220, 220, 220);
 }
 
-/*
----------------------------------------------
-VolumetricDSCのResultに関するCSS
----------------------------------------------
-*/
-div#ResultContainer>div#VolumetricDSCResultContainer{
-    width:100%;
-    height:100%;
-    display:flex;
-    flex-direction: column;
-    --InfoTextContainerHeight:calc(30px * 2);
-    --ResultTableContainerHeight:calc(100% - var(--InfoTextContainerHeight));
-}
-/*InfoTextContainer*/
-div#VolumetricDSCResultContainer>div#VolumetricDSCInfoTextContainer{
-    /*InputNum=2*/
-    width:100%;
-    height:var(--InfoTextContainerHeight);
-    display: flex;
-    flex-direction: column;
-}
-div#VolumetricDSCResultContainer>div#VolumetricDSCInfoTextContainer>div.InfoText{
-    width:100%;
-    height:50%;
-    text-align: left;
-    vertical-align: top;
-    background-color: rgb(195, 195, 195);
-    font-size:10px;
-    font-weight: bold;
-    border:1px solid black;
-    white-space: pre-wrap;
-}
-/*ResultTable*/
-div#VolumetricDSCResultContainer>div#VolumetricDSCResultTableContainer{
-    width:100%;
-    height:var(--ResultTableContainerHeight);
-    max-width: 100%;
-    max-height: var(--ResultTableContainerHeight);
-    overflow-y:auto;
-    overflow-x:auto;
-    /*先頭行と先頭列の固定用*/
-    position:relative;
-}
-div#VolumetricDSCResultContainer>div#VolumetricDSCResultTableContainer>table#VolumetricDSCResultTable{
-    border-collapse: collapse;/*セル同士の境界線を重ねて隙間をなくす*/
-    table-layout: fixed;
-    /*tableのサイズは内部要素によって変化するようにすることで構成が崩れない*/
-}
-/*
-table#VolumetricDSCResultTable tr{
-    background-color: white;
-}
-*/
-table#VolumetricDSCResultTable th,td{
-    --width:75px;
-    --height:30px;
-    width:var(--width);
-    height:var(--height);
-    border: 1px solid rgb(0, 0, 0);
-    /*background-color: rgb(255, 255, 255);*/
-    font-size: 12px;
-    /*以下はギチギチに条件を明示して勝手に画面構成を最適化して崩すことを防ぐためのモノ*/
-    max-width: var(--width);
-    min-width: var(--width);
-    max-height: var(--height);
-    min-height: var(--height);
-    /*はみ出したら*/
-    overflow: hidden;/*はみ出た部分は隠す*/
-    text-overflow: ellipsis;/*はみ出たら...で表示*/
-    white-space: nowrap;/*折り返し禁止*/
-    z-index:-1;
-    text-align: center;
-}
-/*行と列の固定設定*/
-table#VolumetricDSCResultTable th.InitialRow{
-    position:sticky;
-    top:0;
-    background-color: rgb(81, 81, 81);
-    color:white;
-    z-index:1
-}
-table#VolumetricDSCResultTable th.InitialColumn{
-    position:sticky;
-    left:0;
-    /*データ部分の左端セルは色ついてなくてもいいかも*/
-    background-color: rgb(81, 81, 81);
-    color:white;
-    z-index:1
-}
-table#VolumetricDSCResultTable th.InitialRow.InitialColumn{
-    position:sticky;
-    top:0;
-    left:0;
-    background-color: rgb(81, 81, 81);
-    color:white;
-    z-index:2
-}
-
-table#VolumetricDSCResultTable tbody>tr>td{
-    background-color: white;
-}
-table#VolumetricDSCResultTable tbody>tr:hover>th,
-table#VolumetricDSCResultTable tbody>tr:hover>td{
-    background-color: rgb(115, 115, 115);
-}
-
-table#VolumetricDSCResultTable tbody>tr.Selected{
-    border: 2px solid red;
-}
 
 /*
 ---------------------------------------------
-HausdorffDistanceのResultに関するCSS
+EvaluationTableForMaskのResultに関するCSS
 基本的にはVolumetricDSCと同じ構造
 しかし、HD100とHD95で同じCSSを使用するために、IDで設定している名前空間をclassにしている
 2025/12/22時点では、HD100とHD95は分離して実装する予定。⇒二つを合わせた場合に一つの行や列に２行分入れる必要があり、それをJSのtableで実現できるかわからないため。Excelで行や列の結合として行っている処理
+2025/12/28 VDSC、HD、SurfaceDiceなどのマスクに対する評価で、これまでの結果をまとめて表示するタイプをまとめて一つのスタイルにまとめる
 ---------------------------------------------
 */
-div#ResultContainer>div.HausdorffDistanceResultContainer{
+div#ResultContainer>div.EvaluationTableForMaskResultContainer{
     width:100%;
     height:100%;
     display:flex;
@@ -480,14 +372,14 @@ div#ResultContainer>div.HausdorffDistanceResultContainer{
     --ResultTableContainerHeight:calc(100% - var(--InfoTextContainerHeight));
 }
 /*InfoTextContainer*/
-div.HausdorffDistanceResultContainer>div.HausdorffDistanceInfoTextContainer{
+div.EvaluationTableForMaskResultContainer>div.EvaluationTableForMaskInfoTextContainer{
     /*InputNum=2*/
     width:100%;
     height:var(--InfoTextContainerHeight);
     display: flex;
     flex-direction: column;
 }
-div.HausdorffDistanceResultContainer>div.HausdorffDistanceInfoTextContainer>div.InfoText{
+div.EvaluationTableForMaskResultContainer>div.EvaluationTableForMaskInfoTextContainer>div.InfoText{
     width:100%;
     height:50%;
     text-align: left;
@@ -499,7 +391,7 @@ div.HausdorffDistanceResultContainer>div.HausdorffDistanceInfoTextContainer>div.
     white-space: pre-wrap;
 }
 /*ResultTable*/
-div.HausdorffDistanceResultContainer>div.HausdorffDistanceResultTableContainer{
+div.EvaluationTableForMaskResultContainer>div.EvaluationTableForMaskResultTableContainer{
     width:100%;
     height:var(--ResultTableContainerHeight);
     max-width: 100%;
@@ -509,7 +401,7 @@ div.HausdorffDistanceResultContainer>div.HausdorffDistanceResultTableContainer{
     /*先頭行と先頭列の固定用*/
     position:relative;
 }
-div.HausdorffDistanceResultContainer>div.HausdorffDistanceResultTableContainer>table.HausdorffDistanceResultTable{
+div.EvaluationTableForMaskResultContainer>div.EvaluationTableForMaskResultTableContainer>table.EvaluationTableForMaskResultTable{
     border-collapse: collapse;/*セル同士の境界線を重ねて隙間をなくす*/
     table-layout: fixed;
     /*tableのサイズは内部要素によって変化するようにすることで構成が崩れない*/
@@ -519,7 +411,7 @@ table#VolumetricDSCResultTable tr{
     background-color: white;
 }
 */
-table.HausdorffDistanceResultTable th,td{
+table.EvaluationTableForMaskResultTable th,td{
     --width:75px;
     --height:30px;
     width:var(--width);
@@ -540,14 +432,14 @@ table.HausdorffDistanceResultTable th,td{
     text-align: center;
 }
 /*行と列の固定設定*/
-table.HausdorffDistanceResultTable th.InitialRow{
+table.EvaluationTableForMaskResultTable th.InitialRow{
     position:sticky;
     top:0;
     background-color: rgb(81, 81, 81);
     color:white;
     z-index:1
 }
-table.HausdorffDistanceResultTable th.InitialColumn{
+table.EvaluationTableForMaskResultTable th.InitialColumn{
     position:sticky;
     left:0;
     /*データ部分の左端セルは色ついてなくてもいいかも*/
@@ -555,7 +447,7 @@ table.HausdorffDistanceResultTable th.InitialColumn{
     color:white;
     z-index:1
 }
-table.HausdorffDistanceResultTable th.InitialRow.InitialColumn{
+table.EvaluationTableForMaskResultTable th.InitialRow.InitialColumn{
     position:sticky;
     top:0;
     left:0;
@@ -565,14 +457,14 @@ table.HausdorffDistanceResultTable th.InitialRow.InitialColumn{
     text-align: center;
 }
 
-table.HausdorffDistanceResultTable tbody>tr>td{
+table.EvaluationTableForMaskResultTable tbody>tr>td{
     background-color: white;
 }
-table.HausdorffDistanceResultTable tbody>tr:hover>th,
-table.HausdorffDistanceResultTable tbody>tr:hover>td{
+table.EvaluationTableForMaskResultTable tbody>tr:hover>th,
+table.EvaluationTableForMaskResultTable tbody>tr:hover>td{
     background-color: rgb(115, 115, 115);
 }
 
-table.HausdorffDistanceResultTable tbody>tr.Selected{
+table.EvaluationTableForMaskResultTable tbody>tr.Selected{
     border: 2px solid red;
 }
