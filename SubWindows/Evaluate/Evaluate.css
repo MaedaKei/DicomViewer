@@ -29,13 +29,11 @@ dialog#InputSelectDialog{
     --CanvasSelectButtonContainerWidth:calc((var(--CanvasSelectButtonWidth) + var(--CanvasSelectButtonGridGap)) * var(--CanvasSelectButtonGridColumnsNum) - var(--CanvasSelectButtonGridGap) + 2 * var(--CanvasSelectButtonGridGap));
     --CanvasSelectButtonContainerHeight:calc((var(--CanvasSelectButtonHeight) + var(--CanvasSelectButtonGridGap)) * var(--CanvasSelectButtonGridRowsNum) - var(--CanvasSelectButtonGridGap) + 2 * var(--CanvasSelectButtonGridGap));
     /*TargetinfoDisplayContainerのサイズ*/
-    --TargetInfoDisplayContainerHeight:40px;
-    /*ButtonContainerのサイズ*/
-    --ButtonContainerHeight:30px;
+    --InputSelectDialogInfoAndButtonContainerHeight:40px;
 }
 dialog#InputSelectDialog[open]{
     width:var(--CanvasSelectButtonContainerWidth);
-    height:calc(var(--TargetInfoDisplayContainerHeight) + var(--CanvasSelectButtonContainerHeight) + var(--ButtonContainerHeight));
+    height:calc(var(--InputSelectDialogInfoAndButtonContainerHeight) + var(--CanvasSelectButtonContainerHeight));
     position:absolute;
     display:flex;
     flex-direction: column;
@@ -44,13 +42,21 @@ dialog#InputSelectDialog[open]{
     left:25%;
     background-color: black;
 }
-dialog#InputSelectDialog[open]>div#TargetInfoDisplayContainer{
+dialog#InputSelectDialog[open]>div#InputSelectDialogInfoAndButtonContainer{
     width:100%;
-    height:var(--TargetInfoDisplayContainerHeight);
+    height:var(--InputSelectDialogInfoAndButtonContainerHeight);
+    display: flex;
+    flex-direction: row;
+    --TargetInfoDisplayContainerWidth:calc(100% - var(--InputSelectDialogInfoAndButtonContainerHeight));
+    --ButtonContainerWidth:var(--InputSelectDialogInfoAndButtonContainerHeight);
+}
+dialog#InputSelectDialog[open]>div#InputSelectDialogInfoAndButtonContainer>div#TargetInfoDisplayContainer{
+    width:var(--TargetInfoDisplayContainerWidth);
+    height:100%;
     display: flex;
     flex-direction: column;
 }
-dialog#InputSelectDialog[open]>div#TargetInfoDisplayContainer>div#TargetDataTypeDisplay{
+dialog#InputSelectDialog[open]>div#InputSelectDialogInfoAndButtonContainer>div#TargetInfoDisplayContainer>div#TargetDataTypeDisplay{
     width:100%;
     height:50%;
     font:bold 10px sans-serif;
@@ -60,7 +66,7 @@ dialog#InputSelectDialog[open]>div#TargetInfoDisplayContainer>div#TargetDataType
     color:white;
     border:1px solid white;
 }
-dialog#InputSelectDialog[open]>div#TargetInfoDisplayContainer>div#TargetInputNumDisplay{
+dialog#InputSelectDialog[open]>div#InputSelectDialogInfoAndButtonContainer>div#TargetInfoDisplayContainer>div#TargetInputNumDisplay{
     width:100%;
     height:50%;
     font:bold 10px sans-serif;
@@ -70,6 +76,28 @@ dialog#InputSelectDialog[open]>div#TargetInfoDisplayContainer>div#TargetInputNum
     color:white;
     border:1px solid white;
 }
+dialog#InputSelectDialog[open]>div#InputSelectDialogInfoAndButtonContainer>div#InputSelectDialogButtonContainer{
+    width:var(--ButtonContainerWidth);
+    height:100%;
+    display:flex;
+    flex-direction: row;
+}
+dialog#InputSelectDialog[open]>div#InputSelectDialogInfoAndButtonContainer>div#InputSelectDialogButtonContainer>button#InputSelectDialogCloseButton{
+    width:100%;
+    height:100%;
+    font:bold 15px sans-serif;
+    text-align: center;
+    background-color: rgb(151, 43, 43);
+    color:white;
+    padding:2px;
+}
+dialog#InputSelectDialog[open]>div#InputSelectDialogInfoAndButtonContainer>div#InputSelectDialogButtonContainer>button#InputSelectDialogCloseButton:hover{
+    background-color: rgb(255, 0, 0);
+}
+dialog#InputSelectDialog[open]>div#InputSelectDialogInfoAndButtonContainer>div#InputSelectDialogButtonContainer>button#InputSelectDialogCloseButton:active{
+    color:black;
+}
+
 dialog#InputSelectDialog[open]>div#CanvasSelectButtonContainer{
     width:100%;
     height:var(--CanvasSelectButtonContainerHeight);
@@ -100,27 +128,7 @@ dialog#InputSelectDialog[open]>div#CanvasSelectButtonContainer>button:disabled{
     background-color: black;
     color:gray;
 }
-dialog#InputSelectDialog[open]>div#InputSelectDialogButtonContainer{
-    width:100%;
-    height:var(--ButtonContainerHeight);
-    display:flex;
-    flex-direction: row;
-    padding:2px;
-}
-dialog#InputSelectDialog[open]>div#InputSelectDialogButtonContainer>button#InputSelectDialogCloseButton{
-    width:100%;
-    height:100%;
-    font:bold 15px sans-serif;
-    text-align: center;
-    background-color: blue;
-    color:white;
-}
-dialog#InputSelectDialog[open]>div#InputSelectDialogButtonContainer>button#InputSelectDialogCloseButton:hover{
-    background-color: rgb(94, 94, 239);
-}
-dialog#InputSelectDialog[open]>div#InputSelectDialogButtonContainer>button#InputSelectDialogCloseButton:active{
-    color:black;
-}
+
 
 div#InputContainer{
     width:var(--InputContainerWidth);
