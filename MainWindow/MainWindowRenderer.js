@@ -1363,12 +1363,13 @@ class MASKDIFFclass{
         this.Input1Selecter.innerHTML="";
         this.Input2Selecter.innerHTML="";
         const Input1Selecterinitialoption=document.createElement("option");
-        Input1Selecterinitialoption.text="CanvasIDを選択";//中身はDataID
-        Input1Selecterinitialoption.value=(-99999);
+        Input1Selecterinitialoption.value=(-99999);//中身はDataID
         Input1Selecterinitialoption.disabled=true;
         Input1Selecterinitialoption.hidden=true;
         Input1Selecterinitialoption.selected=true;
         const Input2Selecterinitialoption=Input1Selecterinitialoption.cloneNode(true);
+        Input1Selecterinitialoption.text="GTを選択";
+        Input2Selecterinitialoption.text="Predictionを選択";
         Input2Selecterinitialoption.selected=true;
         const Input1Fragment=document.createDocumentFragment();
         const Input2Fragment=document.createDocumentFragment();
@@ -1534,40 +1535,58 @@ class MASKDIFFclass{
         const MaskADataID=CanvasClassDictionary.get(CanvasIDList[0]).LayerDataMap.get("MASK").get("DataID");
         const MaskBDataID=CanvasClassDictionary.get(CanvasIDList[1]).LayerDataMap.get("MASK").get("DataID");
         */
-        const [MaskADataID,MaskBDataID]=loadedData.split(MASKDIFFclass.DataIDDataIDDelimita).map(DataID=>parseInt(DataID));
-        const MASKA=DicomDataClassDictionary.get("MASK").get(MaskADataID).get("Data");
-        const MASKB=DicomDataClassDictionary.get("MASK").get(MaskBDataID).get("Data");
-        this.width=MASKA.width;
-        this.height=MASKA.height;
-        this.depth=MASKA.depth;
+        const [GTMaskDataID,PredictionMaskDataID]=loadedData.split(MASKDIFFclass.DataIDDataIDDelimita).map(DataID=>parseInt(DataID));
+        const GTMask=DicomDataClassDictionary.get("MASK").get(GTMaskDataID).get("Data");
+        const PredictionMask=DicomDataClassDictionary.get("MASK").get(PredictionMaskDataID).get("Data");
+        this.width=GTMask.width;
+        this.height=GTMask.height;
+        this.depth=GTMask.depth;
         const sizePerSlice=this.width*this.height;
         this.ImageVolume=new Float32Array(sizePerSlice*this.depth);
         //2つのボリュームを比較して差分を入れていく
         const histgram=new Map();
         let vMin=Infinity,vMax=-Infinity;
+        const PI_div_2=Math.PI/2;
         for(let i=0;i<this.ImageVolume.length;i++){
-            const value=MASKA.ImageVolume[i]-MASKB.ImageVolume[i];
-            this.ImageVolume[i]=value;
-            histgram.set(value,(histgram.get(value)||0)+1);
-            if(value<vMin)vMin=value;
-            if(value>vMax)vMax=value;
+            //const value=MASKA.ImageVolume[i]-MASKB.ImageVolume[i];
+            const GTMaskValue=GTMask.ImageVolume[i];
+            const PredictionMaskValue=PredictionMask.ImageVolume[i];
+            let DiffValue=Math.abs(GTMaskValue-PredictionMaskValue);//一致していれば0
+            if(DiffValue){//0ではないときにTrueとなる=差分があるとき
+                if(GTMaskValue*PredictionMaskValue){//ここがTrueとなるのは両方とも０ではないとき、つまり、GTのBGを組織とした、GTの組織をBGとした、という完全な形状の誤検知はやばいミスとする。そうでない場合は許せるミスとする
+                    /*
+                    GTMaskValueが0ではない、つまり、BGを0という前提の下で見たときに何かしらの組織を別の組織と誤認した。
+                    組織があることは認識できたので許せるミスとし、負の値で登録
+                    色は緑
+
+                    反対にBGだった場合は、何もないところに組織があると認識したことを意味する
+                    やばいミスとして、正の値で登録＝なにもしない
+                    色は赤
+                    */
+                    DiffValue*=-1;//負の値に変換
+                }
+            }
+            this.ImageVolume[i]=Math.atan(DiffValue)/PI_div_2;//画像作成時にやる返還はここでやってしまう。ヒストグラムには元の画素値で登録
+            histgram.set(DiffValue,(histgram.get(DiffValue)||0)+1);
+            if(DiffValue<vMin)vMin=DiffValue;
+            if(DiffValue>vMax)vMax=DiffValue;
         }
         this.histgram=new Map(
             [...histgram.entries()].sort((a,b)=>a[0]-b[0])
         );
-        this.i2p=MASKA.i2p;//スライスインデックスから患者座標系ｚ軸を取得(int => float)
-        this.p2i=MASKA.p2i;//患者座標系ｚ軸からスライスインデックスを取得(flloat => int)
-        this.xMin=MASKA.xMin;
-        this.xMax=MASKA.xMax;
-        this.yMin=MASKA.yMin;
-        this.yMax=MASKA.yMax;
-        this.zMin=MASKA.zMin;
-        this.zMax=MASKA.zMax;
+        this.i2p=GTMask.i2p;//スライスインデックスから患者座標系ｚ軸を取得(int => float)
+        this.p2i=GTMask.p2i;//患者座標系ｚ軸からスライスインデックスを取得(flloat => int)
+        this.xMin=GTMask.xMin;
+        this.xMax=GTMask.xMax;
+        this.yMin=GTMask.yMin;
+        this.yMax=GTMask.yMax;
+        this.zMin=GTMask.zMin;
+        this.zMax=GTMask.zMax;
         this.imagesize=this.width*this.height;
         this.vMin=vMin;
         this.vMax=vMax;
-        this.ySpacing=MASKA.ySpacing;
-        this.xSpacing=MASKA.xSpacing;
+        this.ySpacing=GTMask.ySpacing;
+        this.xSpacing=GTMask.xSpacing;
         //console.log(vMin,"~",vMax);
         this.currentImageBitmap=null;
     }
@@ -1596,20 +1615,12 @@ class MASKDIFFclass{
     createImageBitmap(index){
         //MASK、CONTOUR用のカラーマップを作成する必要がある。
         const rgbArray=new Uint8ClampedArray(this.imagesize*4);
+        //const PI_div_2=Math.PI/2;
         for(let i=0;i<this.imagesize;i++){
             const baseindex=i*4;
-            //const value=Math.round((this.ImageVolume[index*this.imagesize+i]-this.vMin));
             let value=this.ImageVolume[index*this.imagesize+i];
-            value=Math.atan(value)/(Math.PI/2);
-            //const startindex=4*value;
-            /*
-            rgbArray[baseindex]=colormapformask.colormap[startindex];//R
-            rgbArray[baseindex+1]=colormapformask.colormap[startindex+1];//G
-            rgbArray[baseindex+2]=colormapformask.colormap[startindex+2];//B
-            rgbArray[baseindex+3]=colormapformask.colormap[startindex+3];//A
-            */
-            //正と負で場合分けする必要がありそう
-            //とりあえずは0以外は赤、0は白とする
+            //value=Math.atan(value)/PI_div_2;
+            //正と負で場合分けする。正は赤、負は緑
             //console.log(value);
             if(value==0){
                 rgbArray[baseindex]=255;//R
@@ -2285,12 +2296,6 @@ function Path2InfoText(loadingPath,partsnum=3){
 }
 class Canvas{
     constructor(CanvasID,DataInfoMap){
-        /*
-        DataInfoMap:Map{
-            DataType:"CT"/"MASK"/"CONTOUR"/"MASKDIFF",重複はなし
-            DataID:DataIDまたはMaskDiffの場合はMap{MaskA:CID,MaskB:CID}
-        }
-        */
         //一応一時的にデータにアクセスしておく
         this.id=new Map([
             ["CanvasID",CanvasID],
