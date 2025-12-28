@@ -1309,7 +1309,7 @@ class HausdorffDistance95{
                         */
                         //まずは選択領域の端点でないか確認する
                         //輪郭点として保存する座標は切り取り後の座標に変換する
-                        const FocasPoint=[z-startslice,h-starth,w-starth];
+                        const FocasPoint=[z-startslice,h-starth,w-startw];
                         if((z===startslice||z===endslice)||(h===starth||h===endh)||(w===startw||w===endw)){
                             //選択領域の端っこにあるので境界点として登録
                             ContourPointsMap.get(FocusPointMaskValue).push(FocasPoint);
@@ -1411,6 +1411,8 @@ class HausdorffDistance95{
         emptycell.textContent="";
         emptycell.classList.add(InitialRowClassName);
         emptycell.classList.add(InitialColumnClassName);
+        //この評価指標にはmmという単位があるのでそれを記入する
+        emptycell.textContent="( mm )"
         theadtr.appendChild(emptycell);
         for(const label of ["average",...this.ColorMapLabelList]){
             const cell=document.createElement("th");
