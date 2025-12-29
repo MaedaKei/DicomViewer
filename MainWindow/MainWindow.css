@@ -93,183 +93,158 @@ dialog{
 body{
     position: relative;
 }
+
 /*
-GridChangeダイアログ
+ChangeCanvasLayout
 */
-dialog#GridChangeDialog{
+dialog#ChangeCanvasLayoutDialog[open]{
     font-family: sans-serif;
-    --label-height:20px;
-    --select-height:100px;
-    --button-height:20px;
+    --TitleAndButtonContainerHeight:20px;
+    --GridChangeInputContainerHeight:40px;
+    --CanvasMoveSelecterContainerHeight:300px;
     position:absolute;
-    top:50%;
-    left:50%;
-    transform: translate(-50%,-50%);
-    width:200px;
-    height:calc(var(--label-height) + var(--select-height) + var(--button-height) + 10px);
-}
-
-/* タイトル */
-dialog#GridChangeDialog>h3 {
-    font-size: calc(var(--label-height) / 2);
-    font-weight: bold;
-    width:100%;
-    height:var(--label-height);
-    text-align: center;
-    background-color: #054c82;
-    color:white;
-}
-
-/* ドロップダウン横並び */
-dialog#GridChangeDialog>div.GridChangeInputContainer{
-    width:100%;
-    height:var(--select-height);
-    display: flex;
-    gap:5px;
-}
-dialog#GridChangeDialog>div.GridChangeInputContainer>div{
-    width:100%;
-    flex: 1;
     display: flex;
     flex-direction: column;
-}
-/* ラベルとセレクトを縦に並べて、横並びに配置 */
-dialog#GridChangeDialog>div.GridChangeInputContainer>div>label{
-    width:100%;
-    display: block;
-    font-weight: bold;
-}
-
-dialog#GridChangeDialog>div.GridChangeInputContainer>div>input{
-    width:100%;
-    height:20px;
-    padding: 3px;
-    font-size: 12px;
-    box-sizing: border-box;
-}
-
-/* ボタン横並び */
-dialog#GridChangeDialog>div.GridChangeButtonContainer{
-    width:100%;
-    height:var(--button-height);
-    display: flex;
-    justify-content: flex-end;
-    gap: 5px;
-}
-
-/* ボタンスタイル */
-dialog#GridChangeDialog>div.GridChangeButtonContainer>button{
-    width:50%;
-    height:100%;
-    padding: 2px 3px;
-    font-size: 12px;
-    border: none;
-    border-radius: 4px;
-    background-color: #0078d4;
-    color: white;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-}
-
-dialog#GridChangeDialog>div.GridChangeButtonContainer>button:hover{
-    background-color: #005a9e;
-}
-
-/*
-CanvasMoveダイアログ
-*/
-dialog#CanvasMoveDialog{
-    font-family: sans-serif;
-    --label-height:20px;
-    --select-height:300px;
-    --button-height:20px;
-    position:absolute;
     top:50%;
     left:50%;
     transform: translate(-50%,-50%);
-    min-width:300px;
-    height:calc(var(--label-height) + var(--select-height) + var(--button-height) + 2px);
+    width:300px;
+    height:calc(var(--TitleAndButtonContainerHeight) + var(--GridChangeInputContainerHeight) + var(--CanvasMoveSelecterContainerHeight));
     border:1px solid purple;
 }
-
-/* タイトル */
-dialog#CanvasMoveDialog>h3{
-    font-size: calc(var(--label-height) / 2);
-    min-width:100%;
-    height:var(--label-height);
+/*TitleAndButtonContainer*/
+dialog#ChangeCanvasLayoutDialog[open]>div#TitleAndButtonContainer{
+    width:100%;
+    height:var(--TitleAndButtonContainerHeight);
+    display: flex;
+    flex-direction: row;
+    --CloseButtonWidth:var(--TitleAndButtonContainerHeight);/*閉じるボタンは正方形*/
+    --TitleWidth:calc(100% - var(--CloseButtonWidth));
+}
+dialog#ChangeCanvasLayoutDialog[open]>div#TitleAndButtonContainer>div#ChangeCanvasLayoutDialogTitle{
+    width:var(--TitleWidth);
+    height:100%;
+    background-color: #2f93c9;
+    font:bold 12px sans-serif;
+    color:black;
     text-align: center;
-    background-color: blue;
+    padding:2px;
+}
+dialog#ChangeCanvasLayoutDialog[open]>div#TitleAndButtonContainer>button#ChangeCanvasLayoutDialogCloseButton{
+    width:var(--CloseButtonWidth);
+    height:100%;
+    padding:2px;
+    font:bold 10px sans-serif;
+    background-color: rgb(113, 23, 23);
     color:white;
-    font-weight:bold;
+    text-align: center;
+}
+dialog#ChangeCanvasLayoutDialog[open]>div#TitleAndButtonContainer>button#ChangeCanvasLayoutDialogCloseButton:hover{
+    background-color: red;
+}
+dialog#ChangeCanvasLayoutDialog[open]>div#TitleAndButtonContainer>button#ChangeCanvasLayoutDialogCloseButton:active{
+    color:black;
+}
+/*GridChangeInput*/
+/* ドロップダウン横並び */
+dialog#ChangeCanvasLayoutDialog[open]>div.GridChangeInputContainer{
+    width:100%;
+    height:var(--GridChangeInputContainerHeight);
+    display: flex;
+    flex-direction: row;
+}
+dialog#ChangeCanvasLayoutDialog[open]>div.GridChangeInputContainer>div{
+    flex:1;
+    height:100%;
+    display: flex;
+    flex-direction: column;
+    border:1px solid black;
+}
+/* ラベルとセレクトを縦に並べて、横並びに配置 */
+dialog#ChangeCanvasLayoutDialog[open]>div.GridChangeInputContainer>div>label{
+    width:100%;
+    height:50%;
+    display: block;
+    text-align: center;
+    background-color: rgb(171, 253, 167);
+    color:rgb(0, 0, 0);
+    font:bold 12px sans-serif;
 }
 
+dialog#ChangeCanvasLayoutDialog[open]>div.GridChangeInputContainer>div>input[type="number"]{
+    width:100%;
+    height:50%;
+    padding: 3px;
+    font:bold 12px sans-serif;
+    box-sizing: border-box;
+    text-align: center;
+}
+dialog#ChangeCanvasLayoutDialog[open]>div.GridChangeInputContainer>label{
+    width:40px;
+    height:100%;
+    padding:2px;
+    display: block;
+    text-align: center;
+    background-color:rgb(233, 233, 233);
+    color:rgb(0, 0, 0);
+    font:bold 20px sans-serif;
+    border:1px solid black;
+}
+dialog#ChangeCanvasLayoutDialog[open]>div.GridChangeInputContainer>button#GridChangeConfirmButton{
+    width:60px;
+    height:100%;
+    font: bold 12px sans-serif;
+    padding:2px;
+    border: 1px solid black;
+    text-align: center;
+    color:white;
+    background-color: #005a9e;
+}
+dialog#ChangeCanvasLayoutDialog[open]>div.GridChangeInputContainer>button#GridChangeConfirmButton:hover{
+    background-color: #0175cd;
+}
+dialog#ChangeCanvasLayoutDialog[open]>div.GridChangeInputContainer>button#GridChangeConfirmButton:active{
+    color:black;
+    background-color: #002846;
+}
 /* チェックボックス格子 */
-dialog#CanvasMoveDialog>div#CanvasMoveSelecterContainer{
+dialog#ChangeCanvasLayoutDialog[open]>div#CanvasMoveSelecterContainer{
     /*JSがつくるボタン群のコンテナをセットするだけの場所*/
     width:100%;
-    height:var(--select-height);
+    height:var(--CanvasMoveSelecterContainerHeight);
     display:grid;
     place-items:center;
     overflow-x:auto;
     overflow-y:auto;
     background-color: #000000;
 }
-dialog#CanvasMoveDialog>div#CanvasMoveSelecterContainer>div#CanvasMovePositionButtonContainer{
+dialog#ChangeCanvasLayoutDialog[open]>div#CanvasMoveSelecterContainer>div#CanvasMovePositionButtonContainer{
     /*widthは可変*/
     /*heightは可変*/
     display:grid;
 }
-dialog#CanvasMoveDialog>div#CanvasMoveSelecterContainer>div#CanvasMovePositionButtonContainer>button{
+dialog#ChangeCanvasLayoutDialog[open]>div#CanvasMoveSelecterContainer>div#CanvasMovePositionButtonContainer>button{
     /*width:30px;*/
     /*height:30px;*/
     white-space: pre;
     padding:1px;
     border:2px solid rgb(195, 195, 195);
 }
-dialog#CanvasMoveDialog>div#CanvasMoveSelecterContainer>div#CanvasMovePositionButtonContainer>button[data-EmptyStatus="NotEmpty"]{
+dialog#ChangeCanvasLayoutDialog[open]>div#CanvasMoveSelecterContainer>div#CanvasMovePositionButtonContainer>button[data-EmptyStatus="NotEmpty"]{
     background-color: white;
     color:black;
     font-size:10px;
 }
-dialog#CanvasMoveDialog>div#CanvasMoveSelecterContainer>div#CanvasMovePositionButtonContainer>button[data-EmptyStatus="Empty"]{
+dialog#ChangeCanvasLayoutDialog[open]>div#CanvasMoveSelecterContainer>div#CanvasMovePositionButtonContainer>button[data-EmptyStatus="Empty"]{
     background-color: gray;
     color:black;
     font-size:10px;
 }
-dialog#CanvasMoveDialog>div#CanvasMoveSelecterContainer>div#CanvasMovePositionButtonContainer>button:hover{
+dialog#ChangeCanvasLayoutDialog[open]>div#CanvasMoveSelecterContainer>div#CanvasMovePositionButtonContainer>button:hover{
     border:2px solid rgb(255, 0, 0);
 }
-dialog#CanvasMoveDialog>div#CanvasMoveSelecterContainer>div#CanvasMovePositionButtonContainer>button.Selected{
+dialog#ChangeCanvasLayoutDialog[open]>div#CanvasMoveSelecterContainer>div#CanvasMovePositionButtonContainer>button.Selected{
     background-color: #bb95d6;
-}
-/* ボタン横並び */
-dialog#CanvasMoveDialog>div.CanvasMoveButtonContainer{
-    min-width:100%;
-    height:var(--button-height);
-    display: flex;
-    justify-content: flex-end;
-    /*gap: 5px;*/
-}
-
-/* ボタンスタイル */
-dialog#CanvasMoveDialog>div.CanvasMoveButtonContainer>button{
-    width:100%;
-    height:100%;
-    padding: 2px;
-    font-size: 12px;
-    border: none;
-    border-radius: 4px;
-    background-color: #0078d4;
-    color: white;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-}
-
-dialog#CanvasMoveDialog>div.CanvasMoveButtonContainer>button:hover{
-    background-color: #005a9e;
-}
-dialog#CanvasMoveDialog>div.CanvasMoveButtonContainer>button:disabled{
-    background-color: #002846;
 }
 /*キャンバスコンテナ*/
 #CanvasContainer{

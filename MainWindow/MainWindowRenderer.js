@@ -3963,119 +3963,71 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
                 await LoadAndLayoutFunctions.Resize(NewBodyRect.width,NewBodyRect.height);//PixelRatioによっては内部でmain.jsに要請したサイズと実際のサイズが変わることがある
             },200);
         });
-        //GridChange用
-        this.GridChangeButton=document.getElementById("GridChangeButton");
-        this.GridChangeDialog=document.getElementById("GridChangeDialog");
-        this.RowsInputContainer=document.getElementById("RowsInputContainer");
-        this.RowsInput=document.getElementById("RowsInput");
-        this.ColumnsInputContainer=document.getElementById("ColumnsInputContainer");
-        this.ColumnsInput=document.getElementById("ColumnsInput");
-        this.GridChangeConfirmButton=document.getElementById("GridChangeConfirmButton");
-        this.GridChangeFinishButton=document.getElementById("GridChangeFinishButton");
-        //初期化
-        this.ResetLayoutStatus(true);
-
-        this.EventSetHelper(this.GridChangeButton,"mouseup",()=>{
-            this.GridChangeDialog.showModal();
-        });
-        this.EventSetHelper(this.RowsInput,"focus",()=>{
-            this.RowsInput.select();
-        });
-        /*
-        this.EventSetHelper(this.RowsInputContainer,"wheel",(e)=>{
-            const changevalue=-1*Math.sign(e.deltaY);
-            this.RowsInput.value=Math.max(parseInt(this.RowsInput.value)+changevalue,1);
-        });
-        */
-        this.EventSetHelper(this.ColumnsInput,"focus",()=>{
-            this.ColumnsInput.select();
-        });
         /*
         this.EventSetHelper(this.ColumnsInputContainer,"wheel",(e)=>{
             const changevalue=-1*Math.sign(e.deltaY);
             this.ColumnsInput.value=Math.max(parseInt(this.ColumnsInput.value)+changevalue,1);
         });
         */
-        const ConfirmFunc=()=>{
-            //変更処理
-            //CanvasBlockの格子配置が変更されたら、詰めて配置しなおすことにする
-            const newRows=parseInt(this.RowsInput.value)||this.CurrentRowsNum;
-            const newColumns=parseInt(this.ColumnsInput.value)||this.CurrentColumnsNum;
-            if(newRows*newColumns<CanvasClassDictionary.size){
-                console.log(`現在のCanvasBlockの個数は ${CanvasClassDictionary.size} です。`);
-                return;
-            }
-            if(!(this.CurrentRowsNum==newRows&&this.CurrentColumnsNum==newColumns)){
-                //Grid情報を更新
-                this.UpdateCanvasPosition(newRows,newColumns);
-                //更新した情報を基にスタイル変更
-                this.UpdateStyle();
-                this.Resize();
-                //新しい位置情報を送信する
-                this.SendMainWindowStatus();
-            }
-            this.GridChangeDialog.close();
+        /*ChangeCanvasLayoutダイアログ*/
+        this.ChangeCanvasLayoutButton=document.getElementById("ChangeCanvasLayoutButton");
+        this.ChangeCanvasLayoutDialog=document.getElementById("ChangeCanvasLayoutDialog");
+        this.ChangeCanvasLayoutDialogCloseButton=document.getElementById("ChangeCanvasLayoutDialogCloseButton");
+        //GridChange
+        this.RowsInput=document.getElementById("RowsInput");
+        this.ColumnsInput=document.getElementById("ColumnsInput");
+        this.GridChangeConfirmButton=document.getElementById("GridChangeConfirmButton");
+        this.CurrentRowsNum=1;
+        this.CurrentColumnsNum=1;
+        this.ResetLayoutStatus(true);
+        this.CanvasMovePositionButtonContainer=document.getElementById("CanvasMovePositionButtonContainer");
+        this.CanvasMovePositionButtonContainer.tabIndex="-1";
+        this.CanvasMovePositionSelectedCount=0;
+        this.EventSetHelper(this.ChangeCanvasLayoutButton,"mouseup",()=>{
+            this.UpdateCanvasMovePositionButtonContainer();//現在のCanvasの配置を再現
+            //表示開始
+            this.ChangeCanvasLayoutDialog.showModal();
+        });
+        //ChangeCanvasLayoutダイアログCloseイベント
+        const ChangeCanvasLayoutCloseFunction=()=>{
+            this.ClearCanvasMovePositionButtonSelect();
+            /*
+            GridChangeInputでは確定ボタン押下時に格子の変更が行われるため、場合によってはInputの書き換えだけ行って確定を押さないときもある。
+            この変更が次のダイアログ展開時も残るので、閉じるときにこれを直しておく
+            */
+            this.RowsInput.value=this.CurrentRowsNum;
+            this.ColumnsInput.value=this.CurrentColumnsNum;
+            //最後にダイアログを閉じる
+            this.ChangeCanvasLayoutDialog.close();
         }
+        this.EventSetHelper(this.ChangeCanvasLayoutDialogCloseButton,"mouseup",(e)=>{
+            if(e.button===0){
+                ChangeCanvasLayoutCloseFunction();
+            }
+        });
+        this.EventSetHelper(this.ChangeCanvasLayoutDialogCloseButton,"keydown",(e)=>{
+            if(e.code==="Enter"){
+                ChangeCanvasLayoutCloseFunction();
+            }
+        });
+        //ChangeCanvasLayoutダイアログ ChangeCanvasGridイベント
+        this.EventSetHelper(this.RowsInput,"focus",()=>{
+            this.RowsInput.select();
+        });
+        this.EventSetHelper(this.ColumnsInput,"focus",()=>{
+            this.ColumnsInput.select();
+        });
         this.EventSetHelper(this.GridChangeConfirmButton,"mouseup",(e)=>{
-            if(e.button==0)ConfirmFunc();
+            if(e.button===0){
+                this.ChangeCanvasGrid();
+            }
         });
         this.EventSetHelper(this.GridChangeConfirmButton,"keydown",(e)=>{
-            if(e.code==="Enter")ConfirmFunc();
-        });
-        this.EventSetHelper(this.GridChangeFinishButton,"mouseup",(e)=>{
-            if(e.button===0)this.GridChangeDialog.close();
-        });
-        this.EventSetHelper(this.GridChangeFinishButton,"keydown",(e)=>{
-            if(e.code==="Enter")this.GridChangeDialog.close();
-        });
-        //CanvasMoveダイアログ用
-        this.CanvasMoveButton=document.getElementById("CanvasMoveButton");
-        this.CanvasMoveDialog=document.getElementById("CanvasMoveDialog");
-        this.CanvasMovePositionButtonContainer=document.getElementById("CanvasMovePositionButtonContainer");
-        /*this.CanvasMoveConfirmButton=document.getElementById("CanvasMoveConfirmButton");*/
-        this.CanvasMoveCancelButton=document.getElementById("CanvasMoveCancelButton");
-        this.CanvasMovePositionSelectedCount=0;
-        this.EventSetHelper(this.CanvasMoveButton,"mouseup",()=>{
-            //this.CanvasMovePositionButtonContainer.innerHTML="";
-            //SelectorContainerの格子を更新する
-            //CanvasContainer.style.gridTemplateColumns=`repeat(${this.CurrentColumnsNum},1fr)`;
-            //CanvasContainer.style.gridTemplateRows=`{repeat(${this.CurrentRowsNum},1fr)}`;
-            this.CanvasMovePositionButtonContainer.style.gridTemplateColumns=`repeat(${this.CurrentColumnsNum},1fr)`;
-            this.CanvasMovePositionButtonContainer.style.gridTemplateRows=`{repeat(${this.CurrentRowsNum},1fr)}`;
-            const gap=5;
-            this.CanvasMovePositionButtonContainer.style.gap=`${gap}px`;
-            const ButtonSize=75;//px
-            this.CanvasMovePositionButtonContainer.style.width=`${ButtonSize*this.CurrentColumnsNum+gap*(this.CurrentColumnsNum-1)}px`;
-            this.CanvasMovePositionButtonContainer.style.height=`${ButtonSize*this.CurrentRowsNum+gap*(this.CurrentRowsNum-1)}px`;
-            const CanvasMovePositionButtonContainerFragment=document.createDocumentFragment();
-            //現在のgridの状態を基にチェックボックスを配置する
-            for(let lp=0;lp<this.GridNumber2CanvasIDArray.length;lp++){
-                const r=Math.floor(lp/this.CurrentColumnsNum)+1;
-                const c=lp%this.CurrentColumnsNum+1;
-                //const label=document.createElement("MaskLabel");
-                const button=document.createElement("button");
-                button.style.width=`${ButtonSize}px`;
-                button.style.height=`${ButtonSize}px`;
-                button.value=lp;
-                CanvasMovePositionButtonContainerFragment.appendChild(button);
-                button.style.gridArea=`${r}/${c}/${r+1}/${c+1}`;
-                /*ボタンの色を決定する*/
-                const CanvasID=this.GridNumber2CanvasIDArray[lp];
-                if(CanvasID>=0){
-                    //画像があるLPである
-                    button.setAttribute("data-EmptyStatus","NotEmpty");
-                    const LayarMapArray=Array.from(CanvasClassDictionary.get(CanvasID).LayerDataMap.keys());
-                    const textContent=`CanvasID:${CanvasID}\n`+LayarMapArray.join("\n");
-                    button.textContent=textContent;
-                }else{
-                    button.setAttribute("data-EmptyStatus","Empty");
-                }
+            if(e.code==="Enter"){
+                this.ChangeCanvasGrid();
             }
-            this.CanvasMovePositionButtonContainer.appendChild(CanvasMovePositionButtonContainerFragment);
-            this.CanvasMoveDialog.showModal();
-            //選択数を初期化
-            this.CanvasMovePositionSelectedCount=0;
         });
+        //ChangeCanvasLayoutダイアログ MoveCanvasイベント
         this.EventSetHelper(this.CanvasMovePositionButtonContainer,"mouseup",(e)=>{
             if(e.button===0&&e.target.tagName==="BUTTON"){
                 const PositionButton=e.target;
@@ -4089,15 +4041,16 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
                 }
                 if(this.CanvasMovePositionSelectedCount===2){
                     //２個選択されたので即座に入れ替え処理
-                    //選択数初期化
-                    this.CanvasMovePositionSelectedCount=0;
-                    const SelectedPositionButtonArray=Array.from(this.CanvasMovePositionButtonContainer.querySelectorAll(":scope>button.Selected"));
-                    const CheckedLPArray=SelectedPositionButtonArray.map((PositionButton)=>{
-                        PositionButton.classList.remove("Selected");
-                        return parseInt(PositionButton.value);
-                    });
-                    const LPA=CheckedLPArray[0];
-                    const LPB=CheckedLPArray[1];
+                    //選択を初期化して、選択されていたButtonのvalueをまとめた配列を吐き出す
+                    const SelectedCanvasMovePositionButtonArray=this.ClearCanvasMovePositionButtonSelect(true);
+                    const SelectedLPArray=SelectedCanvasMovePositionButtonArray.map((button)=>parseInt(button.value));
+                    /*
+                    UpdateCanvasPositionInfomationのと同じようなことをここでやっている
+                    あちらは格子に順番にCanvasを詰めた場合の情報に書き換える作業
+                    こちらは指定されたCanvasを好感した情報に書き換える作業
+                    */
+                    const LPA=SelectedLPArray[0];
+                    const LPB=SelectedLPArray[1];
                     const CanvasIDA=this.GridNumber2CanvasIDArray[LPA];//-1の可能性あり。
                     const CanvasIDB=this.GridNumber2CanvasIDArray[LPB];//-1の可能性あり
                     this.GridNumber2CanvasIDArray[LPA]=CanvasIDB;
@@ -4112,14 +4065,14 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
                         StyleUpdateFlag=true;
                     }
                     if(StyleUpdateFlag){
-                        this.UpdateStyle();
+                        this.UpdateCanvasPosition();
                         //新しい位置情報を送信する
                         this.SendMainWindowStatus();
                     }
                     /*見た目の更新*/
                     //ボタンに表示している情報など
-                    const PositionButtonA=SelectedPositionButtonArray[0];
-                    const PositionButtonB=SelectedPositionButtonArray[1];
+                    const PositionButtonA=SelectedCanvasMovePositionButtonArray[0];
+                    const PositionButtonB=SelectedCanvasMovePositionButtonArray[1];
                     const EmptyStatusBuffer=PositionButtonA.getAttribute("data-EmptyStatus");
                     const TextContentBuffer=PositionButtonA.textContent;
                     PositionButtonA.setAttribute("data-EmptyStatus",PositionButtonB.getAttribute("data-EmptyStatus"));
@@ -4129,15 +4082,6 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
                 }
             }
         });
-        this.EventSetHelper(this.CanvasMoveCancelButton,"mouseup",()=>{
-            //CanvasMovePositionButtonContainerの初期化
-            //Containerの中はgrid上に並んだチェックボックス
-            this.CanvasMovePositionButtonContainer.innerHTML="";
-            //一応選択数初期化
-            this.CanvasMovePositionSelectedCount=0;
-            this.CanvasMoveDialog.close();
-        });
-        
         /*ChangeAndLoad*/
         this.ChangeAndLoadButton=document.getElementById("ChangeAndLoadButton");
         this.ChangeAndLoadDialog=document.getElementById("ChangeAndLoadDialog");
@@ -4529,7 +4473,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
                 this.CanvasID2GridNumberMap.set(NewCanvasID,LP);
                 this.GridNumber2CanvasIDArray[LP]=NewCanvasID;
             }
-            this.UpdateStyle();//CanvasのDOMTreeのスタイルを書き換えて位置交換を反映する
+            this.UpdateCanvasPosition();//CanvasのDOMTreeのスタイルを書き換えて位置交換を反映する
             this.Resize();
             console.log("パス変更＆読み込み完了");
             /*データの読み込み状況を更新*/
@@ -4537,9 +4481,8 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
         }
         //console.log("読み込み＆再配置が完了しました。");
     }
-    //各キャンバスの位置情報を更新する
-    //すでに配置されているキャンバスたちに対して、新しい格子での位置を与える
-    UpdateCanvasPosition(newRows,newColumns){
+    /*Canvasの位置情報を更新する*/
+    UpdateCanvasPositionInfomation(newRows,newColumns){
         //初期化
         /*
         this.GridNumber2CanvasIDArray=Array(newRows*newColumns).fill(-1);
@@ -4568,7 +4511,60 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
         this.ColumnsInput.value=newColumns;
         this.CurrentColumnsNum=newColumns;
     }
-    UpdateStyle(){
+    UpdateCanvasMovePositionButtonContainer(){
+        //初期化
+        this.CanvasMovePositionButtonContainer.innerHTML="";
+        //ChangeCanvasLayoutDialogのボタンの配置を更新する
+        this.CanvasMovePositionButtonContainer.style.gridTemplateColumns=`repeat(${this.CurrentColumnsNum},1fr)`;
+        this.CanvasMovePositionButtonContainer.style.gridTemplateRows=`{repeat(${this.CurrentRowsNum},1fr)}`;
+        const gap=5;
+        this.CanvasMovePositionButtonContainer.style.gap=`${gap}px`;
+        const ButtonSize=75;//px
+        this.CanvasMovePositionButtonContainer.style.width=`${ButtonSize*this.CurrentColumnsNum+gap*(this.CurrentColumnsNum-1)}px`;
+        this.CanvasMovePositionButtonContainer.style.height=`${ButtonSize*this.CurrentRowsNum+gap*(this.CurrentRowsNum-1)}px`;
+        const CanvasMovePositionButtonContainerFragment=document.createDocumentFragment();
+        //現在のgridの状態を基にチェックボックスを配置する
+        for(let lp=0;lp<this.GridNumber2CanvasIDArray.length;lp++){
+            const r=Math.floor(lp/this.CurrentColumnsNum)+1;
+            const c=lp%this.CurrentColumnsNum+1;
+            //const label=document.createElement("MaskLabel");
+            const button=document.createElement("button");
+            button.tabIndex="-1";
+            button.style.width=`${ButtonSize}px`;
+            button.style.height=`${ButtonSize}px`;
+            button.value=lp;
+            CanvasMovePositionButtonContainerFragment.appendChild(button);
+            button.style.gridArea=`${r}/${c}/${r+1}/${c+1}`;
+            //ボタンの色を決定する
+            const CanvasID=this.GridNumber2CanvasIDArray[lp];
+            if(CanvasID>=0){
+                //画像があるLPである
+                button.setAttribute("data-EmptyStatus","NotEmpty");
+                const LayarMapArray=Array.from(CanvasClassDictionary.get(CanvasID).LayerDataMap.keys());
+                const textContent=`CanvasID:${CanvasID}\n`+LayarMapArray.join("\n");
+                button.textContent=textContent;
+            }else{
+                button.setAttribute("data-EmptyStatus","Empty");
+            }
+        }
+        this.CanvasMovePositionButtonContainer.appendChild(CanvasMovePositionButtonContainerFragment);
+        /*Gridが変わると、空いてる場所に単純にCanvasを詰めていくことになるため、選択状態は解除する*/
+        this.ClearCanvasMovePositionButtonSelect();
+    }
+    ClearCanvasMovePositionButtonSelect(ReturnButtonArrayFlag=false){
+        const SelectedCanvasMovePositionButtonArray=Array.from(this.CanvasMovePositionButtonContainer.querySelectorAll(":scope>button.Selected"));
+        SelectedCanvasMovePositionButtonArray.forEach((PositionButton)=>{
+            PositionButton.classList.remove("Selected");
+        });
+        this.CanvasMovePositionSelectedCount=0;
+        //必要があれば選択されてたButtonを返すよ
+        //あとはそちら側で値の抽出なりを行ってね
+        if(ReturnButtonArrayFlag){
+            return SelectedCanvasMovePositionButtonArray;
+        }
+    }
+    /*位置情報を基にCanvasの場所を実際に変更する*/
+    UpdateCanvasPosition(){
         //実際にスタイルを変更する部分
         //CanvasのLPとgridを参考にして位置を適用していく
         //styleを書き換えた時点で多分反映される
@@ -4587,6 +4583,33 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
         CanvasContainer.style.gridTemplateColumns=`repeat(${this.CurrentColumnsNum},1fr)`;
         CanvasContainer.style.gridTemplateRows=`repeat(${this.CurrentRowsNum},1fr)`;
         //
+    }
+    /*GridChangeの本体*/
+    ChangeCanvasGrid(){
+        //変更処理
+        //CanvasBlockの格子配置が変更されたら、詰めて配置しなおすことにする
+        const newRows=parseInt(this.RowsInput.value)||this.CurrentRowsNum;
+        const newColumns=parseInt(this.ColumnsInput.value)||this.CurrentColumnsNum;
+        if(newRows*newColumns<CanvasClassDictionary.size){
+            console.log(`現在のCanvasBlockの個数は ${CanvasClassDictionary.size} です。`);
+            return;
+        }
+        if(!(this.CurrentRowsNum==newRows&&this.CurrentColumnsNum==newColumns)){
+            /*
+            やらないといけない処理
+            位置情報の更新⇒位置を変更⇒Windowsizeの最適化⇒サブウィンドウ向けデータ送信
+            ダイアログのボタンの配置を更新
+            */
+            //Grid情報を更新
+            this.UpdateCanvasPositionInfomation(newRows,newColumns);
+            //CanvasMovePositionButtonを再配置
+            this.UpdateCanvasMovePositionButtonContainer();
+            //更新した情報を基にスタイル変更
+            this.UpdateCanvasPosition();
+            this.Resize();
+            //新しい位置情報を送信する
+            this.SendMainWindowStatus();
+        }
     }
     CreateNewCanvasBlock(DataInfoMap){
         //キャンバスの作成と登録
@@ -4609,10 +4632,10 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
             console.log(w,h);
             if(w>=h){
                 console.log("行を増やす");
-                this.UpdateCanvasPosition(this.CurrentRowsNum+1,this.CurrentColumnsNum);
+                this.UpdateCanvasPositionInfomation(this.CurrentRowsNum+1,this.CurrentColumnsNum);
             }else if(w<h){
                 console.log("列を増やす");
-                this.UpdateCanvasPosition(this.CurrentRowsNum,this.CurrentColumnsNum+1);
+                this.UpdateCanvasPositionInfomation(this.CurrentRowsNum,this.CurrentColumnsNum+1);
             }
         }
         //ここまでに必ず空きがある状態にする
@@ -4620,7 +4643,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
         this.GridNumber2CanvasIDArray[newLP]=NewCanvasID;
         this.CanvasID2GridNumberMap.set(NewCanvasID,newLP);
         //スタイルを変更する
-        this.UpdateStyle();
+        this.UpdateCanvasPosition();
         this.Resize();
         return NewCanvasID;//とりあえず新しいCanvasIDを返す
     }
@@ -4743,7 +4766,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
         }else{
             //console.log("前回と同じ要望サイズなのでリサイズは行わない");
         }
-        //this.UpdateStyle();
+        //this.UpdateCanvasPosition();
         /*
         console.log("---------------------リサイズ完了------------------\n",this.previousBodyOrderWidth,this.previousBodyOrderHeight);
         const currentbodyrect=document.body.getBoundingClientRect();

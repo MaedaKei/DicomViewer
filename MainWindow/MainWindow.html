@@ -26,8 +26,7 @@
                 </li>
                 <li><button>Layout</button>
                     <ul class="SubMenu">
-                        <li><button id="GridChangeButton">Change Grid</button></li>
-                        <li><button id="CanvasMoveButton">Move Block</button></li>
+                        <li><button id="ChangeCanvasLayoutButton">Change Layout</button></li>
                         <li><button id="ChangeAndLoadButton">Change & Load</button></li>
                     </ul>
                 </li>
@@ -45,34 +44,31 @@
                 <button id="LoadDialogCancelButton">Cancel</button>
             </div>
         </dialog>
-        <!--格子配置変更ダイアログ-->
-        <dialog id="GridChangeDialog">
-            <h3>GridChange</h3>
+        <!--キャンバス配置変更ダイアログ-->
+        <dialog id="ChangeCanvasLayoutDialog">
+            <div id="TitleAndButtonContainer">
+                <div id="ChangeCanvasLayoutDialogTitle">Canvasの配置変更</div>
+                <button id="ChangeCanvasLayoutDialogCloseButton">✕</button>
+            </div>
+            <!--キャンバスのグリッドを変更する-->
+            <!--確定方法は各インプットからFocusが外れたタイミング-->
             <div class="GridChangeInputContainer">
                 <div id="RowsInputContainer">
                     <label for="RowsInput">Rows ⇩</label>
                     <input type="number" id="RowsInput" value="1" min="1" step="1"></input>
                 </div>
+                <label>✕</label>
                 <div id="ColumnsInputContainer">
                     <label for="ColumnsInput">Columns ⇨</label>
                     <input type="number" id="ColumnsInput" value="1" min="1" step="1"></input>
                 </div>
+                <button id="GridChangeConfirmButton">格子変更</button>
             </div>
-            <div class="GridChangeButtonContainer">
-                <button id="GridChangeConfirmButton">変更</button>
-                <button id="GridChangeFinishButton" >キャンセル</button>
-             </div>
-        </dialog>
-        <!--キャンバス移動ダイアログ-->
-        <dialog id="CanvasMoveDialog">
-            <h3>CanvasMove</h3>
+            <!--キャンバスの位置を交換する-->
             <div id="CanvasMoveSelecterContainer">
                 <div id="CanvasMovePositionButtonContainer">
 
                 </div>
-            </div>
-            <div class="CanvasMoveButtonContainer">
-                <button id="CanvasMoveCancelButton">終了</button>
             </div>
         </dialog>
         <!--パス一括変更ダイアログ-->
