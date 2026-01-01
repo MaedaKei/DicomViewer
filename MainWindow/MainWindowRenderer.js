@@ -244,7 +244,7 @@ class CTclass{
         */
     }
     //LoadAndLayoutにDOMTreeを渡す
-    static setPathSelectDOMTree(MultipleSelections=this.DefaultMultiSelections){
+    static setPathSelectDOMTree(TargetCanvasID=99999,MultipleSelections=this.DefaultMultiSelections){
         /*
         外部から要請を受けてDOMTreeを渡す。
         */
@@ -798,7 +798,7 @@ class MASKclass{
         */
     }
     //LoadAndLayoutにDOMTreeを渡す
-    static setPathSelectDOMTree(MultipleSelections=this.DefaultMultiSelections){
+    static setPathSelectDOMTree(TargetCanvasID=99999,MultipleSelections=this.DefaultMultiSelections){
         /*
         外部から要請を受けてDOMTreeを渡す。
         */
@@ -1323,7 +1323,7 @@ class MASKDIFFclass{
         */
     }
     //LoadAndLayoutにDOMTreeを渡す
-    static setPathSelectDOMTree(MultipleSelections=this.DefaultMultiSelections){
+    static setPathSelectDOMTree(TargetCanvasID=99999,MultipleSelections=this.DefaultMultiSelections){
         /*
         外部から要請を受けてDOMTreeを渡す。
         */
@@ -1826,7 +1826,7 @@ class CONTOURclass{
         */
     }
     //LoadAndLayoutにDOMTreeを渡す
-    static setPathSelectDOMTree(MultipleSelections=this.DefaultMultiSelections){
+    static setPathSelectDOMTree(TargetCanvasID=99999,MultipleSelections=this.DefaultMultiSelections){
         /*
         外部から要請を受けてDOMTreeを渡す。
         */
@@ -1859,6 +1859,7 @@ class CONTOURclass{
         const ExistingPathInputSelecterDataIDCanvasIDListMap=new Map();
         const CONTOURDataType=this.DataType;
         const CTDataType=CTclass.DataType;
+        let DefaultOriginalCTDataID=-99999;
         for(const [CanvasID,Canvas] of CanvasClassDictionary.entries()){
             if(Canvas.LayerDataMap.has(CONTOURDataType)){
                 const DataID=Canvas.LayerDataMap.get(CONTOURDataType).get("DataID");
@@ -1880,6 +1881,10 @@ class CONTOURclass{
                     ReferOriginalPathInputSelecterDataIDCanvasIDListMap.get(DataID).push(CanvasID);
                 }else{
                     ReferOriginalPathInputSelecterDataIDCanvasIDListMap.set(DataID,[CanvasID]);
+                }
+                //DataIDがデフォルト選択にするものかチェック
+                if(CanvasID===TargetCanvasID){
+                    DefaultOriginalCTDataID=DataID;
                 }
             }
         }
@@ -1909,6 +1914,9 @@ class CONTOURclass{
         }
         */
         this.ReferOriginalPathInputSelecter.appendChild(ReferOriginalPathInputSelecterFragment);
+        if(DefaultOriginalCTDataID>=0){
+            this.ReferOriginalPathInputSelecter.value=DefaultOriginalCTDataID;
+        }
         //ModeSelectButtonを初期化する
         this.ModeSelectContainer.setAttribute("data-SelectMode","");
         const ModeSelectButtonArray=this.ModeSelectContainer.querySelectorAll(":scope>button.Selected");
@@ -2462,7 +2470,7 @@ class DOSEclass{
 
     }
     //LoadAndLayoutにDOMTreeを渡す
-    static setPathSelectDOMTree(MultipleSelections=this.DefaultMultiSelections){
+    static setPathSelectDOMTree(TargetCanvasID=99999,MultipleSelections=this.DefaultMultiSelections){
         /*
         外部から要請を受けてDOMTreeを渡す。
         */
@@ -2495,6 +2503,7 @@ class DOSEclass{
         const ExistingPathInputSelecterDataIDCanvasIDListMap=new Map();
         const CONTOURDataType=this.DataType;
         const CTDataType=CTclass.DataType;
+        let DefaultOriginalCTDataID=-99999;
         for(const [CanvasID,Canvas] of CanvasClassDictionary.entries()){
             if(Canvas.LayerDataMap.has(CONTOURDataType)){
                 const DataID=Canvas.LayerDataMap.get(CONTOURDataType).get("DataID");
@@ -2517,8 +2526,13 @@ class DOSEclass{
                 }else{
                     ReferOriginalPathInputSelecterDataIDCanvasIDListMap.set(DataID,[CanvasID]);
                 }
+                //DataIDがデフォルト選択にするものかチェック
+                if(CanvasID===TargetCanvasID){
+                    DefaultOriginalCTDataID=DataID;
+                }
             }
         }
+        console.log(TargetCanvasID,MultipleSelections);
         //既存セレクタの再構成
         for(const [DataID,CanvasIDList] of ExistingPathInputSelecterDataIDCanvasIDListMap.entries()){
             const option=document.createElement("option");
@@ -2545,6 +2559,9 @@ class DOSEclass{
         }
         */
         this.ReferOriginalPathInputSelecter.appendChild(ReferOriginalPathInputSelecterFragment);
+        if(DefaultOriginalCTDataID>=0){
+            this.ReferOriginalPathInputSelecter.value=DefaultOriginalCTDataID;
+        }
         //ModeSelectButtonを初期化する
         this.ModeSelectContainer.setAttribute("data-SelectMode","");
         const ModeSelectButtonArray=this.ModeSelectContainer.querySelectorAll(":scope>button.Selected");
@@ -4909,7 +4926,8 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
                 //特定のDOMTreeだけ追加する
                 const TargetDataClass=this.DataClassMap.get(LoadTarget);
                 this.LoadDialogDOMTreeContainer.innerHTML="";//初期化
-                const TargetDataClassLoadDOMTree=TargetDataClass.setPathSelectDOMTree();//複数選択するかはそのタイプのデフォルトでOK
+                //複数選択するかはそのタイプのデフォルトでOK, Originalのデータを必要とするタイプはいちいちオリジナルを選択するのが面倒である。そこで、TargetCanvasIDを引数に渡してデフォルト選択した状態のDOMツリーを作るようにした
+                const TargetDataClassLoadDOMTree=TargetDataClass.setPathSelectDOMTree(TargetCanvasID);
                 //渡されたDOMTreeのIDがDataTypeになっている。
                 this.LoadDialogDOMTreeContainer.appendChild(TargetDataClassLoadDOMTree);
                 //Confirmボタンにキャンバスの新設かどうかの情報を付与
@@ -4920,7 +4938,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
                 //すべてのDOMTreeを追加する
                 const LoadDialogDOMTreeContainerFragment=document.createDocumentFragment();
                 for(const TargetDataClass of this.DataClassMap.values()){
-                    const TargetDataClassLoadDOMTree=TargetDataClass.setPathSelectDOMTree("");//複数選択抑制
+                    const TargetDataClassLoadDOMTree=TargetDataClass.setPathSelectDOMTree(TargetCanvasID,"");//複数選択抑制
                     LoadDialogDOMTreeContainerFragment.appendChild(TargetDataClassLoadDOMTree);
                 }
                 this.LoadDialogDOMTreeContainer.appendChild(LoadDialogDOMTreeContainerFragment);
