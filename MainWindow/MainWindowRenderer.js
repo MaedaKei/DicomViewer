@@ -2729,6 +2729,7 @@ class DOSEclass{
         //CTの情報から、CTGridの座標がわかるので、これをもとにDoseGridをCTGridに補完していく。補完手法はEclipseなるモノでも使われている方法を採用
         //ippの抽出
         const ipp=DicomData.string("x00200032").split("\\").map(parseFloat);//Dose配列(0,0,0,)が患者座標系のどこにあるか[x,y,z]のならび
+        console.log(ipp);
         //iopの抽出
         const iop=DicomData.string("x00200037").split("\\").map(parseFloat);//各軸の方向ベクトル(rowX rowY rowZ colX colY colZ)
         const iopXvector=[iop[0],iop[3]];
@@ -2781,7 +2782,7 @@ class DOSEclass{
         //const DoseVolumeSize=NumberOfFrames*DosePixelRows*DosePixelColumns;
         const DoseSliceSize=DosePixelRows*DosePixelColumns;
         const DoseSliceMap=new Map();//mmをKeyとして、そのスライスデータを保持する
-        for(const [Zindex,Zmm] of GridFrameOffsetVectorArray.entries()){
+        for(const [Zindex,ZOfset] of GridFrameOffsetVectorArray.entries()){
             const DoseSliceArray=new Float32Array(DoseSliceSize);
             /*
             for(let SliceIndex=0;SliceIndex<DoseSliceSize;SliceIndex++){
@@ -2796,7 +2797,8 @@ class DOSEclass{
                     DoseSliceArray[Hindex*DosePixelColumns+Windex]=getDoseValueFunction(pixelBuffer,PixelBufferIndex);
                 }
             }
-            DoseSliceMap.set(Zmm,DoseSliceArray);
+            console.log(ZOfset);
+            DoseSliceMap.set(ipp[2]+ZOfset,DoseSliceArray);
         }
         //DoseSliceMapを患者座標系Zmmが昇順になるようにソートする
         //CTやMASKは頭⇒足で+⇒-となる。これがLPSの標準なので、これもそれに従うよって、大⇒小とZ座標が並ぶ
@@ -2816,8 +2818,8 @@ class DOSEclass{
         //補完してCTボリュームと同じサイズにする
         this.ImageVolume=new Float32Array(this.depth*this.height*this.width);
         this.ImageVolume.fill(0);//何もなければ線量値0となる
-        //console.log(this.i2p);
-        //console.log(SortedDoseSliceZPositionSliceArray);
+        console.log(this.i2p);
+        console.log(SortedDoseSliceZPositionSliceArray);
         //最大値と最小値も調べておく
         let vMin=Infinity;
         let vMax=(-Infinity);
