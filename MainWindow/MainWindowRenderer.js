@@ -16,7 +16,7 @@ cornerstoneWADOImageLoader.configure({ useWebWorkers: false });
 /*
 (CT,MASK)>DOSE>(MASKDIFF,CONTOUR)
 */
-const DicomDataClassDictionary = new Map([["CT",new Map()],["MASK",new Map()],["DOSE",new Map()],["MASKDIFF",new Map()],["CONTOUR",new Map()]]);
+const DicomDataClassDictionary = new Map([["CT",new Map()],["MASK",new Map()],["DOSE",new Map()],["MASKDIFF",new Map()],["CONTOUR",new Map()],["DOSE",new Map()]]);
 const DicomNextID = new Map(DicomDataClassDictionary.keys().map(key => [key, 0]));
 //キャンバスに関する情報を管理するクラスをまとめた辞書型オブジェクト
 const CanvasClassDictionary = new Map();
@@ -31,22 +31,24 @@ let CanvasNextID = 0;
 function sortDicomFiles(fileList){
     /*ソート基準 ImagePositionPatientのZ座標 -> ファイル名のナンバリング -> InstanceNumber*/
     //console.log(fileList);
-    return fileList.sort((b, a) => {
+    return fileList.sort((a, b) => {
         const posA = a["dataset"].string("x00200032").split('\\')[2]; // ImagePositionPatientのZ座標を取得
         const posB = b["dataset"].string("x00200032").split('\\')[2];
         const zA=posA!==undefined ? parseFloat(posA) : null;
         const zB=posB!==undefined ? parseFloat(posB) : null;
         if (zA !== null && zB !== null) {
-            return zA - zB; // Z座標でソート
+            return zB-zA; // Z座標でソート
         }
         // Z座標が同じ場合はファイル名でソート
         if(a["name"]!== b["name"]){
-            return a["name"].localeCompare(b["name"],undefined,{numeric:true}); // ファイル名でソート
+            console.log("名前ソート");
+            return b["name"].localeCompare(a["name"],undefined,{numeric:true}); // ファイル名でソート
         }
         //InstanceNumberでソート
         const instA=parseInt(dataA.string("x00200013")||'0', 10);
         const instB=parseInt(dataB.string("x00200013")||'0', 10);
-        return instA - instB; // InstanceNumberでソート
+        console.log("InstanceNumberソート");
+        return instB - instA; // InstanceNumberでソート
     });
 }
 function hsv2rgb(h, s=1, v=1) {
@@ -67,6 +69,11 @@ function hsv2rgb(h, s=1, v=1) {
 }
 
 //各データクラス
+/*
+Z方向：頭+　足-
+Y方向：腹+　背中-
+X方向：右+　左-
+*/
 class CTclass{
     /*
     静的メソッド
@@ -419,7 +426,7 @@ class CTclass{
         //このなかでシリーズデータを解析して必要な情報を抽出
         //console.log("CT data loaded:");
         //loadedDataのsort
-        loadedData = sortDicomFiles(loadedData);
+        loadedData = sortDicomFiles(loadedData);//ここで各スライスファイいるのデータをZ座標が昇順となるようにソートしている。
         //まずはpixeldataを抽出しつつzとImagePositionPatientの紐づけ。また、患者座標系のx,y,zの境界値を取得する
         this.width=loadedData[0]["dataset"].uint16("x00280011");//cols
         this.height=loadedData[0]["dataset"].uint16("x00280010");//rows
@@ -435,6 +442,7 @@ class CTclass{
         for(let z=0;z<this.depth;z++){
             const dataset=loadedData[z]["dataset"];
             const position=parseFloat(dataset.string("x00200032").split('\\')[2]);//患者座標系
+            //console.log(z,position);
             this.i2p.set(z,position);//indexからｚ座標を取得
             this.p2i.set(position,z);//z座標からindexを取得
             const slope=parseFloat(dataset.string("x00281053")||"1");
@@ -515,8 +523,8 @@ class CTclass{
         this.xMax=this.xMin+(this.width-1)*xSpacing;
         this.yMin=ipp0?ipp0[1]:0;
         this.yMax=this.yMin+(this.height-1)*ySpacing;
-        this.zMin=this.i2p.get(0);
-        this.zMax=this.i2p.get(this.depth-1);
+        this.zMin=this.i2p.get(this.depth-1);
+        this.zMax=this.i2p.get(0);
         this.imagesize=this.width*this.height;
         this.vMin=vMin;
         this.vMax=vMax;
@@ -525,6 +533,7 @@ class CTclass{
         //console.log(vMin,"~",vMax);
         //一時保存用の変数
         this.currentImageBitmap=null;
+        //p2iはPositionが昇順になるようにソートする。i2pはインデックスですでに昇順になっている。こいつはあくまでインデックスからポジションの逆引き用
     }
     async draw(ctx,DrawStatus){
         const dWidth=ctx.canvas.width,dHeight=ctx.canvas.height;
@@ -1048,8 +1057,8 @@ class MASKclass{
         this.xMax=this.xMin+(this.width-1)*xSpacing;
         this.yMin=ipp0?ipp0[1]:0;
         this.yMax=this.yMin+(this.height-1)*ySpacing;
-        this.zMin=this.i2p.get(0);
-        this.zMax=this.i2p.get(this.depth-1);
+        this.zMin=this.i2p.get(this.depth-1);
+        this.zMax=this.i2p.get(0);
         this.imagesize=this.width*this.height;
         this.vMin=vMin;
         this.vMax=vMax;
@@ -1172,7 +1181,7 @@ class MASKDIFFclass{
     static DataType="MASKDIFF";
     static PathTarget="openDirectory";
     static DefaultMultiSelections="";
-    static DataIDDataIDDelimita="vs";//DataIDvsDataID
+    static DataIDDataIDDelimita=`<|${this.DataType}|>`;//DataIDvsDataID
     static {
         this.InitializePathSelectDOMTree();
     }
@@ -1582,7 +1591,7 @@ class MASKDIFFclass{
         this.yMax=GTMask.yMax;
         this.zMin=GTMask.zMin;
         this.zMax=GTMask.zMax;
-        this.imagesize=this.width*this.height;
+        this.imagesize=GTMask.imagesize;
         this.vMin=vMin;
         this.vMax=vMax;
         this.ySpacing=GTMask.ySpacing;
@@ -1648,7 +1657,7 @@ class CONTOURclass{
     static DataType="CONTOUR";
     static PathTarget="openFile";
     static DefaultMultiSelections="";
-    static FilePathCanvasIDDelimita="|";//このデータクラスでは (読み込むファイルパス)|(元となるCT画像のCanvasID) という形でパスを持つ
+    static FilePathCanvasIDDelimita=`<|${this.DataType}|>`;//このデータクラスでは (読み込むファイルパス)|(元となるCT画像のCanvasID) という形でパスを持つ
     static {
         this.InitializePathSelectDOMTree();
     }
@@ -2078,6 +2087,7 @@ class CONTOURclass{
         this.yMax=OriginalCTData.yMax;
         this.zMin=OriginalCTData.zMin;
         this.zMax=OriginalCTData.zMax;
+        this.imagesize=OriginalCTData.imagesize;
         /*画像座標スライスインデックスと患者座標ｚ軸の相互変換*/
         this.i2p=OriginalCTData.i2p;
         this.p2i=OriginalCTData.p2i;
@@ -2277,22 +2287,677 @@ CanvasContainer.addEventListener("wheel",(e)=>{
         slider.dispatchEvent(new Event("input"));
     }
 });
-/*
-CanvasContainer.addEventListener("kyedown",(e)=>{
-    if(e.code="Space"){
-        //console.log("グローバルAlign");
-        for(const Canvas of CanvasClassDictionary.value()){
-            const slider=Canvas.slider;
-            slider.value=Canvas.stampedslice;
-            slider.dispatchEvent(new Event("input"));
+//線量分布を読み込むためのクラス
+class DOSEclass{
+    static DataType="DOSE";
+    static PathTarget="openFile";
+    static DefaultMultiSelections="";
+    static FilePathCanvasIDDelimita=`<|${this.DataType}|>`;//このデータクラスでは (読み込むファイルパス)|(元となるCT画像のCanvasID) という形でパスを持つ
+    static {
+        this.InitializePathSelectDOMTree();
+    }
+    //DOMTreeのパーツと必要なイベントの設定
+    static InitializePathSelectDOMTree(){
+        const PathSelectDOMTree=document.createElement("div");
+        PathSelectDOMTree.id=this.DataType;//CSSで個別設定をするために必要になる
+        PathSelectDOMTree.className="PathSelectDOMTree";
+        /*DataTypeのタイトル欄*/
+        const TitleDiv=document.createElement("div");
+        TitleDiv.className="DataTypeDisplay";
+        TitleDiv.textContent=`${this.DataType} の読み込み`;
+        PathSelectDOMTree.appendChild(TitleDiv);
+        /*パスの指定コンテナ*/
+        const PathSettingContainer=document.createElement("div");
+        PathSettingContainer.className="FilePathInputWithCanvasIDSelectSettingContainer";
+        //1. modeセレクトボタン
+        const ModeSelectContainer=document.createElement("div");
+        ModeSelectContainer.className="ModeSelectContainer";
+        const NewModeButton=document.createElement("button");
+        NewModeButton.setAttribute("data-SelectMode","New");
+        NewModeButton.textContent="新規";
+        const ExistingModeButton=document.createElement("button");
+        ExistingModeButton.setAttribute("data-SelectMode","Existing");
+        ExistingModeButton.textContent="既存";
+        ModeSelectContainer.appendChild(NewModeButton);
+        ModeSelectContainer.appendChild(ExistingModeButton);
+        PathSettingContainer.appendChild(ModeSelectContainer);
+        //2. PathInputContainer
+        const PathInputContainer=document.createElement("div");
+        PathInputContainer.className="PathInputContainer";
+        const NewPathContainer=document.createElement("div");
+        NewPathContainer.classList.add("PathContainer");//パーツ名
+        //NewPathContainer.classList.add("FilePathInput");//入力方法
+        NewPathContainer.setAttribute("data-SelectMode","New");
+        //ファイルパス参照＆入力部分
+        const LoadPathParts=document.createElement("div");
+        LoadPathParts.className="LoadPathParts";
+        const NewPathInputText=document.createElement("input");
+        NewPathInputText.className="NewPathInputText";
+        NewPathInputText.type="text";
+        NewPathInputText.placeholder="新しく読み込むデータのパスを入力...";
+        const OpenFileDialogButton=document.createElement("button");
+        OpenFileDialogButton.className="OpenFildDialogButton";
+        OpenFileDialogButton.textContent="参照";
+        OpenFileDialogButton.setAttribute("data-MultipleSelections",this.DefaultMultiSelections);//このDomに複数選択状態を設定しておくことでその都度切り替えられるようにする
+        LoadPathParts.appendChild(NewPathInputText);
+        LoadPathParts.appendChild(OpenFileDialogButton);
+        //元となったCT画像をCanvasIDから選択するセレクタ部分
+        const ReferOriginalParts=document.createElement("div");
+        ReferOriginalParts.className="ReferOriginalParts";
+        const ReferOriginalPathInputSelecter=document.createElement("select");
+        ReferOriginalParts.appendChild(ReferOriginalPathInputSelecter);
+        NewPathContainer.appendChild(LoadPathParts);
+        NewPathContainer.appendChild(ReferOriginalParts);
+        PathInputContainer.appendChild(NewPathContainer);
+
+        //既存のデータの参照を指定する部分。セレクターはこの時点では空としておき、起動時にoptionを設定する。
+        //選択肢はCanvasIDとする(CanvasID＝？に映ってるCT画像をこっちのCanvasIDでも表示させたい、のようなイメージ)
+        const ExistingPathContainer=document.createElement("div");
+        ExistingPathContainer.classList.add("PathContainer");//パーツ名
+        //ExistingPathContainer.classList.add("ExistingCanvasIDSelect");//入力方法
+        ExistingPathContainer.setAttribute("data-SelectMode","Existing");
+        const ExistingPathInputSelecter=document.createElement("select");
+        ExistingPathInputSelecter.className="ExistingPathInputSelecter";
+        ExistingPathContainer.appendChild(ExistingPathInputSelecter);
+        PathInputContainer.appendChild(ExistingPathContainer);
+        PathSettingContainer.appendChild(PathInputContainer);
+        PathSelectDOMTree.appendChild(PathSettingContainer);
+        //これはLoadAndLayoutなどから要請されて外部に渡したりする。
+        //そのとき、ExistingPathInputSelecterのOptionを再構成して渡す
+        this.OpenFileDialogButton=OpenFileDialogButton;//複数選択か単数選択かをセットしたり、確認する必要があるから
+        this.ModeSelectContainer=ModeSelectContainer;//Selectedクラスの有無を確かめる必要があるから
+        this.NewPathInputText=NewPathInputText;
+        this.ReferOriginalPathInputSelecter=ReferOriginalPathInputSelecter;
+        this.ExistingPathInputSelecter=ExistingPathInputSelecter;
+        this.PathSelectDOMTree=PathSelectDOMTree;
+        const TabIndexTargetArray=[NewModeButton,ExistingModeButton,NewPathInputText,OpenFileDialogButton,ReferOriginalPathInputSelecter,ExistingPathInputSelecter];
+        TabIndexTargetArray.forEach((element)=>element.tabIndex="-1");
+        //console.dir(this.PathSelectDOMTree);
+        /*OpenFileDialogButtonにイベントを設定する*/
+        this.OpenFileDialogButton.addEventListener("mouseup",async (e)=>{
+            if(e.button===0){//左クリックなら
+                //属性値を取得
+                const MultipleSelections=e.target.getAttribute("data-MultipleSelections");//"multipleSelections" or "" になるはず
+                const PathTarget=this.PathTarget;
+                const SelectedPathList=await LoadAndLayout.SelectPathes(PathTarget,MultipleSelections);//[]リストみたいな形式
+                //SelectedPathListはリストで帰ってくることもあれば単一文字列で帰ってくることもあるが、showOpenDialogはかならず[filepath,...]の形式でパス文字列を返すのでfor文を回して良し
+                /*
+                ここではパスの選択は行うが読み込みはまだ行わない。現在読み込んだパスの配列を", "で結合してtextに表示する
+                */
+                this.NewPathInputText.value=SelectedPathList.join(", ");
+            }
+        });
+        /*
+        ModeSelectContainer内のボタンにイベントを付与
+        */
+        this.ModeSelectContainer.addEventListener("mouseup",(e)=>{
+            if(e.button===0){
+                const button=e.target;
+                if(button.tagName==="BUTTON"){
+                    //押されたbuttonにSelectedクラスが付与されているか
+                    if(button.classList.contains("Selected")){
+                        //押されているのでbuttonからSelectedを解除して、ModeSelectContainerのmode属性値を空白にする
+                        button.classList.remove("Selected");
+                        this.ModeSelectContainer.setAttribute("data-SelectMode","");
+                    }else{
+                        //まずは直下のbutton全てからSelectedを取り除く
+                        const ButtonList=this.ModeSelectContainer.querySelectorAll(":scope>button");
+                        ButtonList.forEach((button)=>{
+                            button.classList.remove("Selected");
+                        });
+                        button.classList.add("Selected");
+                        const modeAttribute=button.getAttribute("data-SelectMode");
+                        this.ModeSelectContainer.setAttribute("data-SelectMode",modeAttribute);
+                    }
+                }
+            }
+        });
+        /*
+        PathInputContainerにクリックイベントを付与
+        マウスダウン時にPathContainerまで辿っていく
+        */
+        PathInputContainer.addEventListener("mouseup",(e)=>{
+            if(e.button===0){
+                //e.targetから親を辿る
+                const PathContainer=e.target.closest("div.PathContainer");
+                if(PathContainer){
+                    const PathContainerSelectMode=PathContainer.getAttribute("data-SelectMode");
+                    const ModeSelectContainerSelectMode=this.ModeSelectContainer.getAttribute("data-SelectMode");
+                    if(PathContainerSelectMode!==ModeSelectContainerSelectMode){
+                        //変更する必要あり
+                        this.ModeSelectContainer.querySelectorAll(":scope>button").forEach((button)=>{
+                            button.classList.remove("Selected");
+                        });
+                        //PathContainerSelectModeと同じ属性値を持つButtonを取得
+                        const SelectedButton=this.ModeSelectContainer.querySelector(`:scope>button[data-SelectMode="${PathContainerSelectMode}"]`);
+                        if(SelectedButton){
+                            SelectedButton.classList.add("Selected");
+                            this.ModeSelectContainer.setAttribute("data-SelectMode",PathContainerSelectMode);
+                        }
+                    }
+                }
+            }
+        });
+        /*
+        PathSelectDOMTree.addEventListener("mouseup",(e)=>{
+            if(e.button===0){
+                //クリックされたパスコンテナを取得
+                const ClickedPathContainer=e.target.closest("div.PathContainer");
+                //このパスコンテナのクラスリストをチェックして選択済みかどうか確認
+                if(ClickedPathContainer.classList.contains("Selected")){
+                    //既に選択されている状態で押されたことになるので、選択を解除する
+                    ClickedPathContainer.classList.remove("Selected");
+                }else{
+                    //まずは全てのPathContainerからSelectedを解除
+                    const PathContainerList=this.PathSelectDOMTree.querySelectorAll(":scope>div.PathContainer");
+                    PathContainerList.forEach((PathContainer)=>{
+                        PathContainer.classList.remove("Selected");
+                    });
+                    //クリックされたものだけSelected
+                    ClickedPathContainer.classList.add("Selected");
+                }
+            }
+        });
+        */
+
+    }
+    //LoadAndLayoutにDOMTreeを渡す
+    static setPathSelectDOMTree(MultipleSelections=this.DefaultMultiSelections){
+        /*
+        外部から要請を受けてDOMTreeを渡す。
+        */
+        //状況によって複数パス選択可能か否か変動するため、これが呼ばれるたびにOpenFileDialogのAttributeを更新する
+        this.OpenFileDialogButton.setAttribute("data-MultipleSelections",MultipleSelections);
+        //ReferOriginalPathInputSelecterを更新し、CT画像を持つCanvasIDとパスを表示する
+        this.ReferOriginalPathInputSelecter.innerHTML="";
+        const ReferOriginalPathInputSelecterInitialOption=document.createElement("option");
+        ReferOriginalPathInputSelecterInitialOption.text="元のCTを選択";
+        ReferOriginalPathInputSelecterInitialOption.value=(-99999);
+        ReferOriginalPathInputSelecterInitialOption.disabled=true;
+        ReferOriginalPathInputSelecterInitialOption.hidden=true;
+        ReferOriginalPathInputSelecterInitialOption.selected=true;
+        const ReferOriginalPathInputSelecterFragment=document.createDocumentFragment();
+        ReferOriginalPathInputSelecterFragment.appendChild(ReferOriginalPathInputSelecterInitialOption);
+        const ReferOriginalPathInputSelecterDataIDCanvasIDListMap=new Map();//{CanvasID:DataID}
+        //Path入力欄の初期化
+        this.NewPathInputText.value="";
+        //ExistingPathInputSelecterのOptionを更新する
+        this.ExistingPathInputSelecter.innerHTML="";//初期化
+        const ExistingPathInputSelecterInitialOption=document.createElement("option");
+        ExistingPathInputSelecterInitialOption.text="既にあるDataIDを選択...";
+        ExistingPathInputSelecterInitialOption.value=(-99999);
+        ExistingPathInputSelecterInitialOption.disabled=true;//選択不可
+        ExistingPathInputSelecterInitialOption.hidden=true;//選択肢から除外
+        ExistingPathInputSelecterInitialOption.selected=true;//初期表示
+        //CanvasClassのthis.DataTypeをチェックしていく
+        const ExistingPathInputSelecterFragment=document.createDocumentFragment();//仮想DOM
+        ExistingPathInputSelecterFragment.appendChild(ExistingPathInputSelecterInitialOption);
+        const ExistingPathInputSelecterDataIDCanvasIDListMap=new Map();
+        const CONTOURDataType=this.DataType;
+        const CTDataType=CTclass.DataType;
+        for(const [CanvasID,Canvas] of CanvasClassDictionary.entries()){
+            if(Canvas.LayerDataMap.has(CONTOURDataType)){
+                const DataID=Canvas.LayerDataMap.get(CONTOURDataType).get("DataID");
+                /*
+                const option=document.createElement("option");
+                option.text=`DataID:${DataID}(CanvasID:${CanvasID}) ${Path}`;
+                option.value=DataID;
+                fragment.appendChild(option);
+                */
+                if(ExistingPathInputSelecterDataIDCanvasIDListMap.has(DataID)){
+                    ExistingPathInputSelecterDataIDCanvasIDListMap.get(DataID).push(CanvasID);
+                }else{
+                    ExistingPathInputSelecterDataIDCanvasIDListMap.set(DataID,[CanvasID]);
+                }
+            }
+            if(Canvas.LayerDataMap.has(CTDataType)){
+                const DataID=Canvas.LayerDataMap.get(CTDataType).get("DataID");
+                if(ReferOriginalPathInputSelecterDataIDCanvasIDListMap.has(DataID)){
+                    ReferOriginalPathInputSelecterDataIDCanvasIDListMap.get(DataID).push(CanvasID);
+                }else{
+                    ReferOriginalPathInputSelecterDataIDCanvasIDListMap.set(DataID,[CanvasID]);
+                }
+            }
+        }
+        //既存セレクタの再構成
+        for(const [DataID,CanvasIDList] of ExistingPathInputSelecterDataIDCanvasIDListMap.entries()){
+            const option=document.createElement("option");
+            option.text=`DataID: ${DataID} ( CanvasID= ${CanvasIDList.join(", ")} )`;
+            option.value=DataID;
+            ExistingPathInputSelecterFragment.appendChild(option);
+        }
+        this.ExistingPathInputSelecter.appendChild(ExistingPathInputSelecterFragment);
+        //オリジナルとなるCTセレクタの再構成
+        for(const [DataID,CanvasIDList] of ReferOriginalPathInputSelecterDataIDCanvasIDListMap.entries()){
+            const option=document.createElement("option");
+            const Path=DicomDataClassDictionary.get(CTclass.DataType).get(DataID).get("Data").Path;
+            option.text=`DataID:${DataID} ${Path} ( CanvasID= ${CanvasIDList.join(", ")} )`;
+            option.value=DataID;
+            ReferOriginalPathInputSelecterFragment.appendChild(option);
+        }
+        /*
+        for(const [CanvasID,DataID] of ReferOriginalPathInputSelecterCanvasIDDataIDMap.entries()){
+            const option=document.createElement("option");
+            const Path=DicomDataClassDictionary.get(CTclass.DataType).get(DataID).get("Data").Path;
+            option.text=`CanvasID:${CanvasID} ${Path}`;
+            option.value=DataID;
+            ReferOriginalPathInputSelecterFragment.appendChild(option);
+        }
+        */
+        this.ReferOriginalPathInputSelecter.appendChild(ReferOriginalPathInputSelecterFragment);
+        //ModeSelectButtonを初期化する
+        this.ModeSelectContainer.setAttribute("data-SelectMode","");
+        const ModeSelectButtonArray=this.ModeSelectContainer.querySelectorAll(":scope>button.Selected");
+        for(const button of ModeSelectButtonArray){
+            button.classList.remove("Selected");
+        }
+        return this.PathSelectDOMTree;
+    }
+    /*
+    static makeInfoText(LoadPath){
+        return LoadPath;
+    }
+    */
+
+    static async DataLoader(loadPath){
+        //CTclass用のパス読み込み静的関数
+        //戻り値の形式はこのコンストラクターが受け付けるものとする
+        const LoadingResult=await LoadAndLayout.LoadFiles(loadPath);
+        return LoadingResult;//一度外部で読み込まれたかのチェックを受けてからコンストラクタに入る
+    }
+
+    static async Loading(LoadPathList=[]){
+        /*
+        makeInfoTextの戻り値と同じ形式のリスト(複数選択対応)を受け取る
+        戻り値は
+        [DataID,...,DataID]とする。
+        複数選択された際、すべてのDataType,DataIDが完璧に読み込めた場合のみ戻り値を返し、
+        一つでも不備がある場合はfalseを返すこととする。
+        */
+        if(LoadPathList.length==0){
+            //console.log("選択されませんでした");
+            return false;
+        }else{
+            const DataInfoList=[];
+            for(const LoadPath of LoadPathList){
+                //console.log(LoadPath);
+                const [FilePath,DataIDstr]=LoadPath.split(this.FilePathCanvasIDDelimita);
+                const NewLoadedData=await this.DataLoader(FilePath);
+                /*
+                const CanvasID=parseInt(CanvasIDstr);
+                const OriginalCTCanvas=CanvasClassDictionary.get(CanvasID);
+                const OriginalCTDataID=OriginalCTCanvas.LayerDataMap.get(CTclass.DataType).get("DataID");
+                */
+                const OriginalCTDataID=parseInt(DataIDstr);
+                //console.log(OriginalCTDataID);
+                const _DicomDataClass=DicomDataClassDictionary.get(CTclass.DataType);
+                const _OriginalCTData=_DicomDataClass.get(OriginalCTDataID);
+                const _CTData=_OriginalCTData.get("Data");
+                const OriginalCTData=DicomDataClassDictionary.get(CTclass.DataType).get(OriginalCTDataID).get("Data");
+                if(NewLoadedData&&OriginalCTData){//ちゃんと読み込めているか
+                    //OriginalCTの参照はコンストラクタ内でもできるが、コンストラクタが走るとエラーに関わらずインスタンスが生成されるような気がするので、確実に完了させるために事前にチェックする方策をとる
+                    const LoadedData=new Map([
+                        ["NewLoadedData",NewLoadedData],
+                        ["OriginalCTData",OriginalCTData]//サイズ関連のデータをconstructerで参照する
+                    ]);
+                    const DataType=this.DataType;
+                    const DicomData=new this(LoadPath,LoadedData);
+                    const NewDataID=DicomNextID.get(DataType);
+                    DicomNextID.set(DataType,NewDataID+1);
+                    const DicomDataMap=new Map([
+                        ["Data",DicomData],
+                        ["RefCount",0]
+                    ]);
+                    DicomDataClassDictionary.get(DataType).set(NewDataID,DicomDataMap);
+                    DataInfoList.push(NewDataID);
+                }else{
+                    return false;
+                }
+            }
+            return DataInfoList;
         }
     }
-});
-*/
-function Path2InfoText(loadingPath,partsnum=3){
-    const parts=loadingPath.split("\\");
-    const CanvasInfoText=parts.slice(-partsnum).join("/");
-    return CanvasInfoText;
+    //LoadAndLayoutからデータの読み込みが命令された。データの差し替えや一括読み込みからの経路
+    static async LoadingFromDialog(){
+        const SelectMode=this.ModeSelectContainer.getAttribute("data-SelectMode");
+        if(SelectMode==="Existing"){
+            const DataID=parseInt(this.ExistingPathInputSelecter.value);
+            if(DataID>=0){
+                //const SelectedCanvas=CanvasClassDictionary.get(SelectedCanvasID);
+                //const DataID=SelectedCanvas.LayerDataMap.get(this.DataType).get("DataID");
+                return [DataID];//Loadingの戻り値の形式に一致させる
+            }
+        }else if(SelectMode==="New"){
+            //CONTOURはセレクタにてCanvasIDの指定もされているのでそれと合わせたパス文字列を生成する
+            const PathText=this.NewPathInputText.value;
+            const OriginalCTDataID=this.ReferOriginalPathInputSelecter.value;
+            const LoadPathList=PathText.split(", ").map(path=>`${path}${this.FilePathCanvasIDDelimita}${OriginalCTDataID}`);//複数読み込みを禁止しているので必ず長さ1の配列になるはず
+            //一応個数チェック
+            if(LoadPathList.length!=1){
+                console.log(this.DataType,"読み込み時エラー パスが複数あり",LoadPathList);
+                return false;
+            }
+            //FilePath|CanvasIDという形式の文字列を渡す
+            const DataIDList=await this.Loading(LoadPathList);
+            return DataIDList;
+        }
+        return false;
+    }
+    static ChangePath(OldPathArray,PatternTargetMap,Old2NewDataIDMap){
+        /*
+        変更前のPathのArrayが送られてくるので、それらを変更した新しいArrayを返す.
+        CONTOURはPath変換＆DataID変換が必要
+        CONTOURPathの形式はPath:DataID
+        DOSEも同様なのでCONTOURの流用
+        */
+        const NewPathArray=[];
+        for(let i=0;i<OldPathArray.length;i++){
+            let Before2MiddlePath=OldPathArray[i];
+            for(const [MiddlePattern,BeforeAndAfterPatternMap] of PatternTargetMap.entries()){
+                const BeforePattern=BeforeAndAfterPatternMap.get("Before");
+                Before2MiddlePath=Before2MiddlePath.replace(BeforePattern,MiddlePattern);
+            }
+            NewPathArray.push(Before2MiddlePath);
+        }
+        const TargetDataTypeOld2NewDataIDMap=Old2NewDataIDMap.get(CTclass.DataType);
+        for(let i=0;i<NewPathArray.length;i++){
+            let Middle2AfterPath=NewPathArray[i];
+            let [Middle2AfterFilePath,Middle2AfterDataIDstr]=Middle2AfterPath.split(this.FilePathCanvasIDDelimita);
+            for(const [MiddlePattern,BeforeAndAfterPatternMap] of PatternTargetMap.entries()){
+                const AfterPattern=BeforeAndAfterPatternMap.get("After");
+                Middle2AfterFilePath=Middle2AfterFilePath.replace(MiddlePattern,AfterPattern);
+            }
+            const NewDataID=TargetDataTypeOld2NewDataIDMap.get(parseInt(Middle2AfterDataIDstr));
+            NewPathArray[i]=[Middle2AfterFilePath,NewDataID].join(this.FilePathCanvasIDDelimita);
+        }
+        return NewPathArray;
+    }
+    static JetColorMap(t){
+        //0~1となっているtを受け取り、RGBAの配列を返す。この時、値は0～255となる
+        let R=0,G=0,B=0,A=0;
+        if(t!==0){
+            R=255*Math.max(0,Math.min(1.5-Math.abs(4*t-3),1));
+            G=255*Math.max(0,Math.min(1.5-Math.abs(4*t-2),1));
+            B=255*Math.max(0,Math.min(1.5-Math.abs(4*t-1),1));
+            A=255*0.3;
+        }
+        return [R,G,B,A];
+    }
+    constructor(loadPath,loadedData){
+        this.Path=loadPath;
+        const DicomData=loadedData.get("NewLoadedData")[0]["dataset"];//かならずシングルロードだから
+        const OriginalCTData=loadedData.get("OriginalCTData");
+        //OriginalCTDataからサイズに関する情報をもらう
+        /*画像座標系の情報*/
+        this.width=OriginalCTData.width;//画像座標系の幅
+        this.height=OriginalCTData.height;//画像座標系の高さ
+        this.depth=OriginalCTData.depth;//スライス枚数
+        /*患者座標系の情報*/
+        this.xMin=OriginalCTData.xMin;
+        this.xMax=OriginalCTData.xMax;
+        this.yMin=OriginalCTData.yMin;
+        this.yMax=OriginalCTData.yMax;
+        this.zMin=OriginalCTData.zMin;
+        this.zMax=OriginalCTData.zMax;
+        this.imagesize=OriginalCTData.imagesize;
+        /*画像座標スライスインデックスと患者座標ｚ軸の相互変換*/
+        this.i2p=OriginalCTData.i2p;
+        this.p2i=OriginalCTData.p2i;
+        this.ySpacing=OriginalCTData.ySpacing;
+        this.xSpacing=OriginalCTData.xSpacing;
+        this.currentImageBitmap=null;
+        /*
+        RT Doseからサイズやピクセルデータを抽出
+        必要なデータ
+        1．ピクセルデータ
+        2．位置合わせに必要な座標データ(CTのどこにあたる部分がこのデータの始点か、X,Yのスペーシング、解像度、Z座標など)
+        座標系
+        (0020,0032) Image Position
+        (0020,0037) Image Orientation
+        (3004,000C) Grid Frame Offset Vector
+        (0020,0052) Frame of Reference UID
+        グリッド形状
+        (0028,0030) Pixel Spacing
+        (0028,0010)/(0028,0011) Rows/Columns
+        (0028,0008) Number of Frames
+        線量値
+        (3004,0002) Dose Units
+        (3004,0004) Dose Type
+        (3004,000E) Dose Grid Scaling
+        (7FE0,0010) Pixel Data
+        */
+        //CTの情報から、CTGridの座標がわかるので、これをもとにDoseGridをCTGridに補完していく。補完手法はEclipseなるモノでも使われている方法を採用
+        //ippの抽出
+        const ipp=DicomData.string("x00200032").split("\\").map(parseFloat);//Dose配列(0,0,0,)が患者座標系のどこにあるか[x,y,z]のならび
+        //iopの抽出
+        const iop=DicomData.string("x00200037").split("\\").map(parseFloat);//各軸の方向ベクトル(rowX rowY rowZ colX colY colZ)
+        const iopXvector=[iop[0],iop[3]];
+        const iopYvector=[iop[1],iop[4]];
+        const iopZvector=[iop[2],iop[5]];
+        
+        //Grid Frame Offset Vector,
+        const GridFrameOffsetVectorArray=DicomData.string("x3004000c").split("\\").map(parseFloat);//[?mm, ?mm, ?mm,...]これはつまり、index⇒mmの対応になっている。しかし、座標で昇順か降順かわからない状態である
+        //const DOSEp2i=new Map([..._DOSEp2i].sort((a,b)=>a[0]-b[0]));//これで、p1:i1<p2:i2<...になった。
+        const NumberOfFrames=DicomData.intString("x00280008");
+        const GOVALength=GridFrameOffsetVectorArray.length;
+        //Pixel Spacing, Rows, Columns
+        const PixelSpacing=DicomData.string("x00280030").split("\\").map(parseFloat);//[dx,dy]
+        const DosePixelRows=DicomData.uint16("x00280010");//行数＝画像の高さ
+        const DosePixelColumns=DicomData.uint16("x00280011");//列数＝画像の幅
+        //Dose Grid Scaling PixelDataにこれを乗算することで正式な線量値となる
+        const DoseGridScaling=parseFloat(DicomData.string("x3004000e"));
+        //Dose PixelDataの抽出
+        const pixelElement=DicomData.elements.x7fe00010;
+        const pixelBuffer=new DataView(DicomData.byteArray.buffer,pixelElement.dataOffset,pixelElement.length);
+        const bitsAllocated=DicomData.uint16("x00280100");
+        const bitsStored=DicomData.uint16("x00280101");
+        //const HighBit=DiccomData.uint16("x00280102");
+        const isSigned=DicomData.uint16("x00280103")===1;
+        //console.log(bitsAllocated,bitsStored,isSigned);
+        let getDoseValueFunction=null;
+        if(bitsAllocated===8){
+            if(isSigned){
+                getDoseValueFunction=(pixelBuffer,byte)=>pixelBuffer.getInt8(byte,true);
+            }else{
+                getDoseValueFunction=(pixelBuffer,byte)=>pixelBuffer.getUint8(byte,true);
+            }
+        }else if(bitsAllocated===16){
+            if(isSigned){
+                getDoseValueFunction=(pixelBuffer,byte)=>pixelBuffer.getInt16(2*byte,true);
+            }else{
+                getDoseValueFunction=(pixelBuffer,byte)=>pixelBuffer.getUint16(2*byte,true);
+            }
+        }else if(bitsAllocated===32){
+            if(isSigned){
+                getDoseValueFunction=(pixelBuffer,byte)=>pixelBuffer.getInt32(4*byte,true);
+            }else{
+                getDoseValueFunction=(pixelBuffer,byte)=>pixelBuffer.getUint32(4*byte,true);
+            }
+        }else{
+            getDoseValueFunction=(pixelBuffer,byte)=>pixelBuffer.getUint8(byte,true)
+        }
+        //ここはスライスごとの配列として一度保持する。
+        //場合によっては、スライスのインデックスが増えるごとにZが小さくなる場合も考えられるため、スライスごとに保持した後Zが昇順、つまり、インデックスが増加するごとにZが大きいスライスが来るようにSortする
+        //const DoseVolumeSize=NumberOfFrames*DosePixelRows*DosePixelColumns;
+        const DoseSliceSize=DosePixelRows*DosePixelColumns;
+        const DoseSliceMap=new Map();//mmをKeyとして、そのスライスデータを保持する
+        for(const [Zindex,Zmm] of GridFrameOffsetVectorArray.entries()){
+            const DoseSliceArray=new Float32Array(DoseSliceSize);
+            /*
+            for(let SliceIndex=0;SliceIndex<DoseSliceSize;SliceIndex++){
+                const pixelBufferIndex=Zindex*DoseSliceSize+SliceIndex;
+                console.log(pixelBufferIndex);
+                DoseSliceArray[SliceIndex]=getDoseValueFunction(pixelBuffer,pixelBufferIndex);
+            }
+            */
+            for(let Hindex=0;Hindex<DosePixelRows;Hindex++){
+                for(let Windex=0;Windex<DosePixelColumns;Windex++){
+                    const PixelBufferIndex=(Zindex*DosePixelRows+Hindex)*DosePixelColumns+Windex;
+                    DoseSliceArray[Hindex*DosePixelColumns+Windex]=getDoseValueFunction(pixelBuffer,PixelBufferIndex);
+                }
+            }
+            DoseSliceMap.set(Zmm,DoseSliceArray);
+        }
+        //DoseSliceMapを患者座標系Zmmが昇順になるようにソートする
+        //CTやMASKは頭⇒足で+⇒-となる。これがLPSの標準なので、これもそれに従うよって、大⇒小とZ座標が並ぶ
+        const SortedDoseSliceMap=new Map([...DoseSliceMap].sort((a,b)=>b[0]-a[0]));//a<bという状態になってしまっているなら、入れ替えるというルール
+        const DOSEZPositionArray=Array.from(SortedDoseSliceMap.keys());
+        //console.log(DOSEZPositionArray);
+        //console.log(Array.from(this.i2p.values()));
+        const MaxDOSEZPosition=DOSEZPositionArray[0];
+        const MinDOSEZPosition=DOSEZPositionArray[DOSEZPositionArray.length-1];
+        const SortedDoseSliceZPositionSliceArray=[...SortedDoseSliceMap];//[[mm,SliceArray],...,]
+        let SortedDoseZPositionPointa=0;//CTZPositionが収まる区間を探すのに使う
+        const MaxSortedDoseZPositionPointa=SortedDoseSliceZPositionSliceArray.length-2;
+        const MinDOSEHPosition=ipp[1];
+        const MaxDOSEHPosition=MinDOSEHPosition+PixelSpacing[1]*(DosePixelRows-1);
+        const MinDOSEWPosition=ipp[0];
+        const MaxDOSEWPosition=MinDOSEWPosition+PixelSpacing[0]*(DosePixelColumns-1);
+        //補完してCTボリュームと同じサイズにする
+        this.ImageVolume=new Float32Array(this.depth*this.height*this.width);
+        this.ImageVolume.fill(0);//何もなければ線量値0となる
+        //console.log(this.i2p);
+        //console.log(SortedDoseSliceZPositionSliceArray);
+        //最大値と最小値も調べておく
+        let vMin=Infinity;
+        let vMax=(-Infinity);
+        for(let CTZindex=0;CTZindex<this.depth;CTZindex++){
+            const CTZPosition=this.i2p.get(CTZindex);
+            if(MinDOSEZPosition<=CTZPosition&&CTZPosition<=MaxDOSEZPosition){
+                //CTZPositionを挟み込んでいる区間を探す
+                let DOSEBiggerZ=SortedDoseSliceZPositionSliceArray[SortedDoseZPositionPointa];//[mm,Array]インデックスが若いほど座標が大きい
+                let DOSEBiggerZPosition=DOSEBiggerZ[0];
+                let DOSESmallerZ=SortedDoseSliceZPositionSliceArray[SortedDoseZPositionPointa+1];
+                let DOSESmallerZPosition=DOSESmallerZ[0];
+                while(SortedDoseZPositionPointa<MaxSortedDoseZPositionPointa&&!(DOSESmallerZPosition<=CTZPosition&&CTZPosition<=DOSEBiggerZPosition)){
+                    SortedDoseZPositionPointa++;
+                    DOSEBiggerZ=SortedDoseSliceZPositionSliceArray[SortedDoseZPositionPointa];//[mm,Array]
+                    DOSEBiggerZPosition=DOSEBiggerZ[0];
+                    DOSESmallerZ=SortedDoseSliceZPositionSliceArray[SortedDoseZPositionPointa+1];
+                    DOSESmallerZPosition=DOSESmallerZ[0];
+                }
+                
+                //これから、DOZEIndexの小数値を獲得する
+                const CT2DOSEZIndex=(DOSEBiggerZPosition-CTZPosition)/(DOSEBiggerZPosition-DOSESmallerZPosition)+SortedDoseZPositionPointa;//これでN＋αというインデックス上の小数が得られた。この小数点以下の部分が補完時の重みとなる
+                //console.log(`${DOSEBiggerZPosition}, ${CTZPosition}, ${DOSESmallerZPosition} -> ${CT2DOSEZIndex} (${SortedDoseZPositionPointa})`);
+                const Z0=SortedDoseZPositionPointa;
+                const Z1=Z0+1;
+                const ZDecimalPart=(DOSEBiggerZPosition-CTZPosition)/(DOSEBiggerZPosition-DOSESmallerZPosition);
+                //スライスごとに別に管理しているからこうしてもよい
+                //しかし、スライスは完全にFlattenしているので、H,Wではこのようにはできない
+                const Z0Slice=SortedDoseSliceZPositionSliceArray[Z0][1];
+                const Z1Slice=SortedDoseSliceZPositionSliceArray[Z1][1];
+                //console.log(`${DOSEBiggerZPosition}, ${CTZPosition}, ${DOSESmallerZPosition} -> ${CT2DOSEZIndex} | ${Z0},${Z1} (${ZDecimalPart})`);
+                for(let CTHindex=0;CTHindex<this.height;CTHindex++){
+                    const CTHPosition=this.yMin+CTHindex*this.ySpacing;
+                    if(MinDOSEHPosition<=CTHPosition&&CTHPosition<=MaxDOSEHPosition){
+                        //CTHPositionを基にDOSEのインデックスのどこにあるかを計算する
+                        const CT2DOSEHIndex=(CTHPosition-MinDOSEHPosition)/PixelSpacing[1];
+                        const H0=Math.floor(CT2DOSEHIndex);
+                        const H1=H0+1;
+                        const HDecimalPart=CT2DOSEHIndex-H0;
+                        for(let CTWindex=0;CTWindex<this.width;CTWindex++){
+                            const CTWPosition=this.xMin+CTWindex*this.xSpacing;
+                            if(MinDOSEWPosition<=CTWPosition&&CTWPosition<=MaxDOSEWPosition){
+                                const CT2DOSEWIndex=(CTWPosition-MinDOSEWPosition)/PixelSpacing[0];
+                                const W0=Math.floor(CT2DOSEWIndex);
+                                const W1=W0+1;
+                                const WDecimalPart=CT2DOSEWIndex-W0;//小数部分
+                                /*
+                                ここから３次元線形変換
+                                命名規則
+                                Z0,H0,W1の値⇒v001
+                                */
+                                const H0W0Index=H0*DosePixelColumns+W0;
+                                const H0W1Index=H0*DosePixelColumns+W1;
+                                const H1W0Index=H1*DosePixelColumns+W0;
+                                const H1W1Index=H1*DosePixelColumns+W1;
+                                const v000=Z0Slice[H0W0Index];
+                                const v001=Z0Slice[H0W1Index];
+                                const v010=Z0Slice[H1W0Index];
+                                const v011=Z0Slice[H1W1Index];
+                                const v100=Z1Slice[H0W0Index];
+                                const v101=Z1Slice[H0W1Index];
+                                const v110=Z1Slice[H1W0Index];
+                                const v111=Z1Slice[H1W1Index];
+                                //console.log(v000,v001,v010,v011,v100,v101,v110,v111);
+                                /*X方向の線形補完*/
+                                const Xweight0=1-WDecimalPart;
+                                const Xweight1=WDecimalPart;
+                                const v00=Xweight0*v000+Xweight1*v001;
+                                const v01=Xweight0*v010+Xweight1*v011;
+                                const v10=Xweight0*v100+Xweight1*v101;
+                                const v11=Xweight0*v110+Xweight1*v111;
+                                /*Y方向の線形補完*/
+                                const Yweight0=1-HDecimalPart;
+                                const Yweight1=HDecimalPart;
+                                const v0=Yweight0*v00+Yweight1*v01;
+                                const v1=Yweight0*v10+Yweight1*v11;
+                                /*W方向の線形補完*/
+                                const Zweight0=1-ZDecimalPart;
+                                const Zweight1=ZDecimalPart;
+                                const ComplementValue=Zweight0*v0+Zweight1*v1;
+                                const DoseValue=ComplementValue*DoseGridScaling;
+                                //console.log(DoseValue);
+                                //最終的な補完値を格納する
+                                if(vMin>DoseValue){
+                                    vMin=DoseValue;
+                                }
+                                if(vMax<DoseValue){
+                                    vMax=DoseValue;
+                                }
+                                this.ImageVolume[(CTZindex*this.height+CTHindex)*this.width+CTWindex]=DoseValue;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        console.log("DOSE準備完了");
+        this.vMin=vMin;
+        this.vMax=vMax;
+        console.log(vMin,vMax);
+    }
+    async draw(ctx,DrawStatus){
+        const dWidth=ctx.canvas.width,dHeight=ctx.canvas.height;
+        ctx.clearRect(0,0,dWidth,dHeight);
+        //vMin,vMaxは階調時に変更され、そのあと再描画させることで反映される
+        //console.log("呼ばれたよ");
+        if(DrawStatus.get("regenerate")){
+            if(this.currentImageBitmap){
+                this.currentImageBitmap.close();
+            }
+            //新しいImageBitMapを作成して保持
+            this.currentImageBitmap= await this.CreateImageBitmap(DrawStatus.get("index"));
+            //console.log("Bitmap",this.currentImageBitmap);
+            //DrawStatus.set("regenerate",false);
+        }
+        //保存されたImageBitMapを描画する
+        if(this.currentImageBitmap){
+            ctx.drawImage(
+                this.currentImageBitmap,
+                DrawStatus.get("w0"),DrawStatus.get("h0"),DrawStatus.get("width"),DrawStatus.get("height"),
+                0,0,dWidth,dHeight
+            );
+        }
+    }
+    CreateImageBitmap(index){
+        //console.log("CTクラスだよ");
+        const rgbArray=new Uint8ClampedArray(this.imagesize*4);
+        for(let i=0;i<this.imagesize;i++){
+            const baseindex=i*4;
+            const DoseValue=(this.ImageVolume[index*this.imagesize+i]-this.vMin)/(this.vMax-this.vMin);
+            const [R,G,B,A]=this.constructor.JetColorMap(DoseValue);
+            rgbArray[baseindex]=R;//R
+            rgbArray[baseindex+1]=G;//G
+            rgbArray[baseindex+2]=B;//B
+            rgbArray[baseindex+3]=A;//A
+        }
+        //console.log(this.width,this.height);
+        const imageData=new ImageData(rgbArray,this.width,this.height);
+        //console.log("imageData",imageData);
+        return createImageBitmap(imageData);
+    }
 }
 class Canvas{
     constructor(CanvasID,DataInfoMap){
@@ -3851,6 +4516,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
             //[DOSEclass.DataType,DOSEclass],
             [MASKDIFFclass.DataType,MASKDIFFclass],
             [CONTOURclass.DataType,CONTOURclass],
+            [DOSEclass.DataType,DOSEclass],
         ]);
         //Resize用
         //console.log("PixelRatio",window.devicePixelRatio);
@@ -3904,19 +4570,20 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
             }
         });
         //読み込み用ボタンとイベント
+        /*CT*/
         this.CTButton=document.getElementById("CTButton");
         this.EventSetHelper(this.CTButton,"mouseup",async (e)=>{
             if(e.button===0){
                 this.LoadDialogOpen(99999,"CT");//存在しない正のCanvasIDを指定＝新しくCanvasを作ってほしい, 
             }
         });
+        /*MASK*/
         this.MaskButton=document.getElementById("MaskButton");
         this.EventSetHelper(this.MaskButton,"mouseup",async (e)=>{
             if(e.button===0){
                 this.LoadDialogOpen(99999,"MASK");
             }
         });
-        this.ContourButton=document.getElementById("ContourButton");
         /*MASKDIFF*/
         this.MaskDiffButton=document.getElementById("MaskDiffButton");
         this.EventSetHelper(this.MaskDiffButton,"mouseup",async (e)=>{
@@ -3925,9 +4592,17 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
             }
         });
         /*CONTOUR*/
+        this.ContourButton=document.getElementById("ContourButton");
         this.EventSetHelper(this.ContourButton,"mouseup",async (e)=>{
             if(e.button===0){
                 this.LoadDialogOpen(99999,"CONTOUR");
+            }
+        });
+        /*DOSE*/
+        this.DoseButton=document.getElementById("DoseButton");
+        this.EventSetHelper(this.DoseButton,"mouseup",async (e)=>{
+            if(e.button===0){
+                this.LoadDialogOpen(99999,"DOSE");
             }
         });
         this.MultiTypeLoadButton=document.getElementById("MultiTypeLoadButton");

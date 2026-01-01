@@ -372,7 +372,6 @@ dialog#LoadDialog{
     transform: translate(-50%,-50%);
     width:400px;
     height:calc(var(--DOMTreeContainerHeight) + var(--ButtonContainerHeight) + 2px);
-    background-color: black;
 }
 dialog#LoadDialog>div#LoadDialogDOMTreeContainer{
     width:100%;
@@ -382,6 +381,8 @@ dialog#LoadDialog>div#LoadDialogDOMTreeContainer{
     max-height: var(--DOMTreeContainerHeight);
     display: flex;
     flex-direction: column;
+    gap:5px;
+    background-color: rgb(78, 78, 78);
 }
 /*各データタイプが持っているDOMツリーに関するCSS*/
 div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree{
@@ -393,6 +394,8 @@ div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree{
     /*height:calc(var(--DataTypeDisplay) + var(--PathSettngContainerHeight));*/
     display: flex;
     flex-direction: column;
+    padding-left: 5px;
+    padding-right: 5px;
 }
 div#LoadDialogDOMTreeContainer>div.PathSelectDOMTree>div.DataTypeDisplay{
     width:100%;
