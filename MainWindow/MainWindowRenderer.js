@@ -16,7 +16,7 @@ cornerstoneWADOImageLoader.configure({ useWebWorkers: false });
 /*
 (CT,MASK)>DOSE>(MASKDIFF,CONTOUR)
 */
-const DicomDataClassDictionary = new Map([["CT",new Map()],["MASK",new Map()],["DOSE",new Map()],["MASKDIFF",new Map()],["CONTOUR",new Map()],["DOSE",new Map()]]);
+const DicomDataClassDictionary = new Map([["CT",new Map()],["MASK",new Map()],["DOSE",new Map()],["MASKDIFF",new Map()],["CONTOUR",new Map()]]);
 const DicomNextID = new Map(DicomDataClassDictionary.keys().map(key => [key, 0]));
 //キャンバスに関する情報を管理するクラスをまとめた辞書型オブジェクト
 const CanvasClassDictionary = new Map();
@@ -2835,8 +2835,8 @@ class DOSEclass{
         //補完してCTボリュームと同じサイズにする
         this.ImageVolume=new Float32Array(this.depth*this.height*this.width);
         this.ImageVolume.fill(0);//何もなければ線量値0となる
-        console.log(this.i2p);
-        console.log(SortedDoseSliceZPositionSliceArray);
+        //console.log(this.i2p);
+        //console.log(SortedDoseSliceZPositionSliceArray);
         //最大値と最小値も調べておく
         let vMin=Infinity;
         let vMax=(-Infinity);
