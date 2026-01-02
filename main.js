@@ -56,7 +56,8 @@ ipcMain.handle("GetDisplaySize",(event)=>{
 /*ファイル読み込みのためのIPCハンドラ*/
 ipcMain.handle("selectFiles", async (event, propertieslist)=>{
     //dialogを開き、ファイル、フォルダを選択
-    const result=await dialog.showOpenDialog({
+    const MainWindow=WindowManager.get("MainWindow");
+    const result=await dialog.showOpenDialog(MainWindow,{
         properties:propertieslist,
     });
     if(result.canceled || result.filePaths.length === 0) {
@@ -138,9 +139,17 @@ function createSubWindow(SendingData){
     const ReceivedDataBody=SendingData.get("data");
     const windowsize=ReceivedDataBody.get("windowsize");
     AllowAddOrDeleteFlag=ReceivedDataBody.get("AllowAddOrDeleteFlag");//サブウィンドウごとに設定された許可状態に変更
+    //メインウィンドウの位置を取得する
+    const MainWindow=WindowManager.get("MainWindow");
+    const {x:MainWindowX,y:MainWindowY,width:MainWindowWidth}=MainWindow.getBounds();
+    //console.log(MainWindow.getBounds());
+    //console.log(MainWindowX,MainWindowY,MainWindowWidth);
     const SubWindow = new BrowserWindow({
         width: windowsize[0],
         height: windowsize[1],
+        parent: MainWindow,//MainWindowとの親子関係を設定しておくことでMainWindowが表示されているディスプレイで表示されるようにする
+        x: MainWindowX+MainWindowWidth,
+        y: MainWindowY,
         useContentSize:true,
         //maximizable:false,
         resizable:false,
@@ -154,8 +163,8 @@ function createSubWindow(SendingData){
     SubWindow.removeMenu();
     if(detach)SubWindow.webContents.openDevTools({mode: 'detach'});
     SubWindow.loadFile(path.join(__dirname,"SubWindows",actionName,HTMLfileName));
-    SubWindow.setAlwaysOnTop(true);
-    //SubWindowの準備が整ったらMultiUseLayerModeの可否の返答を受け取る
+    //SubWindow.setAlwaysOnTop(true);どんなウィンドウよりも前面に表示する⇒parentの設定によってMainWindowの前だけにすることができたので不要
+    /*SubWindowの準備が整ったらMultiUseLayerModeの可否の返答を受け取る*/
     SubWindow.webContents.once("did-finish-load",()=>{//HTMLなどの読み込みが終わったらサブウィンドウの初期化データを送る
         //初期化用の送信
         //console.log("SubWindow did-finish-load");
