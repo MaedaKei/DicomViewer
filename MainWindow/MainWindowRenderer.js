@@ -1067,6 +1067,9 @@ class MASKclass{
         //console.log(vMin,"~",vMax);
         //一時保存用の変数
         this.currentImageBitmap=null;
+        //境界となっているピクセルのインデックスの集合
+        this.ContourIndexSet=new Set();
+        this.UpdateContourIndexSet(0,this.depth-1,0,this.height,0,this.width);//全域に対してチェック
     }
     async draw(ctx,DrawStatus){
         const dWidth=ctx.canvas.width,dHeight=ctx.canvas.height;
@@ -1090,17 +1093,22 @@ class MASKclass{
             );
         }
     }
-    CreateImageBitmap(index){
+    CreateImageBitmap(z){
         //MASK、CONTOUR用のカラーマップを作成する必要がある。
         const rgbArray=new Uint8ClampedArray(this.imagesize*4);
         for(let i=0;i<this.imagesize;i++){
             const baseindex=i*4;
-            const value=Math.round((this.ImageVolume[index*this.imagesize+i]-this.vMin));
-            const startindex=4*value;
-            rgbArray[baseindex]=colormapformask.colormap[startindex];//R
-            rgbArray[baseindex+1]=colormapformask.colormap[startindex+1];//G
-            rgbArray[baseindex+2]=colormapformask.colormap[startindex+2];//B
-            rgbArray[baseindex+3]=colormapformask.colormap[startindex+3];//A
+            const VolumeIndex=z*this.imagesize+i;
+            const value=Math.round((this.ImageVolume[VolumeIndex]-this.vMin));
+            const ColorMapBaseIndex=4*value;
+            rgbArray[baseindex]=colormapformask.colormap[ColorMapBaseIndex];//R
+            rgbArray[baseindex+1]=colormapformask.colormap[ColorMapBaseIndex+1];//G
+            rgbArray[baseindex+2]=colormapformask.colormap[ColorMapBaseIndex+2];//B
+            rgbArray[baseindex+3]=colormapformask.colormap[ColorMapBaseIndex+3];//A
+            if(this.ContourIndexSet.has(VolumeIndex)){
+                //境界にあたるので濃い目に表示
+                rgbArray[baseindex+3]+=76//255*0.3=76.5
+            }
         }
         const imageData=new ImageData(rgbArray,this.width,this.height);
         //console.log("imageData",imageData);
@@ -1164,8 +1172,43 @@ class MASKclass{
                 }
             }
         }
+        //境界点集合の更新
+        this.UpdateContourIndexSet(startslice,endslice,h0,height,w0,width);
         if(counter==0){
             console.log(ChangeMaskMap,"変更箇所なし");
+        }
+    }
+    UpdateContourIndexSet(startslice,endslice,h0,height,w0,width){
+        const NeiborOffsetArray=[[-1,0],[1,0],[0,-1],[0,1]];
+        for(let z=startslice;z<=endslice;z++){
+            //選択された領域の+-1の範囲に対して輪郭チェックを粉う必要がある。
+            //選択された領域の外側の画素にとっては、変更によって隣に違うマスクが来る可能性があるから
+            for(let h=h0-1;h<h0+height+1;h++){
+                for(let w=w0-1;w<w0+width+1;w++){
+                    const FocusIndex=(z*this.height+h)*this.width+w;
+                    const FocusMaskValue=this.ImageVolume[FocusIndex];
+                    ////この座標が境界点集合にあるか確認し、あれば一旦リセットする
+                    this.ContourIndexSet.delete(FocusIndex);
+                    if(FocusMaskValue!==0){//BGではないなら境界点かチェックする
+                        if((h<=0||h>=this.height-1)||(w<=0||w>=this.width-1)){
+                            //画像の端に位置するピクセルであり、かならず境界点となる
+                            this.ContourIndexSet.add(FocusIndex);
+                        }else{
+                            for(const [HOffset,WOffset] of NeiborOffsetArray){
+                                const NeiborH=h+HOffset;
+                                const NeiborW=w+WOffset;
+                                const NeiborIndex=(z*this.height+NeiborH)*this.width+NeiborW;
+                                const NeiborMaskValue=this.ImageVolume[NeiborIndex];
+                                if(FocusMaskValue!==NeiborMaskValue){
+                                    //境界点となるので集合に追加
+                                    this.ContourIndexSet.add(FocusIndex);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
