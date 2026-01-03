@@ -1180,17 +1180,22 @@ class MASKclass{
     }
     UpdateContourIndexSet(startslice,endslice,h0,height,w0,width){
         const NeiborOffsetArray=[[-1,0],[1,0],[0,-1],[0,1]];
+        //インデックスが許される範囲
+        //選択された領域の+-1の範囲に対して輪郭チェックを粉う必要がある。
+        //選択された領域の外側の画素にとっては、変更によって隣に違うマスクが来る可能性があるから
+        const starth=Math.max(0,h0-1);
+        const endh=Math.min(this.height-1,(h0+height-1)+1);
+        const startw=Math.max(0,w0-1);
+        const endw=Math.min(this.width-1,(w0+width-1)+1);
         for(let z=startslice;z<=endslice;z++){
-            //選択された領域の+-1の範囲に対して輪郭チェックを粉う必要がある。
-            //選択された領域の外側の画素にとっては、変更によって隣に違うマスクが来る可能性があるから
-            for(let h=h0-1;h<h0+height+1;h++){
-                for(let w=w0-1;w<w0+width+1;w++){
+            for(let h=starth;h<=endh;h++){
+                for(let w=startw;w<=endw;w++){
                     const FocusIndex=(z*this.height+h)*this.width+w;
                     const FocusMaskValue=this.ImageVolume[FocusIndex];
                     ////この座標が境界点集合にあるか確認し、あれば一旦リセットする
                     this.ContourIndexSet.delete(FocusIndex);
                     if(FocusMaskValue!==0){//BGではないなら境界点かチェックする
-                        if((h<=0||h>=this.height-1)||(w<=0||w>=this.width-1)){
+                        if((h===0||h===this.height-1)||(w===0||w===this.width-1)){
                             //画像の端に位置するピクセルであり、かならず境界点となる
                             this.ContourIndexSet.add(FocusIndex);
                         }else{
