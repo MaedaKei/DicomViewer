@@ -179,6 +179,7 @@ class MaskModifingClass{
         document.documentElement.style.setProperty("--LabelNameChangeInputContainerGridColumnsNum",`${LabelNameChangeInputContainerGridColumnsNum}`);
         //適したwindowサイズに変更
         window.SubWindowResizeAPI(WindowContentWidth,WindowContentHeight);
+        window.SubWindowMoveAPI();
         //ダイアログの表示を初期化
         this.UpdateLabelNameChangeDialogPlaceholder();
         this.ButtonHeight=ButtonHeight;

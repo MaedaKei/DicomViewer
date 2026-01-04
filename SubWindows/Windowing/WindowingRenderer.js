@@ -117,6 +117,8 @@ class WindowingClass{
         ]);
         //描画処理は一番最後
         this.Redraw();
+        //見切れないように調整
+        window.SubWindowMoveAPI();
     }
     Redraw(){
         //現在の状態になるようにlineCanvasを書き換える

@@ -3,6 +3,9 @@ console.log("SubWindowsPreload.js is loaded");
 contextBridge.exposeInMainWorld("SubWindowResizeAPI",
     (width,height)=>ipcRenderer.send("WindowResize","SubWindow",width,height)
 );
+contextBridge.exposeInMainWorld("SubWindowMoveAPI",
+    ()=>ipcRenderer.send("WindowMove","SubWindow")
+);
 contextBridge.exposeInMainWorld("SubWindowMainProcessAPI",
     {
         //初期化用のリスナーなので一度実行されると消える

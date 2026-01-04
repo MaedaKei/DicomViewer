@@ -5504,6 +5504,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
         //console.log("ContentSize",WindowContentWidth,WindowContentHeight);
         if(this.previousBodyOrderWidth!==WindowContentWidth||this.previousBodyOrderHeight!==WindowContentHeight){
             window.MainWindowResizeAPI(WindowContentWidth,WindowContentHeight);
+            window.MainWindowMoveAPI();//ディスプレイで見切れないように動かす
             this.previousBodyOrderWidth=WindowContentWidth;
             this.previousBodyOrderHeight=WindowContentHeight;
         }else{

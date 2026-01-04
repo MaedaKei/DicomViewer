@@ -120,7 +120,7 @@ class ROISelectClass{
         */
         //適したウィンドウサイズに変更
         window.SubWindowResizeAPI(WindowContentWidth,WindowContentHeight);
-
+        window.SubWindowMoveAPI();
         this.ROISelectContainer.appendChild(ROISelectContainerFragment);
         //MultiUseLayerMode申請
         this.SwitchedMode=["CONTOURROIClickModeSwitching"];

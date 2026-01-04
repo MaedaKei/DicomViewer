@@ -28,7 +28,8 @@ class Evaluate{
         this.RectangleHeightInput=document.getElementById("RectangleHeightInput");
         this.StartSliceInput=document.getElementById("StartSliceInput");
         this.EndSliceInput=document.getElementById("EndSliceInput");
-        
+        //Windowの位置を調整
+        window.SubWindowMoveAPI();
         //確定ボタン
         this.CalculateConfirmButton=document.getElementById("CalculateConfirmButton");
         //計算履歴リスト

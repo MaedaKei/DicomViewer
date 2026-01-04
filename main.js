@@ -38,6 +38,7 @@ app.whenReady().then(() => {
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) {
             createMainWindow();
+
         }
     });
 });
@@ -111,25 +112,42 @@ ipcMain.handle("loadDicom", async (event,SelectedPath)=>{
     return items;
 });
 
-ipcMain.on("WindowResize",(event,TargetWindow,width,height)=>{
+ipcMain.on("WindowResize",(event,WindowTarget,Width,Height)=>{
     //console.log("Check",width,height)
-    const targetWindow=WindowManager.get(TargetWindow);
+    const TargetWindow=WindowManager.get(WindowTarget);
     try{
-        targetWindow.setContentSize(width,height);
-        //リサイズが完了したら、現在のウィンドウサイズを取得して画面中央に移動させる
-        const [windowwidth,windowheight]=targetWindow.getSize();
-        //console.log(windowwidth,windowheight);
-        //const {width:displaywidth,height:displayheight}=screen.getPrimaryDisplay().workAreaSize;
-        //console.log(displaywidth,displayheight);
-        //const x=Math.floor((displaywidth-windowwidth)/2);
-        //const y=Math.floor((displayheight-windowheight)/2);
-        //console.log("########################Check CenterP",x,y);
-        //targetWindow.setPosition(x,y);
+        TargetWindow.setContentSize(Width,Height);
     }catch(e){
+        console.log("WindowResize Error!!");
         console.log(e);
     }
 });
-
+ipcMain.on("WindowMove",(event,WindowTarget)=>{
+    const TargetWindow=WindowManager.get(WindowTarget);
+    try{
+        //対象とするウィンドウが最も重なっている割合が大きいウィンドウに収まるようにする。
+        const TargetWindowBounds=TargetWindow.getBounds();
+        const TargetDisplay=screen.getDisplayMatching(TargetWindowBounds);//どのディスプレイに最も重なっているか
+        const TargetDisplayBounds=TargetDisplay.workArea;//この境界に収まるようにターゲットウィンドウを移動する
+        const TargetDisplayMinX=TargetDisplayBounds.x;
+        const TargetDisplayMaxX=TargetDisplayMinX+TargetDisplayBounds.width;
+        const TargetDisplayMinY=TargetDisplayBounds.y;
+        const TargetDisplayMaxY=TargetDisplayMinY+TargetDisplayBounds.height;
+        //調整後の左上座標
+        console.log("Current Display Infomation");
+        console.log(`X:${TargetDisplayMinX} ~ ${TargetDisplayMaxX}`);
+        console.log(`Y:${TargetDisplayMinY} ~ ${TargetDisplayMaxY}`);
+        const TargetWindowLeftTopX=Math.max(TargetDisplayMinX,Math.min(TargetWindowBounds.x,TargetDisplayMaxX-TargetWindowBounds.width));
+        const TargetWindowLeftTopY=Math.max(TargetDisplayMinY,Math.min(TargetWindowBounds.y,TargetDisplayMaxY-TargetWindowBounds.height));
+        console.log(`Current Window Infomation ${WindowTarget}`);
+        console.log(`X:${TargetWindowLeftTopX} ~ ${TargetWindowLeftTopX+TargetWindowBounds.width}`);
+        console.log(`Y:${TargetWindowLeftTopY} ~ ${TargetWindowLeftTopY+TargetWindowBounds.height}`);
+        TargetWindow.setPosition(TargetWindowLeftTopX,TargetWindowLeftTopY);
+    }catch(e){
+        console.log("WindowReisze Error!!");
+        console.log(e);
+    }
+});
 /*SubWindow関連のIPCハンドラ*/
 //SubWindowを開くように命令する
 function createSubWindow(SendingData){
