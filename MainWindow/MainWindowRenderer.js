@@ -2218,8 +2218,8 @@ class CONTOURclass{
                 //X,Yの解析とPath2D化を同時進行する
                 const StartPatientX=ContourData[0];
                 const StartPatientY=ContourData[1];
-                const StartX=(this.width)*(StartPatientX-this.xMin)/(this.xMax-this.xMin);
-                const StartY=(this.height)*(StartPatientY-this.yMin)/(this.yMax-this.yMin);
+                const StartX=(this.width-1)*(StartPatientX-this.xMin)/(this.xMax-this.xMin);
+                const StartY=(this.height-1)*(StartPatientY-this.yMin)/(this.yMax-this.yMin);
                 const ContourPath=new Path2D();
                 ContourPath.moveTo(StartX,StartY);
                 for(let BaseIndex=3;BaseIndex<ContourData.length;BaseIndex+=3){//始点の次の点から
@@ -2227,8 +2227,8 @@ class CONTOURclass{
                     const PatientY=ContourData[BaseIndex+1];
                     //const PatientZ=ContourData[BaseIndex+2];
                     /*画像座標系に変換*/
-                    const X=(this.width)*(PatientX-this.xMin)/(this.xMax-this.xMin);
-                    const Y=(this.height)*(PatientY-this.yMin)/(this.yMax-this.yMin);
+                    const X=(this.width-1)*(PatientX-this.xMin)/(this.xMax-this.xMin);
+                    const Y=(this.height-1)*(PatientY-this.yMin)/(this.yMax-this.yMin);
                     ContourPath.lineTo(X,Y);
                 }
                 ContourPath.closePath();
@@ -4334,8 +4334,8 @@ class Canvas{
             const endslice=this.SelectedAreaStatus.get("endslice");
             const currentslice=parseInt(this.slider.value);
             /*現在のスライスが選択範囲内なら塗りつぶし*/
-            //まずは全部黒めにつぶす
-            ctx.fillStyle="rgba(0,0,0,0.5)";
+            //まずは全部黒めにつぶす→白めにつぶす＝CT画像を背景にしているときに、選択範囲外を黒くしてもCTと同じになってわかりづらいから
+            ctx.fillStyle="rgba(255, 255, 255, 0.3)";
             ctx.beginPath();
             ctx.rect(dx,dy,dWidth,dHeight);
             if(startslice<=currentslice&&currentslice<=endslice){
@@ -4346,7 +4346,7 @@ class Canvas{
                 ctx.rect(w0,h0,width,height);
             }
             ctx.fill("evenodd");//選択された部分だけしっかり見える
-            ctx.strokeStyle="rgba(255,0,0,0.95)";
+            ctx.strokeStyle="rgba(255,0,0,0.85)";
             ctx.lineWidth=0.5;
             ctx.strokeRect(w0-0.5,h0-0.5,width+1,height+1);
             ctx.restore();

@@ -119,12 +119,12 @@ ipcMain.on("WindowResize",(event,TargetWindow,width,height)=>{
         //リサイズが完了したら、現在のウィンドウサイズを取得して画面中央に移動させる
         const [windowwidth,windowheight]=targetWindow.getSize();
         //console.log(windowwidth,windowheight);
-        const {width:displaywidth,height:displayheight}=screen.getPrimaryDisplay().workAreaSize;
+        //const {width:displaywidth,height:displayheight}=screen.getPrimaryDisplay().workAreaSize;
         //console.log(displaywidth,displayheight);
-        const x=Math.floor((displaywidth-windowwidth)/2);
-        const y=Math.floor((displayheight-windowheight)/2);
+        //const x=Math.floor((displaywidth-windowwidth)/2);
+        //const y=Math.floor((displayheight-windowheight)/2);
         //console.log("########################Check CenterP",x,y);
-        targetWindow.setPosition(x,y);
+        //targetWindow.setPosition(x,y);
     }catch(e){
         console.log(e);
     }
