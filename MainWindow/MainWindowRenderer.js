@@ -4693,17 +4693,16 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
 
         /*ここからレイアウト関連のイベント設定*/
         this.resizeTimeout=null;
-        this.count=0;
         this.previousBodyOrderWidth=null;
         this.previousBodyOrderHeight=null;
         window.addEventListener("resize",()=>{
             clearTimeout(this.resizeTimeout);
             this.resizeTimeout=setTimeout(async ()=>{
                 const NewBodyRect=document.body.getBoundingClientRect();
-                this.count++;
                 //console.log(`Resize Event ${this.count}回目`,NewBodyRect.width,NewBodyRect.height);
                 await LoadAndLayoutFunctions.Resize(NewBodyRect.width,NewBodyRect.height);//PixelRatioによっては内部でmain.jsに要請したサイズと実際のサイズが変わることがある
             },200);
+            console.log("リサイズ完了");
         });
         /*
         this.EventSetHelper(this.ColumnsInputContainer,"wheel",(e)=>{
@@ -5448,75 +5447,65 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
     //余裕を持たせるためにディスプレイサイズから少しだけ小さい値をデフォルトにする。
     //現在の実装方法では、bodyサイズは指定できるがウィンドウの上らへんにあるOS依存ぽいスペースまで正確に制御できていない状況もあいまって余裕を持たせるようにしている
     async Resize(width=this.DisplayWidth-50,height=this.DisplayHeight-50){
-        if(CanvasClassDictionary.size==0)return;//キャンバスがないなら何もしない
-        //とりあえずはcolumnsの方向で増やしていく応急処理
-        //this.CurrentColumnsNum=CanvasClassDictionary.size;
-        let basewidth=-Infinity,baseheight=-Infinity;
-        //基準となる高さを決める
-        for(const canvasclass of CanvasClassDictionary.values()){
-            const width=canvasclass.Width;
-            const height=canvasclass.Height;
-            if(width>basewidth)basewidth=width;
-            if(height>baseheight)baseheight=height;
-        }
+        if(CanvasClassDictionary.size!==0){//キャンバスがないなら何もしな
+            //とりあえずはcolumnsの方向で増やしていく応急処理
+            //this.CurrentColumnsNum=CanvasClassDictionary.size;
+            let basewidth=-Infinity,baseheight=-Infinity;
+            //基準となる高さを決める
+            for(const canvasclass of CanvasClassDictionary.values()){
+                const width=canvasclass.Width;
+                const height=canvasclass.Height;
+                if(width>basewidth)basewidth=width;
+                if(height>baseheight)baseheight=height;
+            }
 
-        const CellWidth=(width-(this.CurrentColumnsNum-1)*this.gridgap)/this.CurrentColumnsNum;
-        const CellHeight=(height-(this.CurrentRowsNum-1)*this.gridgap-this.menuheight)/this.CurrentRowsNum;
-        //console.log("DisplaySize",this.DisplayWidth,this.DisplayHeight);
-        //console.log("CellSize",CellWidth,CellHeight);
-        const BaseCanvasWidth=basewidth;
-        const BaseCanvasHeight=baseheight-this.sliderheight;
-        // BaseSizeの因数分解
-        // Width,heightで2^h,2^wと異なる可能性があるため、小さいほうを採用する
-        // 2の1乗⇒0.5刻み
-        // 2の２乗⇒0.25刻み
-        let N=0;
-        const basevalue=2
-        let bw=BaseCanvasWidth;
-        let bh=BaseCanvasHeight;
-        while(bw%basevalue==0&&bh%basevalue==0){
-            N++;
-            bw/=2;
-            bh/=2;
-        }
-        const scalestep=Math.pow(basevalue,N);
-        const wrate=CellWidth/BaseCanvasWidth;
-        const hrate=(CellHeight-this.sliderheight)/BaseCanvasHeight;
-        //console.log("scale",wrate,hrate);
-        //小さいほうのレートに対してそれを超えない最小の0.5刻みの数字を得る
-        //scaleは0.5を下回らないようにする。
-        const scale=Math.max(Math.floor(Math.min(wrate,hrate)*scalestep)/scalestep,1/scalestep);
-        //console.log("BaseSize",BaseCanvasWidth,BaseCanvasHeight);
-        const CanvasWidth=BaseCanvasWidth*scale;
-        const CanvasHeight=BaseCanvasHeight*scale;
-        //console.log("ScaledSize",CanvasWidth,CanvasHeight);
-        /*
-        CanvasContainer.style.columnGap=`${this.gridgap}px`;
-        CanvasContainer.style.rowGap=`${this.gridgap}px`;
-        CanvasContainer.style.gridTemplateColumns=`repeat(${this.CurrentColumnsNum},1fr)`;
-        CanvasContainer.style.gridTemplateRows=`{repeat(${this.CurrentRowsNum},1fr)}`;
-        */
-        //Windowのコンテンツサイズを変更する
-        const WindowContentWidth=CanvasWidth*this.CurrentColumnsNum+this.gridgap*(this.CurrentColumnsNum-1);
-        const WindowContentHeight=this.menuheight+(CanvasHeight+this.sliderheight)*this.CurrentRowsNum+this.gridgap*(this.CurrentRowsNum-1);
-        document.body.style.width=WindowContentWidth;
-        document.body.style.height=WindowContentHeight;
-        //console.log("ContentSize",WindowContentWidth,WindowContentHeight);
-        if(this.previousBodyOrderWidth!==WindowContentWidth||this.previousBodyOrderHeight!==WindowContentHeight){
-            window.MainWindowResizeAPI(WindowContentWidth,WindowContentHeight);
+            const CellWidth=(width-(this.CurrentColumnsNum-1)*this.gridgap)/this.CurrentColumnsNum;
+            const CellHeight=(height-(this.CurrentRowsNum-1)*this.gridgap-this.menuheight)/this.CurrentRowsNum;
+            //console.log("DisplaySize",this.DisplayWidth,this.DisplayHeight);
+            //console.log("CellSize",CellWidth,CellHeight);
+            const BaseCanvasWidth=basewidth;
+            const BaseCanvasHeight=baseheight-this.sliderheight;
+            // BaseSizeの因数分解
+            // Width,heightで2^h,2^wと異なる可能性があるため、小さいほうを採用する
+            // 2の1乗⇒0.5刻み
+            // 2の２乗⇒0.25刻み
+            let N=0;
+            const basevalue=2
+            let bw=BaseCanvasWidth;
+            let bh=BaseCanvasHeight;
+            while(bw%basevalue==0&&bh%basevalue==0){
+                N++;
+                bw/=2;
+                bh/=2;
+            }
+            const scalestep=Math.pow(basevalue,N);
+            const wrate=CellWidth/BaseCanvasWidth;
+            const hrate=(CellHeight-this.sliderheight)/BaseCanvasHeight;
+            //console.log("scale",wrate,hrate);
+            //小さいほうのレートに対してそれを超えない最小の0.5刻みの数字を得る
+            //scaleは0.5を下回らないようにする。
+            const scale=Math.max(Math.floor(Math.min(wrate,hrate)*scalestep)/scalestep,1/scalestep);
+            //console.log("BaseSize",BaseCanvasWidth,BaseCanvasHeight);
+            const CanvasWidth=BaseCanvasWidth*scale;
+            const CanvasHeight=BaseCanvasHeight*scale;
+            //console.log("ScaledSize",CanvasWidth,CanvasHeight);
+            /*
+            CanvasContainer.style.columnGap=`${this.gridgap}px`;
+            CanvasContainer.style.rowGap=`${this.gridgap}px`;
+            CanvasContainer.style.gridTemplateColumns=`repeat(${this.CurrentColumnsNum},1fr)`;
+            CanvasContainer.style.gridTemplateRows=`{repeat(${this.CurrentRowsNum},1fr)}`;
+            */
+            //Windowのコンテンツサイズを変更する
+            const WindowContentWidth=CanvasWidth*this.CurrentColumnsNum+this.gridgap*(this.CurrentColumnsNum-1);
+            const WindowContentHeight=this.menuheight+(CanvasHeight+this.sliderheight)*this.CurrentRowsNum+this.gridgap*(this.CurrentRowsNum-1);
+            document.body.style.width=WindowContentWidth;
+            document.body.style.height=WindowContentHeight;
+            //console.log("ContentSize",WindowContentWidth,WindowContentHeight);
+            window.MainWindowResizeAPI(WindowContentWidth,WindowContentHeight);//これによってもう一度無駄にresizeが発火する
             window.MainWindowMoveAPI();//ディスプレイで見切れないように動かす
             this.previousBodyOrderWidth=WindowContentWidth;
             this.previousBodyOrderHeight=WindowContentHeight;
-        }else{
-            //console.log("前回と同じ要望サイズなのでリサイズは行わない");
         }
-        //this.UpdateCanvasPosition();
-        /*
-        console.log("---------------------リサイズ完了------------------\n",this.previousBodyOrderWidth,this.previousBodyOrderHeight);
-        const currentbodyrect=document.body.getBoundingClientRect();
-        const w=currentbodyrect.width,h=currentbodyrect.height;
-        console.log(w,h);
-        */
     }
     /*
     現在のデータタイプとCanvasIDの関係を示すマップを返す
