@@ -4695,14 +4695,20 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
         this.resizeTimeout=null;
         this.previousBodyOrderWidth=null;
         this.previousBodyOrderHeight=null;
+        this.ResizableFlag=false;
+        this.ResizeCount=0;
         window.addEventListener("resize",()=>{
-            clearTimeout(this.resizeTimeout);
-            this.resizeTimeout=setTimeout(async ()=>{
-                const NewBodyRect=document.body.getBoundingClientRect();
-                //console.log(`Resize Event ${this.count}回目`,NewBodyRect.width,NewBodyRect.height);
-                await LoadAndLayoutFunctions.Resize(NewBodyRect.width,NewBodyRect.height);//PixelRatioによっては内部でmain.jsに要請したサイズと実際のサイズが変わることがある
-            },200);
-            console.log("リサイズ完了");
+            if(this.ResizableFlag){
+                clearTimeout(this.resizeTimeout);
+                this.resizeTimeout=setTimeout(async ()=>{
+                    console.log("Windowのリサイズを検知！再調整をするよ");
+                    const NewBodyRect=document.body.getBoundingClientRect();
+                    //console.log(`Resize Event ${this.count}回目`,NewBodyRect.width,NewBodyRect.height);
+                    await LoadAndLayoutFunctions.Resize(NewBodyRect.width,NewBodyRect.height);//PixelRatioによっては内部でmain.jsに要請したサイズと実際のサイズが変わることがある
+                },200);
+            }else{
+                console.log("フラグが立っていないため処理が却下されました");
+            }
         });
         /*
         this.EventSetHelper(this.ColumnsInputContainer,"wheel",(e)=>{
@@ -5448,6 +5454,9 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
     //現在の実装方法では、bodyサイズは指定できるがウィンドウの上らへんにあるOS依存ぽいスペースまで正確に制御できていない状況もあいまって余裕を持たせるようにしている
     async Resize(width=this.DisplayWidth-50,height=this.DisplayHeight-50){
         if(CanvasClassDictionary.size!==0){//キャンバスがないなら何もしな
+            this.ResizeCount++;
+            console.log(`Windowサイズ再調整 ${this.ResizeCount} 回目`);
+            console.log(width,height);
             //とりあえずはcolumnsの方向で増やしていく応急処理
             //this.CurrentColumnsNum=CanvasClassDictionary.size;
             let basewidth=-Infinity,baseheight=-Infinity;
@@ -5473,62 +5482,44 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
             const basevalue=2
             let bw=BaseCanvasWidth;
             let bh=BaseCanvasHeight;
-            while(bw%basevalue==0&&bh%basevalue==0){
+            while(bw%basevalue===0&&bh%basevalue===0){
                 N++;
                 bw/=2;
                 bh/=2;
             }
+            console.log("BaseCanvasSize",BaseCanvasWidth,BaseCanvasWidth);
+            console.log(`2^${N}`);
             const scalestep=Math.pow(basevalue,N);
+            console.log("ScaleStep 1/",scalestep);
             const wrate=CellWidth/BaseCanvasWidth;
             const hrate=(CellHeight-this.sliderheight)/BaseCanvasHeight;
             //console.log("scale",wrate,hrate);
             //小さいほうのレートに対してそれを超えない最小の0.5刻みの数字を得る
             //scaleは0.5を下回らないようにする。
             const scale=Math.max(Math.floor(Math.min(wrate,hrate)*scalestep)/scalestep,1/scalestep);
-            //console.log("BaseSize",BaseCanvasWidth,BaseCanvasHeight);
+            console.log(scale);
             const CanvasWidth=BaseCanvasWidth*scale;
             const CanvasHeight=BaseCanvasHeight*scale;
-            //console.log("ScaledSize",CanvasWidth,CanvasHeight);
-            /*
-            CanvasContainer.style.columnGap=`${this.gridgap}px`;
-            CanvasContainer.style.rowGap=`${this.gridgap}px`;
-            CanvasContainer.style.gridTemplateColumns=`repeat(${this.CurrentColumnsNum},1fr)`;
-            CanvasContainer.style.gridTemplateRows=`{repeat(${this.CurrentRowsNum},1fr)}`;
-            */
+           
             //Windowのコンテンツサイズを変更する
             const WindowContentWidth=CanvasWidth*this.CurrentColumnsNum+this.gridgap*(this.CurrentColumnsNum-1);
             const WindowContentHeight=this.menuheight+(CanvasHeight+this.sliderheight)*this.CurrentRowsNum+this.gridgap*(this.CurrentRowsNum-1);
             document.body.style.width=WindowContentWidth;
             document.body.style.height=WindowContentHeight;
             //console.log("ContentSize",WindowContentWidth,WindowContentHeight);
-            window.MainWindowResizeAPI(WindowContentWidth,WindowContentHeight);//これによってもう一度無駄にresizeが発火する
+            this.ResizableFlag=false;
+            console.log("リサイズ処理呼び出す");
+            await window.MainWindowResizeAPI(WindowContentWidth,WindowContentHeight);//これによってもう一度無駄にresizeが発火する
+            this.ResizableFlag=true;
+            console.log("ムーブ処理呼び出す");
             window.MainWindowMoveAPI();//ディスプレイで見切れないように動かす
             this.previousBodyOrderWidth=WindowContentWidth;
             this.previousBodyOrderHeight=WindowContentHeight;
+            console.log(WindowContentWidth,WindowContentHeight);
+            console.log("Windowサイズ調整終了");
         }
     }
-    /*
-    現在のデータタイプとCanvasIDの関係を示すマップを返す
-    他のクラスからも使われるかもしれないのでLoadAndLayoutが担当する
-    */
-    /*
-    UpdateDataTypeCanvasIDMap(){
-        const DataTypeList=Array.from(DicomDataClassDictionary.keys());
-        const DataTypeCanvasIDMap=new Map(
-            DataTypeList.map(datatypekey=>[datatypekey,new Map()])
-        );
-        for(const canvasclass of CanvasClassDictionary.values()){
-            //各キャンバスに現時点であるDataTypeを集計する
-            const CanvasID=canvasclass.id.get("CanvasID");
-            for(const [DataType,LayerData] of canvasclass.LayerDataMap.entries()){//Layerの名前はデータタイプと一致している
-                //LayerData={"Layer":, "DataID":, }
-                const DataID=LayerData.get("DataID");
-                DataTypeCanvasIDMap.get(DataType).set(CanvasID,DataID);
-            }
-        }
-        this.DataTypeCanvasIDMap=DataTypeCanvasIDMap;//{DataType:{CanvasID:DataID,CanvasID:DataID,...,}}
-    }
-    */
+    
     UpdateCanvasIDDataTypeMap(){//これはデータが削除されたり読み込まれたタイミングで都度呼び出す必要がある。
         const CanvasIDDataTypeMap=new Map();//{CanvasID:{DataType:DataID,...,},...}
         for(const [CanvasID,CanvasClass] of CanvasClassDictionary.entries()){

@@ -111,15 +111,33 @@ ipcMain.handle("loadDicom", async (event,SelectedPath)=>{
     //console.log("Loaded DICOM files:", items);
     return items;
 });
-
-ipcMain.on("WindowResize",(event,WindowTarget,Width,Height)=>{
+//OSがウィンドウサイズの変更を終えるまでまつ
+function ResizeWindow(TargetWindow,width,height){
+    return new Promise(resolve=>{
+        const [CurrentWidth,CurrentHeight]=TargetWindow.getContentSize();
+        if(CurrentWidth===width&&CurrentHeight===height){
+            //サイズが変わらない場合即resolve
+            resolve();
+            //return;
+        }
+        const ResizeFinishFunction=()=>{
+            TargetWindow.off("resize",ResizeFinishFunction);//イベントリスナーの解除
+            resolve();
+        };
+        TargetWindow.on("resize",ResizeFinishFunction);
+        TargetWindow.setContentSize(width,height);
+    });
+}
+ipcMain.handle("WindowResize",async (event,WindowTarget,Width,Height)=>{
     //console.log("Check",width,height)
     const TargetWindow=WindowManager.get(WindowTarget);
     try{
-        TargetWindow.setContentSize(Width,Height);
+        await ResizeWindow(TargetWindow,Width,Height);
+        return {Success:true};
     }catch(e){
         console.log("WindowResize Error!!");
         console.log(e);
+        return {Success:false};
     }
 });
 ipcMain.on("WindowMove",(event,WindowTarget)=>{

@@ -12,7 +12,7 @@ contextBridge.exposeInMainWorld("DicomLoadAPI",
     }
 );
 contextBridge.exposeInMainWorld("MainWindowResizeAPI",
-    (width,height)=>ipcRenderer.send("WindowResize","MainWindow",width,height)
+    (width,height)=>ipcRenderer.invoke("WindowResize","MainWindow",width,height)//リサイズが完了したら結果を返す
 );
 contextBridge.exposeInMainWorld("MainWindowMoveAPI",
     ()=>ipcRenderer.send("WindowMove","MainWindow")
