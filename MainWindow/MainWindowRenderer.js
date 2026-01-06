@@ -4695,16 +4695,18 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
         this.resizeTimeout=null;
         this.previousBodyOrderWidth=null;
         this.previousBodyOrderHeight=null;
-        this.ResizableFlag=false;
+        this.ResizableFlag=true;
         this.ResizeCount=0;
         window.addEventListener("resize",()=>{
+            console.log("リサイズ発火",new Date().toISOString());
             if(this.ResizableFlag){
                 clearTimeout(this.resizeTimeout);
                 this.resizeTimeout=setTimeout(async ()=>{
-                    console.log("Windowのリサイズを検知！再調整をするよ");
+                    console.log("Windowのリサイズを検知！再調整をするよ",new Date().toISOString());
                     const NewBodyRect=document.body.getBoundingClientRect();
                     //console.log(`Resize Event ${this.count}回目`,NewBodyRect.width,NewBodyRect.height);
-                    await LoadAndLayoutFunctions.Resize(NewBodyRect.width,NewBodyRect.height);//PixelRatioによっては内部でmain.jsに要請したサイズと実際のサイズが変わることがある
+                    this.ResizeCalculation(NewBodyRect.width,NewBodyRect.height);//PixelRatioによっては内部でmain.jsに要請したサイズと実際のサイズが変わることがある
+                    this.ResizeExecution();
                 },200);
             }else{
                 console.log("フラグが立っていないため処理が却下されました");
@@ -5050,6 +5052,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
             for(const DataInfoMap of DataInfoMapList){//
                 this.CreateNewCanvasBlock(DataInfoMap);
             }
+            this.ResizeExecution();
         }
         /*読み込まれた状態を更新*/
         this.UpdateCanvasIDDataTypeMap();
@@ -5222,7 +5225,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
                 this.GridNumber2CanvasIDArray[LP]=NewCanvasID;
             }
             this.UpdateCanvasPosition();//CanvasのDOMTreeのスタイルを書き換えて位置交換を反映する
-            this.Resize();
+            this.ResizeExecution();
             console.log("パス変更＆読み込み完了");
             /*データの読み込み状況を更新*/
             this.UpdateCanvasIDDataTypeMap();
@@ -5354,7 +5357,8 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
             this.UpdateCanvasMovePositionButtonContainer();
             //更新した情報を基にスタイル変更
             this.UpdateCanvasPosition();
-            this.Resize();
+            this.ResizeCalculation();//仮想的にサイズを計算
+            this.ResizeExecution();//実際に反映
             //新しい位置情報を送信する
             this.SendMainWindowStatus();
         }
@@ -5392,7 +5396,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
         this.CanvasID2GridNumberMap.set(NewCanvasID,newLP);
         //スタイルを変更する
         this.UpdateCanvasPosition();
-        this.Resize();
+        this.ResizeCalculation();//仮想サイズの計算だけ行う
         return NewCanvasID;//とりあえず新しいCanvasIDを返す
     }
     async delateCanvas(CanvasID,UpdateCanvasIDDataTypeMapFlag=true){
@@ -5452,11 +5456,9 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
     }
     //余裕を持たせるためにディスプレイサイズから少しだけ小さい値をデフォルトにする。
     //現在の実装方法では、bodyサイズは指定できるがウィンドウの上らへんにあるOS依存ぽいスペースまで正確に制御できていない状況もあいまって余裕を持たせるようにしている
-    async Resize(width=this.DisplayWidth-50,height=this.DisplayHeight-50){
+    async ResizeCalculation(width=this.DisplayWidth-50,height=this.DisplayHeight-50){
         if(CanvasClassDictionary.size!==0){//キャンバスがないなら何もしな
-            this.ResizeCount++;
-            console.log(`Windowサイズ再調整 ${this.ResizeCount} 回目`);
-            console.log(width,height);
+            console.log("Windowサイズの計算");
             //とりあえずはcolumnsの方向で増やしていく応急処理
             //this.CurrentColumnsNum=CanvasClassDictionary.size;
             let basewidth=-Infinity,baseheight=-Infinity;
@@ -5487,39 +5489,48 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
                 bw/=2;
                 bh/=2;
             }
-            console.log("BaseCanvasSize",BaseCanvasWidth,BaseCanvasWidth);
-            console.log(`2^${N}`);
+            //console.log("BaseCanvasSize",BaseCanvasWidth,BaseCanvasWidth);
+            //console.log(`2^${N}`);
             const scalestep=Math.pow(basevalue,N);
-            console.log("ScaleStep 1/",scalestep);
+            //console.log("ScaleStep 1/",scalestep);
             const wrate=CellWidth/BaseCanvasWidth;
             const hrate=(CellHeight-this.sliderheight)/BaseCanvasHeight;
             //console.log("scale",wrate,hrate);
             //小さいほうのレートに対してそれを超えない最小の0.5刻みの数字を得る
             //scaleは0.5を下回らないようにする。
             const scale=Math.max(Math.floor(Math.min(wrate,hrate)*scalestep)/scalestep,1/scalestep);
-            console.log(scale);
+            //console.log("リサイズの倍率",scale);
             const CanvasWidth=BaseCanvasWidth*scale;
             const CanvasHeight=BaseCanvasHeight*scale;
            
             //Windowのコンテンツサイズを変更する
             const WindowContentWidth=CanvasWidth*this.CurrentColumnsNum+this.gridgap*(this.CurrentColumnsNum-1);
             const WindowContentHeight=this.menuheight+(CanvasHeight+this.sliderheight)*this.CurrentRowsNum+this.gridgap*(this.CurrentRowsNum-1);
-            document.body.style.width=WindowContentWidth;
-            document.body.style.height=WindowContentHeight;
-            //console.log("ContentSize",WindowContentWidth,WindowContentHeight);
-            this.ResizableFlag=false;
-            console.log("リサイズ処理呼び出す");
-            await window.MainWindowResizeAPI(WindowContentWidth,WindowContentHeight);//これによってもう一度無駄にresizeが発火する
-            this.ResizableFlag=true;
-            console.log("ムーブ処理呼び出す");
-            window.MainWindowMoveAPI();//ディスプレイで見切れないように動かす
             this.previousBodyOrderWidth=WindowContentWidth;
             this.previousBodyOrderHeight=WindowContentHeight;
-            console.log(WindowContentWidth,WindowContentHeight);
+        }
+    }
+    //複数読み込み時などに備えて、仮想的にサイズを調整するクラスと実際に調整するクラスを分離する。
+    //そうすれば、連続読み込みとデバウンスの衝突を回避できそうだ。
+    async ResizeExecution(){
+        //ウィンドウリサイズの実行部分
+        if(CanvasClassDictionary.size!==0){
+            this.ResizeCount++;
+            console.log(`Windowサイズ再調整 ${this.ResizeCount} 回目`);
+            document.body.style.width=this.previousBodyOrderWidth;
+            document.body.style.height=this.previousBodyOrderHeight;
+            //console.log("ContentSize",WindowContentWidth,WindowContentHeight);
+            this.ResizableFlag=false;
+            console.log("リサイズ処理開始",new Date().toISOString());
+            const ResizeResult=await window.MainWindowResizeAPI(this.previousBodyOrderWidth,this.previousBodyOrderHeight);//これによってもう一度無駄にresizeが発火する
+            //console.log(ResizeResult);
+            this.ResizableFlag=true;
+            console.log("リサイズが終わったのでフラグをtrueにしたよ",new Date().toISOString());
+            //console.log("ムーブ処理呼び出す");
+            window.MainWindowMoveAPI();//ディスプレイで見切れないように動かす
             console.log("Windowサイズ調整終了");
         }
     }
-    
     UpdateCanvasIDDataTypeMap(){//これはデータが削除されたり読み込まれたタイミングで都度呼び出す必要がある。
         const CanvasIDDataTypeMap=new Map();//{CanvasID:{DataType:DataID,...,},...}
         for(const [CanvasID,CanvasClass] of CanvasClassDictionary.entries()){

@@ -117,14 +117,23 @@ function ResizeWindow(TargetWindow,width,height){
         const [CurrentWidth,CurrentHeight]=TargetWindow.getContentSize();
         if(CurrentWidth===width&&CurrentHeight===height){
             //サイズが変わらない場合即resolve
+            console.log("Size No Change",new Date().toISOString());
             resolve();
-            //return;
+            return;
         }
+        let timer=null;
         const ResizeFinishFunction=()=>{
-            TargetWindow.off("resize",ResizeFinishFunction);//イベントリスナーの解除
-            resolve();
+            clearTimeout(timer);
+            console.log("resize fired",new Date().toISOString());
+            timer=setTimeout(()=>{
+                TargetWindow.off("resize",ResizeFinishFunction);//イベントリスナーの解除
+                console.log("Size Change Finished",new Date().toISOString());
+                resolve();
+                return;
+            },50);//イベント発火などのタイミング保障のためのデバウンス
         };
         TargetWindow.on("resize",ResizeFinishFunction);
+        console.log("Order Size Change",new Date().toISOString());
         TargetWindow.setContentSize(width,height);
     });
 }
