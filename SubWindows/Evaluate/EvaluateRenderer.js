@@ -64,7 +64,6 @@ class Evaluate{
             [SurfaceDice.EvaluateName,new SurfaceDice()],
             [HausdorffDistance95.EvaluateName,new HausdorffDistance95()],
             [HausdorffDistance100.EvaluateName,new HausdorffDistance100()],
-            [dammyFunction.EvaluateName,new dammyFunction()],
         ]);
         //関数セレクト周辺への反映
         this.EvaluationFunctionSelecter.innerHTML="";
@@ -866,14 +865,7 @@ class Evaluate{
 ターゲットとなる３Dボリューム(flatten)と、選択範囲が渡される。
 評価関数によってflattenしてから計算できるものとそうでないものがあるため、関数の中で所望する形状に再形成したうえで計算を行う
 */
-class dammyFunction{
-    static EvaluateName="dammy";
-    constructor(){
-        //this.InputNum=1;
-        this.TargetDataType="CT";
-        this.CalculateHistory=new Map();
-    }
-}
+
 class VolumetricDSC{
     static EvaluateName="VolumetricDSC";
     constructor(){

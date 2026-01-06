@@ -55,11 +55,12 @@ ipcMain.handle("GetDisplaySize",(event)=>{
     return {width,height};
 });
 /*ファイル読み込みのためのIPCハンドラ*/
-ipcMain.handle("selectFiles", async (event, propertieslist)=>{
+ipcMain.handle("selectFiles", async (event,DialogTitle,PropertiesArray)=>{
     //dialogを開き、ファイル、フォルダを選択
     const MainWindow=WindowManager.get("MainWindow");
     const result=await dialog.showOpenDialog(MainWindow,{
-        properties:propertieslist,
+        title:DialogTitle,
+        properties:PropertiesArray,
     });
     if(result.canceled || result.filePaths.length === 0) {
         console.error("No files selected.");

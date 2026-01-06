@@ -7,7 +7,7 @@ contextBridge.exposeInMainWorld("GetDisplaySize",
 /*フォルダーごと読み込む場合とファイル一つだけ読み込む場合があるため、引数で制御する*/
 contextBridge.exposeInMainWorld("DicomLoadAPI",
     {
-        selectFiles:(propertieslist)=>ipcRenderer.invoke("selectFiles",propertieslist),//選択したパスのリストを返す
+        selectFiles:(DialogTitle,PropertiesArray)=>ipcRenderer.invoke("selectFiles",DialogTitle,PropertiesArray),//選択したパスのリストを返す
         loadDicom:(loadingPath)=>ipcRenderer.invoke("loadDicom",loadingPath),//パスを受け取って、読み込む(ディレクトリorファイルのパスを受け取り、中で判定)
     }
 );

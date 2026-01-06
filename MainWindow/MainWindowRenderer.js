@@ -162,7 +162,8 @@ class CTclass{
                 //属性値を取得
                 const MultipleSelections=e.target.getAttribute("data-MultipleSelections");//"multipleSelections" or "" になるはず
                 const PathTarget=this.PathTarget;
-                const SelectedPathList=await LoadAndLayout.SelectPathes(PathTarget,MultipleSelections);//[]リストみたいな形式
+                const DialogTitle=`Select ${this.DataType}`;
+                const SelectedPathList=await LoadAndLayout.SelectPathes(DialogTitle,PathTarget,MultipleSelections);//[]リストみたいな形式
                 //SelectedPathListはリストで帰ってくることもあれば単一文字列で帰ってくることもあるが、showOpenDialogはかならず[filepath,...]の形式でパス文字列を返すのでfor文を回して良し
                 /*
                 ここではパスの選択は行うが読み込みはまだ行わない。現在読み込んだパスの配列を", "で結合してtextに表示する
@@ -716,7 +717,8 @@ class MASKclass{
                 //属性値を取得
                 const MultipleSelections=e.target.getAttribute("data-MultipleSelections");//"multipleSelections" or "" になるはず
                 const PathTarget=this.PathTarget;
-                const SelectedPathList=await LoadAndLayout.SelectPathes(PathTarget,MultipleSelections);//[]リストみたいな形式
+                const DialogTitle=`Select ${this.DataType}`;
+                const SelectedPathList=await LoadAndLayout.SelectPathes(DialogTitle,PathTarget,MultipleSelections);//[]リストみたいな形式
                 //SelectedPathListはリストで帰ってくることもあれば単一文字列で帰ってくることもあるが、showOpenDialogはかならず[filepath,...]の形式でパス文字列を返すのでfor文を回して良し
                 /*
                 ここではパスの選択は行うが読み込みはまだ行わない。現在読み込んだパスの配列を", "で結合してtextに表示する
@@ -1792,7 +1794,8 @@ class CONTOURclass{
                 //属性値を取得
                 const MultipleSelections=e.target.getAttribute("data-MultipleSelections");//"multipleSelections" or "" になるはず
                 const PathTarget=this.PathTarget;
-                const SelectedPathList=await LoadAndLayout.SelectPathes(PathTarget,MultipleSelections);//[]リストみたいな形式
+                const DialogTitle=`Select ${this.DataType}`;
+                const SelectedPathList=await LoadAndLayout.SelectPathes(DialogTitle,PathTarget,MultipleSelections);//[]リストみたいな形式
                 //SelectedPathListはリストで帰ってくることもあれば単一文字列で帰ってくることもあるが、showOpenDialogはかならず[filepath,...]の形式でパス文字列を返すのでfor文を回して良し
                 /*
                 ここではパスの選択は行うが読み込みはまだ行わない。現在読み込んだパスの配列を", "で結合してtextに表示する
@@ -2435,7 +2438,8 @@ class DOSEclass{
                 //属性値を取得
                 const MultipleSelections=e.target.getAttribute("data-MultipleSelections");//"multipleSelections" or "" になるはず
                 const PathTarget=this.PathTarget;
-                const SelectedPathList=await LoadAndLayout.SelectPathes(PathTarget,MultipleSelections);//[]リストみたいな形式
+                const DialogTitle=`Select ${this.DataType}`;
+                const SelectedPathList=await LoadAndLayout.SelectPathes(DialogTitle,PathTarget,MultipleSelections);//[]リストみたいな形式
                 //SelectedPathListはリストで帰ってくることもあれば単一文字列で帰ってくることもあるが、showOpenDialogはかならず[filepath,...]の形式でパス文字列を返すのでfor文を回して良し
                 /*
                 ここではパスの選択は行うが読み込みはまだ行わない。現在読み込んだパスの配列を", "で結合してtextに表示する
@@ -4519,8 +4523,8 @@ class Canvas{
 */
 class LoadAndLayout{//静的メソッドだけでいい気がする。わざわざコンストラクタを作る必要ないかも
     /*静的メソッドとしてファイルパス読み込み関数を提供する*/
-    static async SelectPathes(PathType="openDirectory",MultiTypeLoad=""){
-        const LoadingPathList=await window.DicomLoadAPI.selectFiles([PathType,MultiTypeLoad]);
+    static async SelectPathes(DialogTitle="Default Title",PathType="openDirectory",MultiTypeLoad=""){
+        const LoadingPathList=await window.DicomLoadAPI.selectFiles(DialogTitle,[PathType,MultiTypeLoad]);
         return LoadingPathList;
     }
     static async LoadFiles(loadingPath){
