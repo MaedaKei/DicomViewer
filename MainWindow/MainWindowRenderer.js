@@ -5732,16 +5732,16 @@ class Evaluate{
         //現在の構想では、ボリュームをサブウィンドウに送り、サブウィンドウレンダラーで計算を行うようにする
         const EvaluateStartFunction=(ReceiveData)=>{
             const ReceivedDataBody=ReceiveData.get("data");
-            const TargetDataList=ReceivedDataBody.get("TargetDataList");
-            const TargetDataType=ReceivedDataBody.get("TargetDataType");
+            const TargetDataTypeArray=ReceivedDataBody.get("TargetDataTypeArray");
+            const LoadDataKeySet=ReceivedDataBody.get("LoadDataKeySet");
             //評価対象になっているボリュームのサイズは選択されたときに送られているのでボリュームだけ送る
             const data=new Map();
             const VolumeMap=new Map();
             //メインレイヤーのデータを送る
             //CID:{"Path":path,"Volume",Volume}
-            for(const TargetDataKey of TargetDataList){
+            for(const TargetDataKey of LoadDataKeySet){
                 //targetData="DataType:DataID"になっているはずなのでこれを翻訳
-                const TargetDataKeyList=Evaluate.String2Array(TargetDataKey);
+                const TargetDataKeyList=this.constructor.String2Array(TargetDataKey);
                 //第一要素は文字列、第二要素は数値型なので文字列からparseInt
                 const DataType=TargetDataKeyList[0];
                 const DataID=parseInt(TargetDataKeyList[1]);
@@ -5767,9 +5767,12 @@ class Evaluate{
             //プラスアルファのデータを送る
             /*マスク用*/
             const ExtraDataMap=new Map();
-            if(TargetDataType==="MASK"){
-                //console.log("MASK用の追加データをセット");
-                ExtraDataMap.set("ColorMapLabelArray",colormapformask.label);
+            for(const TargetDataType of TargetDataTypeArray){
+                if(TargetDataType==="MASK"){
+                    //console.log("MASK用の追加データをセット");
+                    ExtraDataMap.set("ColorMapLabelArray",colormapformask.label);
+                    ExtraDataMap.set("ColorMap",colormapformask.colormap);//色の数×4の長さの配列になっているRGBAで4ずつずらして読み込む
+                }
             }
             data.set("ExtraDataMap",ExtraDataMap);
             const SendingData=new Map([
