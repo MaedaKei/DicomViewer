@@ -70,7 +70,7 @@ class Evaluate{
         for(const [EvaluateName,EvaluationInstance] of this.EvaluationFunctionMap.entries()){
             const option=document.createElement("option");
             option.value=EvaluateName;
-            const OptionText=`${EvaluateName} [ ${EvaluationInstance.TargetDataType} ]`;
+            const OptionText=`${EvaluateName} [ ${EvaluationInstance.TargetDataTypeText} ]`;
             option.text=OptionText;
             this.EvaluationFunctionSelecter.appendChild(option);
         }
@@ -93,10 +93,13 @@ class Evaluate{
         this.originalimageheight=99999;
         this.originalslidermax=99999;
         this.UpdateInputSelectDialog();//まずはダイアログを作成する。
+        console.log("ダイアログの初期化完了");
         this.ChangeFunctionSelect();
+        console.log("評価関数の初期設定完了");
         //イベントの登録
         this.ElementsWithEvents=new Map();
         this.setUserEvents();
+        console.log("ユーザー用イベント設定完了");
         this.setSubWindowCloseEvents();
     }
     setUserEvents(){
@@ -137,7 +140,7 @@ class Evaluate{
                         //CurrentSelectedCanvasIDSetを更新
                         //const DataType=this.EvaluationFunctionMap.get(this.CurrentSelectedFunctionName).TargetDataType;
                         //const DataID=this.CanvasIDDataTypeMap.get(CanvasID).get(DataType);
-                        this.CurrentSelectedCanvasIDSet.set(CanvasID);//{CanvasID:{DataType:???,DataID:???}}
+                        this.CurrentSelectedCanvasIDSet.add(CanvasID);//{CanvasID:{DataType:???,DataID:???}}
                     }
                 }
             }
@@ -396,7 +399,7 @@ class Evaluate{
             const scrollHeight=this.CalculateHistoryList.scrollHeight;
             this.CalculateHistoryList.scrollTop=scrollHeight;
             //ここでのFocusでは送信を起こしたくない
-            this.FocusHistoryListItem(CalculateID,false);
+            this.FocusHistoryListItem(this.CalculateID-1,false);
         }
         this.FromMainProcessToSubFunctions.set("FromMainToSubTargetVolume",FromMainToSubTargetVolumeFunction);
         //ulに対してイベントを定義
@@ -612,12 +615,10 @@ class Evaluate{
             if(CanvasID>=0){//この位置にCanvasが配置されている
                 CanvasSelectButton.value=CanvasID;
                 //DataTypeクラスを付与する
-                /*
                 const DataTypeMap=this.CanvasIDDataTypeMap.get(CanvasID);//{DataType:DataID,...,}
                 for(const DataType of DataTypeMap.keys()){
                     CanvasSelectButton.classList.add(DataType);
                 }
-                */
                 CanvasSelectButton.textContent=`CanvasID : ${CanvasID}`;
             }
             CanvasSelectButtonContainerFragment.appendChild(CanvasSelectButton);
@@ -638,9 +639,7 @@ class Evaluate{
         this.TargetInputNumDisplay.textContent=`N${InputNumConditionText}`;
         //CanvasSelectButtonContainer直下のボタンを一度すべて非表示にする
         this.CanvasSelectButtonContainer.querySelectorAll(":scope>button").forEach((button)=>{
-            const CanvasID=parseInt(button.value);
-            const DataTypeDataIDMap=this.CanvasIDDataTypeMap.get(CanvasID);//このボタンのCanvasIDのデータの表示状況を取得する
-            if(EvaluationFunction.CheckSelectable(DataTypeDataIDMap)){
+            if(EvaluationFunction.CheckSelectable(button)){
                 button.disabled=false;
                 //console.log("disabled False");
             }else{
@@ -680,9 +679,7 @@ class Evaluate{
         let CanvasSelectChangedFlag=false;//選択状態が変わった⇒MainWindowに通知必要という印
         let ChangeCount=0;
         SelectedButtonArray.forEach((button)=>{
-            const CanvasID=parseInt(button.value);
-            const DataTypeDataIDMap=this.CanvasIDDataTypeMap.get(CanvasID);
-            if(!CurrentSelectedFunction.CheckSelectable(DataTypeDataIDMap)){
+            if(!CurrentSelectedFunction.CheckSelectable(button)){
                 //このCanvasIDは選択可能なものではないので、選択状態ではなくする
                 button.classList.remove("Selected");
                 this.CurrentSelectedCanvasIDSet.delete(CanvasID);
@@ -923,7 +920,7 @@ class VolumetricDSC{
         //this.InputNum=2;
         //this.TargetDataType="MASK";
         this.TargetDataTypeArray=["MASK"].sort();
-        this.TargetDataTypeText=`with ${this.TargetDataTypeArray.join(", ")}`;
+        this.TargetDataTypeText=`${this.TargetDataTypeArray.join(", ")}`;
         //this.InputNum=2;//可変数の入力を受け付ける関数は下限値、上限値などの境界値を表す変数とする。
         //this.InputNumConditionText=`=${this.InputNum}`;//可変長の場合は>=1のようにする。この条件はInputNumConditionCheckで表現する
         /*Canvasの入力数に関するパラメータ*/
@@ -935,14 +932,16 @@ class VolumetricDSC{
         this.setResultTemplate();
         this.setUserEvents();
     }
+    /*どの関数でも必要*/
     //与えられたCanvasButtonのクラス＝読み込んであるデータタイプをチェックして、この関数への入力として選択できるキャンバスであるかチェックする
-    CheckSelectable(DataTypeDataIDMap){
+    CheckSelectable(CanvasButtonElement){//ButtonElementに付与されているデータタイプを見てこのCanvasIDが選択可能か判定する
         let ButtonSelectableFlag=true;
         for(const TargetDataType of this.TargetDataTypeArray){
-            ButtonSelectableFlag=ButtonSelectableFlag&&DataTypeDataIDMap.has(TargetDataType);
+            ButtonSelectableFlag=ButtonSelectableFlag&&CanvasButtonElement.classList.contains(TargetDataType);
         }
         return ButtonSelectableFlag;
     }
+    /*どの関数でも必要*/
     //この評価関数が受け付ける入力数の条件をチェックしてtrueかfalseで返す。これはすべての評価関数でもたなければならない
     CheckCalculatable(InputNum){
         //この評価関数は入力数2のときに計算可能である。
@@ -957,8 +956,32 @@ class VolumetricDSC{
     評価指標によっては、MASKとDOSEを同一キャンバスにオーバーレイした状態で、１つを選択⇒そこに読み込まれているこれらを送信させる、というように従来の仕様の枠をはみ出した動きが必要になるので
     評価関数ごとの専用実装部分とすることにした
     */
-    OrderNecessaryData(CanvasIDDataTypeMapArray){//[{CanvasID:{Mask:DataID,CT:DataID,...}},{CanvasID:{}}]のような形式で送られてくるはず
-
+    OrderNecessaryData(CurrentSelectedCanvasIDSet,CanvasIDDataTypeMap){//[{CanvasID:{Mask:DataID,CT:DataID,...}},{CanvasID:{}}]のような形式で送られてくるはず
+        /*
+        CurrentSelectedCanvasIDSetは選択されたCanvasID、CanvasIDDataTypeMapはメインウィンドウのデータ読み込み状況
+        例：以下の出力形式の意味
+        {
+            0:{
+                CT:1,
+                MASK:2
+            }
+        }
+        CurrentSelectedCanvasIDSetにはCanvsID：0が格納されており、CanvasID＝0のキャンバスで表示しているデータを評価することを示す
+        このキャンバスに表示されているデータのうち、どのデータタイプを使うかは評価関数の側で自由に決める。この例では、キャンバス0で表示しているCTとMASKのデータを評価のために必要としており
+        、そのCTデータはDataType＝CT、DataID(DataTypeごとの識別番号＝通し番号、何番目に読み込まれたCTデータか)＝1のデータを必要としている。MASKの2を必要としている。
+        */
+        const OrderCanvasIDDataTypeDataIDMap=new Map();
+        for(const CanvasID of CurrentSelectedCanvasIDSet){
+            const CanvasIDMap=new Map();
+            const SelectedCanvasIDDataTypeDataIDMap=CanvasIDDataTypeMap.get(CanvasID);
+            /*この評価関数では、MASKのみを使用する*/
+            for(const TargetDataType of this.TargetDataTypeArray){
+                const DataID=SelectedCanvasIDDataTypeDataIDMap.get(TargetDataType);
+                CanvasIDMap.set(TargetDataType,DataID);
+            }
+            OrderCanvasIDDataTypeDataIDMap.set(CanvasID,CanvasIDMap);
+        }
+        return OrderCanvasIDDataTypeDataIDMap;
     }
     setResultTemplate(){
         this.EvaluationTableForMaskResultContainer=document.createElement("div");
@@ -966,7 +989,7 @@ class VolumetricDSC{
         /*InfoText部はテンプレートとして持っておく*/
         this.InfoTextContainer=document.createElement("div");
         this.InfoTextContainer.className="EvaluationTableForMaskInfoTextContainer";
-        for(let i=0;i<this.InputNum;i++){
+        for(let i=0;i<this.CanvasInputRequiredNum;i++){
             const InfoText=document.createElement("div");
             InfoText.className="InfoText";
             this.InfoTextContainer.appendChild(InfoText);
@@ -1021,7 +1044,7 @@ class VolumetricDSC{
         const InputVolumeMap=CalculateData.get("InputVolumeMap");//{CID:{"Path",path,"Size":{width:???,height:???},"Volume":Volume}}をvalueとするMap
         //SelectedCanvasInfoMapからInputVolumeKeyArrayを作成する
         /*
-        const InputVolumeKeyList=Array.from(SelectedCanvasInfoMap.values()).map((DataTypeDataIDMap)=>{
+        const InputVolumeKeyArray=Array.from(SelectedCanvasInfoMap.values()).map((DataTypeDataIDMap)=>{
             const DataType=DataTypeDataIDMap.get("DataType");
             const DataID=DataTypeDataIDMap.get("DataID");
             const InputVolumeKey=Evaluate.Array2String([DataType,DataID]);
@@ -1040,18 +1063,18 @@ class VolumetricDSC{
         }
         /*
         for(let i=0;i<InputInfoList.length;i++){
-            InputInfoList[i].set("Path",InputVolumeMap.get(InputVolumeKeyList[i]).get("Path"));
+            InputInfoList[i].set("Path",InputVolumeMap.get(InputVolumeKeyArray[i]).get("Path"));
         }
         */
         //const PathTextList=[];//入力パスをまとめるもの
 
-        const InputVolume1=InputVolumeMap.get(InputVolumeKeyList[0]);
+        const InputVolume1=InputVolumeMap.get(InputVolumeKeyArray[0]);
         const flattenvolume1=InputVolume1.get("Volume");
         const volume1OriginalWidth=InputVolume1.get("Size").get("width");
         const volume1OriginalHeight=InputVolume1.get("Size").get("height");
         //PathTextList.push(InputVolume1.get("Path"));
 
-        const InputVolume2=InputVolumeMap.get(InputVolumeKeyList[1]);
+        const InputVolume2=InputVolumeMap.get(InputVolumeKeyArray[1]);
         const flattenvolume2=InputVolume2.get("Volume");
         const volume2OriginalWidth=InputVolume2.get("Size").get("width");
         const volume2OriginalHeight=InputVolume2.get("Size").get("height");
@@ -1229,12 +1252,12 @@ class VolumetricDSC{
         const SelectedCanvasArray=Array.from(SelectedCanvasInfoMap.keys());
         const TargetDataType="MASK";
         const InfoTextList=Array.from(this.InfoTextContainer.children);
-        for(const [index,CanvasID] of SelectedCanvasArray.entries()){
+        for(const [i,CanvasID] of SelectedCanvasArray.entries()){
             const DataTypeDataIDMap=SelectedCanvasInfoMap.get(CanvasID);
             const TargetDataID=DataTypeDataIDMap.get(TargetDataType);
             const InputVolumeKey=Evaluate.Array2String([TargetDataType,TargetDataID]);
             const Path=InputVolumeKeyPathMap.get(InputVolumeKey);
-            const text=`Input ${index} : CanvasID = ${CanvasID}\n${Path}`;
+            const text=`Input ${i} : CanvasID = ${CanvasID}\n${Path}`;
             InfoTextList[i].textContent=text;
         }
         //trの中からclass名で検索をかけ、そこからそのクラスを除外する
@@ -1337,7 +1360,7 @@ class HausdorffDistance95{
         const SelectedCanvasInfoMap=structuredClone(CalculateData.get("SelectedCanvasInfoMap"));//参照を切る。ただ代入するだけではEvaluate内のCurrentSelectedCanvasIDSetまで影響することを確認した。
         //SelectedCanvasInfoMap={CanvasID:{DataType:???,DataID:???},...}
         const InputVolumeMap=CalculateData.get("InputVolumeMap");//{CID:{"Path",path,"Size":{width:???,height:???},"Volume":Volume}}をvalueとするMap
-        const InputVolumeKeyList=Array.from(SelectedCanvasInfoMap.values()).map((DataTypeDataIDMap)=>{
+        const InputVolumeKeyArray=Array.from(SelectedCanvasInfoMap.values()).map((DataTypeDataIDMap)=>{
             const DataType=DataTypeDataIDMap.get("DataType");
             const DataID=DataTypeDataIDMap.get("DataID");
             const InputVolumeKey=Evaluate.Array2String([DataType,DataID]);
@@ -1424,7 +1447,7 @@ class HausdorffDistance95{
             InputVolumeKeyContourPointsMap.set(InputVolumeKey,ContourPointsMap);
         }
         console.log("境界点集合抽出完了");
-        const [InputVolumeKey1,InputVolumeKey2]=InputVolumeKeyList;
+        const [InputVolumeKey1,InputVolumeKey2]=InputVolumeKeyArray;
         const ContourPointsMap1=InputVolumeKeyContourPointsMap.get(InputVolumeKey1);
         const ContourPointsMap2=InputVolumeKeyContourPointsMap.get(InputVolumeKey2);
         const SpacingDataMap1=InputVolumeKeySpacingDataMap.get(InputVolumeKey1);
@@ -1898,7 +1921,7 @@ class SurfaceDice{
         const SelectedCanvasInfoMap=structuredClone(CalculateData.get("SelectedCanvasInfoMap"));//参照を切る。ただ代入するだけではEvaluate内のCurrentSelectedCanvasIDSetまで影響することを確認した。
         //SelectedCanvasInfoMap={CanvasID:{DataType:???,DataID:???},...}
         const InputVolumeMap=CalculateData.get("InputVolumeMap");//{CID:{"Path",path,"Size":{width:???,height:???},"Volume":Volume}}をvalueとするMap
-        const InputVolumeKeyList=Array.from(SelectedCanvasInfoMap.values()).map((DataTypeDataIDMap)=>{
+        const InputVolumeKeyArray=Array.from(SelectedCanvasInfoMap.values()).map((DataTypeDataIDMap)=>{
             const DataType=DataTypeDataIDMap.get("DataType");
             const DataID=DataTypeDataIDMap.get("DataID");
             const InputVolumeKey=Evaluate.Array2String([DataType,DataID]);
@@ -1988,7 +2011,7 @@ class SurfaceDice{
             InputVolumeKeyContourPointsMap.set(InputVolumeKey,ContourPointsMap);
         }
         console.log("境界点集合抽出完了");
-        const [InputVolumeKey1,InputVolumeKey2]=InputVolumeKeyList;
+        const [InputVolumeKey1,InputVolumeKey2]=InputVolumeKeyArray;
         const ContourPointsMap1=InputVolumeKeyContourPointsMap.get(InputVolumeKey1);
         const ContourPointsMap2=InputVolumeKeyContourPointsMap.get(InputVolumeKey2);
         const SpacingDataMap1=InputVolumeKeySpacingDataMap.get(InputVolumeKey1);

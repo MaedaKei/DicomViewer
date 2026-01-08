@@ -162,7 +162,7 @@ class CTclass{
                 //属性値を取得
                 const MultipleSelections=e.target.getAttribute("data-MultipleSelections");//"multipleSelections" or "" になるはず
                 const PathTarget=this.PathTarget;
-                const DialogTitle=`Select ${this.DataType}`;
+                const DialogTitle=`${this.DataType} 選択ダイアログ`;
                 const SelectedPathList=await LoadAndLayout.SelectPathes(DialogTitle,PathTarget,MultipleSelections);//[]リストみたいな形式
                 //SelectedPathListはリストで帰ってくることもあれば単一文字列で帰ってくることもあるが、showOpenDialogはかならず[filepath,...]の形式でパス文字列を返すのでfor文を回して良し
                 /*
@@ -717,7 +717,7 @@ class MASKclass{
                 //属性値を取得
                 const MultipleSelections=e.target.getAttribute("data-MultipleSelections");//"multipleSelections" or "" になるはず
                 const PathTarget=this.PathTarget;
-                const DialogTitle=`Select ${this.DataType}`;
+                const DialogTitle=`${this.DataType} 選択ダイアログ`;
                 const SelectedPathList=await LoadAndLayout.SelectPathes(DialogTitle,PathTarget,MultipleSelections);//[]リストみたいな形式
                 //SelectedPathListはリストで帰ってくることもあれば単一文字列で帰ってくることもあるが、showOpenDialogはかならず[filepath,...]の形式でパス文字列を返すのでfor文を回して良し
                 /*
@@ -1794,7 +1794,7 @@ class CONTOURclass{
                 //属性値を取得
                 const MultipleSelections=e.target.getAttribute("data-MultipleSelections");//"multipleSelections" or "" になるはず
                 const PathTarget=this.PathTarget;
-                const DialogTitle=`Select ${this.DataType}`;
+                const DialogTitle=`${this.DataType} 選択ダイアログ`;
                 const SelectedPathList=await LoadAndLayout.SelectPathes(DialogTitle,PathTarget,MultipleSelections);//[]リストみたいな形式
                 //SelectedPathListはリストで帰ってくることもあれば単一文字列で帰ってくることもあるが、showOpenDialogはかならず[filepath,...]の形式でパス文字列を返すのでfor文を回して良し
                 /*
@@ -2438,7 +2438,7 @@ class DOSEclass{
                 //属性値を取得
                 const MultipleSelections=e.target.getAttribute("data-MultipleSelections");//"multipleSelections" or "" になるはず
                 const PathTarget=this.PathTarget;
-                const DialogTitle=`Select ${this.DataType}`;
+                const DialogTitle=`${this.DataType} 選択ダイアログ`;
                 const SelectedPathList=await LoadAndLayout.SelectPathes(DialogTitle,PathTarget,MultipleSelections);//[]リストみたいな形式
                 //SelectedPathListはリストで帰ってくることもあれば単一文字列で帰ってくることもあるが、showOpenDialogはかならず[filepath,...]の形式でパス文字列を返すのでfor文を回して良し
                 /*
