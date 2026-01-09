@@ -192,7 +192,7 @@ function createSubWindow(SendingData){
     let SubWindowLeftTopX=MainWindowX+MainWindowWidth;
     let SubWindowLeftTopY=MainWindowY;
     const SafetyOffset=15;//座標領域の端ぴったりでも異常ウィンドウの判定を受けたので、WorkAreaより少し狭いところに左上が来るようにする。
-    const NearestDisplay=screen.getDisplayNearestPoint({x:SubWindowLeftTopX,y:SubWindowLeftTopY});
+    const NearestDisplay=screen.getDisplayNearestPoint({x:SubWindowLeftTopX,y:SubWindowLeftTopY});//ウィンドウの左上の点が最も近いディスプレイを取得し、その中に点を移動させる
     const NearestDisplayWorkArea=NearestDisplay.workArea;
     console.log("SubWindowの左上が存在できる範囲",NearestDisplayWorkArea);
     const NearestDisplayMinX=NearestDisplayWorkArea.x;
