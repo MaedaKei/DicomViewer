@@ -188,14 +188,26 @@ function createSubWindow(SendingData){
     //メインウィンドウの位置を取得する
     const MainWindow=WindowManager.get("MainWindow");
     const {x:MainWindowX,y:MainWindowY,width:MainWindowWidth}=MainWindow.getBounds();
-    //console.log(MainWindow.getBounds());
-    //console.log(MainWindowX,MainWindowY,MainWindowWidth);
+    /*サブウィンドウの展開場所を調整*/
+    let SubWindowLeftTopX=MainWindowX+MainWindowWidth;
+    let SubWindowLeftTopY=MainWindowY;
+    const SafetyOffset=15;//座標領域の端ぴったりでも異常ウィンドウの判定を受けたので、WorkAreaより少し狭いところに左上が来るようにする。
+    const NearestDisplay=screen.getDisplayNearestPoint({x:SubWindowLeftTopX,y:SubWindowLeftTopY});
+    const NearestDisplayWorkArea=NearestDisplay.workArea;
+    console.log("SubWindowの左上が存在できる範囲",NearestDisplayWorkArea);
+    const NearestDisplayMinX=NearestDisplayWorkArea.x;
+    const NearestDisplayMaxX=NearestDisplayMinX+NearestDisplayWorkArea.width;
+    const NearestDisplayMinY=NearestDisplayWorkArea.y;
+    const NearestDisplayMaxY=NearestDisplayMinY+NearestDisplayWorkArea.height;
+    //一番近いディスプレイの座標内に左上の点が含まれるようにする
+    SubWindowLeftTopX=Math.max(NearestDisplayMinX+SafetyOffset,Math.min(SubWindowLeftTopX,NearestDisplayMaxX-SafetyOffset));
+    SubWindowLeftTopY=Math.max(NearestDisplayMinY+SafetyOffset,Math.min(SubWindowLeftTopY,NearestDisplayMaxY-SafetyOffset));
     const SubWindow = new BrowserWindow({
         width: windowsize[0],
         height: windowsize[1],
         parent: MainWindow,//MainWindowとの親子関係を設定しておくことでMainWindowが表示されているディスプレイで表示されるようにする
-        x: MainWindowX+MainWindowWidth,
-        y: MainWindowY,
+        x: SubWindowLeftTopX,
+        y: SubWindowLeftTopY,
         useContentSize:true,
         //maximizable:false,
         resizable:false,
