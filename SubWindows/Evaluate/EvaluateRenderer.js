@@ -297,8 +297,8 @@ class Evaluate{
                 データタイプごとに共通で必要となるデータを送れない(例えばMaskLabelとか)。
                 そこで、DataTypeも別で送ることにする
                 */
-                const TargetDataTypeArray=this.EvaluationFunctionMap.get(this.CurrentSelectedFunctionName).TargetDataTypeArray;
-                this.SendTargetDataList(TargetDataTypeArray,LoadDataKeySet);//ラッパー
+                const TargetDataTypeSet=this.EvaluationFunctionMap.get(this.CurrentSelectedFunctionName).TargetDataTypeSet;
+                this.SendTargetDataList(TargetDataTypeSet,LoadDataKeySet);//ラッパー
             }
         });
         //2.データ受け取り→計算
@@ -822,11 +822,11 @@ class Evaluate{
             }
         }
     }
-    SendTargetDataList(TargetDataTypeArray,LoadDataKeySet){//ラッパー
+    SendTargetDataList(TargetDataTypeSet,LoadDataKeySet){//ラッパー
         const SendingData=new Map([
             ["action","EvaluateStart"],
             ["data",new Map([
-                ["TargetDataTypeArray",TargetDataTypeArray],
+                ["TargetDataTypeSet",TargetDataTypeSet],
                 ["LoadDataKeySet",LoadDataKeySet],
             ])]
         ])
@@ -919,8 +919,9 @@ class VolumetricDSC{
         //this.EvaluatonName=this.constructor.name
         //this.InputNum=2;
         //this.TargetDataType="MASK";
-        this.TargetDataTypeArray=["MASK"].sort();
-        this.TargetDataTypeText=`${this.TargetDataTypeArray.join(", ")}`;
+        const TargetDataTypeArray=["MASK"];
+        this.TargetDataTypeSet=new Set(TargetDataTypeArray);
+        this.TargetDataTypeText=`${TargetDataTypeArray.join(", ")}`;
         //this.InputNum=2;//可変数の入力を受け付ける関数は下限値、上限値などの境界値を表す変数とする。
         //this.InputNumConditionText=`=${this.InputNum}`;//可変長の場合は>=1のようにする。この条件はInputNumConditionCheckで表現する
         /*Canvasの入力数に関するパラメータ*/
@@ -936,7 +937,7 @@ class VolumetricDSC{
     //与えられたCanvasButtonのクラス＝読み込んであるデータタイプをチェックして、この関数への入力として選択できるキャンバスであるかチェックする
     CheckSelectable(CanvasButtonElement){//ButtonElementに付与されているデータタイプを見てこのCanvasIDが選択可能か判定する
         let ButtonSelectableFlag=true;
-        for(const TargetDataType of this.TargetDataTypeArray){
+        for(const TargetDataType of this.TargetDataTypeSet){
             ButtonSelectableFlag=ButtonSelectableFlag&&CanvasButtonElement.classList.contains(TargetDataType);
         }
         return ButtonSelectableFlag;
@@ -975,7 +976,7 @@ class VolumetricDSC{
             const CanvasIDMap=new Map();
             const SelectedCanvasIDDataTypeDataIDMap=CanvasIDDataTypeMap.get(CanvasID);
             /*この評価関数では、MASKのみを使用する*/
-            for(const TargetDataType of this.TargetDataTypeArray){
+            for(const TargetDataType of this.TargetDataTypeSet){
                 const DataID=SelectedCanvasIDDataTypeDataIDMap.get(TargetDataType);
                 CanvasIDMap.set(TargetDataType,DataID);
             }
@@ -1276,8 +1277,9 @@ class HausdorffDistance95{
         //名前。基本的には自身のクラス名を名前とする
         //this.EvaluatonName=this.constructor.name
         //this.InputNum=2;
-        this.TargetDataTypeArray=["MASK"].sort();
-        this.TargetDataTypeText=`${this.TargetDataTypeArray.join(", ")}`;
+        const TargetDataTypeArray=["MASK"];
+        this.TargetDataTypeSet=new Set(TargetDataTypeArray);
+        this.TargetDataTypeText=`${TargetDataTypeArray.join(", ")}`;
         /*Canvasの入力数に関するパラメータ*/
         this.CanvasInputRequiredNum=2;//条件に合うCanvasを２つ入力する必要がある
         this.CalculateRepetitionsNum=1;//一度Calculateが押されたときに何回評価を行うか＝最終的にCalculateIDがどれだけ増加するか
@@ -1291,7 +1293,7 @@ class HausdorffDistance95{
     //与えられたCanvasButtonのクラス＝読み込んであるデータタイプをチェックして、この関数への入力として選択できるキャンバスであるかチェックする
     CheckSelectable(CanvasButtonElement){//ButtonElementに付与されているデータタイプを見てこのCanvasIDが選択可能か判定する
         let ButtonSelectableFlag=true;
-        for(const TargetDataType of this.TargetDataTypeArray){
+        for(const TargetDataType of this.TargetDataTypeSet){
             ButtonSelectableFlag=ButtonSelectableFlag&&CanvasButtonElement.classList.contains(TargetDataType);
         }
         return ButtonSelectableFlag;
@@ -1317,7 +1319,7 @@ class HausdorffDistance95{
             const CanvasIDMap=new Map();
             const SelectedCanvasIDDataTypeDataIDMap=CanvasIDDataTypeMap.get(CanvasID);
             /*この評価関数では、MASKのみを使用する*/
-            for(const TargetDataType of this.TargetDataTypeArray){
+            for(const TargetDataType of this.TargetDataTypeSet){
                 const DataID=SelectedCanvasIDDataTypeDataIDMap.get(TargetDataType);
                 CanvasIDMap.set(TargetDataType,DataID);
             }
@@ -1878,8 +1880,9 @@ class SurfaceDice{
         //名前。基本的には自身のクラス名を名前とする
         //this.EvaluatonName=this.constructor.name
         //this.InputNum=2;
-        this.TargetDataTypeArray=["MASK"].sort();
-        this.TargetDataTypeText=`${this.TargetDataTypeArray.join(", ")}`;
+        const TargetDataTypeArray=["MASK"];
+        this.TargetDataTypeSet=new Set(TargetDataTypeArray);
+        this.TargetDataTypeText=`${TargetDataTypeArray.join(", ")}`;
         /*Canvasの入力数に関するパラメータ*/
         this.CanvasInputRequiredNum=2;//条件に合うCanvasを２つ入力する必要がある
         this.CalculateRepetitionsNum=1;//一度Calculateが押されたときに何回評価を行うか＝最終的にCalculateIDがどれだけ増加するか
@@ -1893,7 +1896,7 @@ class SurfaceDice{
     //与えられたCanvasButtonのクラス＝読み込んであるデータタイプをチェックして、この関数への入力として選択できるキャンバスであるかチェックする
     CheckSelectable(CanvasButtonElement){//ButtonElementに付与されているデータタイプを見てこのCanvasIDが選択可能か判定する
         let ButtonSelectableFlag=true;
-        for(const TargetDataType of this.TargetDataTypeArray){
+        for(const TargetDataType of this.TargetDataTypeSet){
             ButtonSelectableFlag=ButtonSelectableFlag&&CanvasButtonElement.classList.contains(TargetDataType);
         }
         return ButtonSelectableFlag;
@@ -1919,7 +1922,7 @@ class SurfaceDice{
             const CanvasIDMap=new Map();
             const SelectedCanvasIDDataTypeDataIDMap=CanvasIDDataTypeMap.get(CanvasID);
             /*この評価関数では、MASKのみを使用する*/
-            for(const TargetDataType of this.TargetDataTypeArray){
+            for(const TargetDataType of this.TargetDataTypeSet){
                 const DataID=SelectedCanvasIDDataTypeDataIDMap.get(TargetDataType);
                 CanvasIDMap.set(TargetDataType,DataID);
             }

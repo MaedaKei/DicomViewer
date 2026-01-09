@@ -5732,7 +5732,7 @@ class Evaluate{
         //現在の構想では、ボリュームをサブウィンドウに送り、サブウィンドウレンダラーで計算を行うようにする
         const EvaluateStartFunction=(ReceiveData)=>{
             const ReceivedDataBody=ReceiveData.get("data");
-            const TargetDataTypeArray=ReceivedDataBody.get("TargetDataTypeArray");
+            const TargetDataTypeSet=ReceivedDataBody.get("TargetDataTypeSet");
             const LoadDataKeySet=ReceivedDataBody.get("LoadDataKeySet");
             //評価対象になっているボリュームのサイズは選択されたときに送られているのでボリュームだけ送る
             const data=new Map();
@@ -5767,12 +5767,9 @@ class Evaluate{
             //プラスアルファのデータを送る
             /*マスク用*/
             const ExtraDataMap=new Map();
-            for(const TargetDataType of TargetDataTypeArray){
-                if(TargetDataType==="MASK"){
-                    //console.log("MASK用の追加データをセット");
-                    ExtraDataMap.set("ColorMapLabelArray",colormapformask.label);
-                    ExtraDataMap.set("ColorMap",colormapformask.colormap);//色の数×4の長さの配列になっているRGBAで4ずつずらして読み込む
-                }
+            if(TargetDataTypeSet.has("MASK")){
+                ExtraDataMap.set("ColorMapLabelArray",colormapformask.label);
+                ExtraDataMap.set("ColorMap",colormapformask.colormap);
             }
             data.set("ExtraDataMap",ExtraDataMap);
             const SendingData=new Map([
