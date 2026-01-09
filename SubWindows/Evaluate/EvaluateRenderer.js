@@ -1174,7 +1174,7 @@ class VolumetricDSC{
         emptycell.classList.add(InitialRowClassName);
         emptycell.classList.add(InitialColumnClassName);
         theadtr.appendChild(emptycell);
-        for(const label of ["average",...this.ColorMapLabelList]){
+        for(const label of ["average",...this.ColorMapLabelList.slice(1)]){//BGにあたるであろう一番小さいマスク値＝0を除外する
             const cell=document.createElement("th");
             cell.textContent=label;
             cell.classList.add(InitialRowClassName);//先頭行
@@ -1190,7 +1190,9 @@ class VolumetricDSC{
             tr.setAttribute("data-CalculateID",CalculateID);//クリックイベント用のデータ
             let count=0;//マスクが評価された個数をカウント
             let EvaluateValueSum=0;
+            const trFragment=document.createDocumentFragment();
             //0だけ外に出して平均値に含めない
+            /*
             let maskvalue=0;
             const td=document.createElement("td");
             if(ResultMap.get("Result").has(maskvalue)){
@@ -1199,8 +1201,8 @@ class VolumetricDSC{
             }else{
                 td.textContent="";
             }
-            const trFragment=document.createDocumentFragment();
             trFragment.appendChild(td);
+            */
             //BG以外のマスク
             for(let maskvalue=1;maskvalue<this.ColorMapLabelList.length;maskvalue++){
                 const td=document.createElement("td");
@@ -1490,7 +1492,7 @@ class HausdorffDistance95{
         for(const MaskValue of ApparaedMaskValue){
             //まずはこのマスクの境界点集合を両方で持っているか
             console.log(MaskValue,"評価開始");
-            if(MaskValue===0||!(ContourPointsMap1.has(MaskValue)&&ContourPointsMap2.has(MaskValue))){
+            if(MaskValue===0||!(ContourPointsMap1.has(MaskValue)&&ContourPointsMap2.has(MaskValue))){//BGは除外。一応計算できるような構造にしてある
                 //どちらかにしかないので評価値を無限大とする
                 HDMap.set(MaskValue,Infinity);
             }else{
@@ -1550,7 +1552,7 @@ class HausdorffDistance95{
         //この評価指標にはmmという単位があるのでそれを記入する
         emptycell.textContent="( mm )"
         theadtr.appendChild(emptycell);
-        for(const label of ["average",...this.ColorMapLabelList]){
+        for(const label of ["average",...this.ColorMapLabelList.slice(1)]){//BGにあたるであろうラベルは除外する
             const cell=document.createElement("th");
             cell.textContent=label;
             cell.classList.add(InitialRowClassName);//先頭行
@@ -1566,6 +1568,8 @@ class HausdorffDistance95{
             tr.setAttribute("data-CalculateID",CalculateID);//クリックイベント用のデータ
             let count=0;//マスクが評価された個数をカウント
             let EvaluateValueSum=0;
+            const trFragment=document.createDocumentFragment();
+            /*
             //0だけ外に出して平均値に含めない
             let maskvalue=0;
             const td=document.createElement("td");
@@ -1575,8 +1579,8 @@ class HausdorffDistance95{
             }else{
                 td.textContent="";
             }
-            const trFragment=document.createDocumentFragment();
             trFragment.appendChild(td);
+            */
             //BG以外のマスク
             for(let maskvalue=1;maskvalue<this.ColorMapLabelList.length;maskvalue++){
                 const td=document.createElement("td");
@@ -2155,7 +2159,7 @@ class SurfaceDice{
         //この評価指標には許容値があるのでそこを記入する
         emptycell.textContent=`τ = ${this.constructor.Tau} ( mm )`;
         theadtr.appendChild(emptycell);
-        for(const label of ["average",...this.ColorMapLabelList]){
+        for(const label of ["average",...this.ColorMapLabelList.slice(1)]){
             const cell=document.createElement("th");
             cell.textContent=label;
             cell.classList.add(InitialRowClassName);//先頭行
@@ -2171,7 +2175,9 @@ class SurfaceDice{
             tr.setAttribute("data-CalculateID",CalculateID);//クリックイベント用のデータ
             let count=0;//マスクが評価された個数をカウント
             let EvaluateValueSum=0;
+            const trFragment=document.createDocumentFragment();
             //0だけ外に出して平均値に含めない
+            /*
             let maskvalue=0;
             const td=document.createElement("td");
             if(ResultMap.get("Result").has(maskvalue)){
@@ -2180,8 +2186,8 @@ class SurfaceDice{
             }else{
                 td.textContent="";
             }
-            const trFragment=document.createDocumentFragment();
             trFragment.appendChild(td);
+            */
             //BG以外のマスク
             for(let maskvalue=1;maskvalue<this.ColorMapLabelList.length;maskvalue++){
                 const td=document.createElement("td");
