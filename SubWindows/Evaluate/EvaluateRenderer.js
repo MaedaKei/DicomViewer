@@ -946,11 +946,12 @@ class VolumetricDSC{
     //この評価関数が受け付ける入力数の条件をチェックしてtrueかfalseで返す。これはすべての評価関数でもたなければならない
     CheckCalculatable(InputNum){
         //この評価関数は入力数2のときに計算可能である。
-        if(InputNum===this.CalculatableSelectNum){
-            return true;
-        }else{
-            return false;
+        if(InputNum%2===0){//２の倍数
+            if(InputNum/2===this.CalculateRepetitionsNum){//計算ワンセット分のみの入力数
+                return true;
+            }
         }
+        return false;
     }
     /*
     選択されたCanvasIDに読み込まれているデータタイプをチェックして、Evaluateに要求するデータを申請するメソッド
@@ -1304,11 +1305,12 @@ class HausdorffDistance95{
     //この評価関数が受け付ける入力数の条件をチェックしてtrueかfalseで返す。これはすべての評価関数でもたなければならない
     CheckCalculatable(InputNum){
         //この評価関数は入力数2のときに計算可能である。
-        if(InputNum===this.CalculatableSelectNum){
-            return true;
-        }else{
-            return false;
+        if(InputNum%2===0){//２の倍数
+            if(InputNum/2===this.CalculateRepetitionsNum){//計算ワンセット分のみの入力数
+                return true;
+            }
         }
+        return false;
     }
     /*
     選択されたCanvasIDに読み込まれているデータタイプをチェックして、Evaluateに要求するデータを申請するメソッド
@@ -1909,11 +1911,12 @@ class SurfaceDice{
     //この評価関数が受け付ける入力数の条件をチェックしてtrueかfalseで返す。これはすべての評価関数でもたなければならない
     CheckCalculatable(InputNum){
         //この評価関数は入力数2のときに計算可能である。
-        if(InputNum===this.CalculatableSelectNum){
-            return true;
-        }else{
-            return false;
+        if(InputNum%2===0){//２の倍数
+            if(InputNum/2===this.CalculateRepetitionsNum){//計算ワンセット分のみの入力数
+                return true;
+            }
         }
+        return false;
     }
     /*
     選択されたCanvasIDに読み込まれているデータタイプをチェックして、Evaluateに要求するデータを申請するメソッド
