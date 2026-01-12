@@ -1521,7 +1521,7 @@ class HausdorffDistance95{
                 //console.log(DistanceSet.size,this.Parcentile,EvaluateValueIndex);
                 const SortedDistanceArray=Array.from(DistanceSet).sort((a,b)=>a-b);
                 //console.log(SortedDistanceArray);
-                const EvaluateValue=Math.sqrt(SortedDistanceArray[EvaluateValueIndex]);
+                const EvaluateValue=Math.sqrt(SortedDistanceArray[EvaluateValueIndex]);//距離の２乗の状態でEDTがされている、本来は平方根をとる必要があるが、対象とする距離のみに平方根をとるだけでよし
                 HDMap.set(MaskValue,EvaluateValue);
             }
         }
@@ -1881,6 +1881,7 @@ class HausdorffDistance100 extends HausdorffDistance95{
 //SurfaceDice
 class SurfaceDice{
     static Tau=3;//mm
+    static SquaredTau=this.Tau*this.Tau;
     static EvaluateName="SurfaceDice";
     constructor(){
         //名前。基本的には自身のクラス名を名前とする
@@ -2114,18 +2115,22 @@ class SurfaceDice{
                 const DistanceMapVolume2=this.EDT_3D(MaskContourArray2,startslice,endslice,TargetHSize,TargetWSize,SpacingDataMap2);
                 const DistanceSet=new Set();//ここに距離を集約する
                 //1. 1⇒2の距離を集計する
+                /*
+                EDT_3Dによって帰ってきた距離マップは平方根をとる計算をしていないので注意
+                よって、Tauの２乗に収まる境界点数をカウントする
+                */
                 let TauCount=0;//許容範囲内に入っている境界点をカウントする
                 for(const [z,h,w] of MaskContourArray1){
                     //この座標でDistanceMapVolume2を参照する
                     const index=(z*TargetHSize+h)*TargetWSize+w;
-                    if(DistanceMapVolume2[index]<=this.constructor.Tau){
+                    if(DistanceMapVolume2[index]<=this.constructor.SquaredTau){
                         TauCount++;
                     }
                 }
                 //2⇒1の距離を集計する
                 for(const [z,h,w] of MaskContourArray2){
                     const index=(z*TargetHSize+h)*TargetWSize+w;
-                    if(DistanceMapVolume1[index]<=this.constructor.Tau){
+                    if(DistanceMapVolume1[index]<=this.constructor.SquaredTau){
                         TauCount++;
                     }
                 }
