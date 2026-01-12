@@ -376,8 +376,18 @@ div#ResultContainer>div.EvaluationTableForMaskResultContainer{
     height:100%;
     display:flex;
     flex-direction: column;
+    --EvaluationNameH3Height:40px;
     --InfoTextContainerHeight:calc(30px * 2);
-    --ResultTableContainerHeight:calc(100% - var(--InfoTextContainerHeight));
+    --ResultTableContainerHeight:calc(100% - var(--InfoTextContainerHeight) - var(--EvaluationIndexSettingHeight));
+}
+div.EvaluationTableForMaskResultContainer>h3.EvaluationNameH3{
+    display: inline-block;
+    width:100%;
+    height:var(--EvaluationIndexSettingHeight);
+    font:20px bold sans-serif;
+    color:white;
+    background-color: black;
+    padding:2px;
 }
 /*InfoTextContainer*/
 div.EvaluationTableForMaskResultContainer>div.EvaluationTableForMaskInfoTextContainer{

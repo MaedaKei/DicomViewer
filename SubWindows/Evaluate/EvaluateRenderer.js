@@ -988,6 +988,10 @@ class VolumetricDSC{
     setResultTemplate(){
         this.EvaluationTableForMaskResultContainer=document.createElement("div");
         this.EvaluationTableForMaskResultContainer.className="EvaluationTableForMaskResultContainer";
+        const EvaluationNameH3=document.createElement("h3");
+        EvaluationNameH3.className="EvaluationNameH3";
+        EvaluationNameH3.textContent=`${this.constructor.EvaluateName} [ ${Array.from(this.TargetDataTypeSet).join(", ")} ]`;
+        this.EvaluationTableForMaskResultContainer.appendChild(EvaluationNameH3);
         /*InfoText部はテンプレートとして持っておく*/
         this.InfoTextContainer=document.createElement("div");
         this.InfoTextContainer.className="EvaluationTableForMaskInfoTextContainer";
@@ -1334,6 +1338,10 @@ class HausdorffDistance95{
     setResultTemplate(){
         this.EvaluationTableForMaskResultContainer=document.createElement("div");
         this.EvaluationTableForMaskResultContainer.className="EvaluationTableForMaskResultContainer";
+        const EvaluationNameH3=document.createElement("h3");
+        EvaluationNameH3.className="EvaluationNameH3";
+        EvaluationNameH3.textContent=`${this.constructor.EvaluateName} [ ${Array.from(this.TargetDataTypeSet).join(", ")} ]`;
+        this.EvaluationTableForMaskResultContainer.appendChild(EvaluationNameH3);
         /*InfoText部はテンプレートとして持っておく*/
         this.InfoTextContainer=document.createElement("div");
         this.InfoTextContainer.className="EvaluationTableForMaskInfoTextContainer";
@@ -1941,6 +1949,10 @@ class SurfaceDice{
     setResultTemplate(){
         this.EvaluationTableForMaskResultContainer=document.createElement("div");
         this.EvaluationTableForMaskResultContainer.className="EvaluationTableForMaskResultContainer";
+        const EvaluationNameH3=document.createElement("h3");
+        EvaluationNameH3.className="EvaluationNameH3";
+        EvaluationNameH3.textContent=`${this.constructor.EvaluateName} ( τ = ${this.constructor.Tau} mm ) [ ${Array.from(this.TargetDataTypeSet).join(", ")} ]`;
+        this.EvaluationTableForMaskResultContainer.appendChild(EvaluationNameH3);
         /*InfoText部はテンプレートとして持っておく*/
         this.InfoTextContainer=document.createElement("div");
         this.InfoTextContainer.className="EvaluationTableForMaskInfoTextContainer";
