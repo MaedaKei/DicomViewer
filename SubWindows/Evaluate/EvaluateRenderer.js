@@ -2117,8 +2117,9 @@ class SurfaceDice{
             //まずはこのマスクの境界点集合を両方で持っているか
             console.log(MaskValue,"評価開始");
             if(MaskValue===0||!(ContourPointsMap1.has(MaskValue)&&ContourPointsMap2.has(MaskValue))){
-                //どちらかにしかないので評価値を無限大とする
-                HDMap.set(MaskValue,Infinity);
+                //どちらかにしかないので評価値を0とする。
+                //HD系は無限とし、Dice系は0とする
+                HDMap.set(MaskValue,0);
             }else{
                 //まずはこのマスクの距離マップを作成しよう
                 const MaskContourArray1=ContourPointsMap1.get(MaskValue);
