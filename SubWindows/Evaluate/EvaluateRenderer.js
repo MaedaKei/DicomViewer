@@ -32,8 +32,7 @@ class Evaluate{
         window.SubWindowMoveAPI();
         //確定ボタン
         this.CalculateConfirmButton=document.getElementById("CalculateConfirmButton");
-        this.CalculateConfirmButtonStatusMessageArray=["Calculating...","Calculate"];//0は計算開始不可、1は計算開始可能のメッセージとする
-        this.CalculateConfirmButton.textContent=this.CalculateConfirmButtonStatusMessageArray[1];
+        this.ChangeCalculataConfirmButtonStatus();//なにも指定しない＝計算可能
         //計算履歴リスト
         /*
         CalclateID、評価指標、Inputの情報を表示する
@@ -209,8 +208,7 @@ class Evaluate{
         this.EventSetHelper(this.CalculateConfirmButton,"mouseup",(e)=>{
             if(e.button==0){
                 console.log("計算開始");
-                this.CalculateConfirmButton.disabled=true;
-                this.CalculateConfirmButton.textContent=this.CalculateConfirmButtonStatusMessageArray[0];
+                this.ChangeCalculataConfirmButtonStatus(1);//1＝計算中
                 //要求されているCIDと現在ストックされているCIDを調査
                 //ストックはMainWindowからデータをもらった時に上書きされる
                 //とりあえず選択されている関数の入力数を気にせずやってみる
@@ -404,9 +402,8 @@ class Evaluate{
             this.CalculateHistoryList.scrollTop=scrollHeight;
             //ここでのFocusでは送信を起こしたくない
             this.FocusHistoryListItem(this.CalculateID-1,false);
-            
-            this.CalculateConfirmButton.disabled=false;
-            this.CalculateConfirmButton.textContent=this.CalculateConfirmButtonStatusMessageArray[1];
+            //CalculateConfirmButtonの状態を更新
+            this.ChangeCalculataConfirmButtonStatus(2);
         }
         this.FromMainProcessToSubFunctions.set("FromMainToSubTargetVolume",FromMainToSubTargetVolumeFunction);
         //ulに対してイベントを定義
@@ -716,8 +713,29 @@ class Evaluate{
     CheckCalculatable(){
         const CurrentSelectedCanvasNum=this.CurrentSelectedCanvasIDSet.size;
         const CurrentSelectedFunction=this.EvaluationFunctionMap.get(this.CurrentSelectedFunctionName);
-        const CheckResult=CurrentSelectedFunction.CheckCalculatable(CurrentSelectedCanvasNum);
-        this.CalculateConfirmButton.disabled=!CheckResult;//計算可能であればボタンの無効化を解除
+        if(CurrentSelectedFunction.CheckCalculatable(CurrentSelectedCanvasNum)){
+            this.ChangeCalculataConfirmButtonStatus(2);//条件を満たして計算可能
+        }else{
+            this.ChangeCalculataConfirmButtonStatus(0);//条件を満たしていない
+        }
+    }
+    ChangeCalculataConfirmButtonStatus(StatusNumber=2){
+        /*
+        CalculateConfirmButtonの状態とメッセージを変更する
+        0：CanvasSelectの条件を満たしていない
+        1：計算中
+        2：計算可能状態
+        */
+        if(StatusNumber===0){
+            this.CalculateConfirmButton.disabled=true;
+            this.CalculateConfirmButton.textContent="Select Input";
+        }else if(StatusNumber===1){
+            this.CalculateConfirmButton.disabled=true;
+            this.CalculateConfirmButton.textContent="Calculating...";
+        }else if(StatusNumber===2){
+            this.CalculateConfirmButton.disabled=false;
+            this.CalculateConfirmButton.textContent="Calculate";
+        }
     }
     SelectedAreaChange(){
         //範囲選択が画像の範囲を超えていないかチェックする
