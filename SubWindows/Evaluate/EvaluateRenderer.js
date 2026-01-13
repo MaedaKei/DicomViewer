@@ -32,6 +32,8 @@ class Evaluate{
         window.SubWindowMoveAPI();
         //確定ボタン
         this.CalculateConfirmButton=document.getElementById("CalculateConfirmButton");
+        this.CalculateConfirmButtonStatusMessageArray=["Calculating...","Calculate"];//0は計算開始不可、1は計算開始可能のメッセージとする
+        this.CalculateConfirmButton.textContent=this.CalculateConfirmButtonStatusMessageArray[1];
         //計算履歴リスト
         /*
         CalclateID、評価指標、Inputの情報を表示する
@@ -206,7 +208,9 @@ class Evaluate{
         */
         this.EventSetHelper(this.CalculateConfirmButton,"mouseup",(e)=>{
             if(e.button==0){
-                //console.log("計算開始");
+                console.log("計算開始");
+                this.CalculateConfirmButton.disabled=true;
+                this.CalculateConfirmButton.textContent=this.CalculateConfirmButtonStatusMessageArray[0];
                 //要求されているCIDと現在ストックされているCIDを調査
                 //ストックはMainWindowからデータをもらった時に上書きされる
                 //とりあえず選択されている関数の入力数を気にせずやってみる
@@ -400,6 +404,9 @@ class Evaluate{
             this.CalculateHistoryList.scrollTop=scrollHeight;
             //ここでのFocusでは送信を起こしたくない
             this.FocusHistoryListItem(this.CalculateID-1,false);
+            
+            this.CalculateConfirmButton.disabled=false;
+            this.CalculateConfirmButton.textContent=this.CalculateConfirmButtonStatusMessageArray[1];
         }
         this.FromMainProcessToSubFunctions.set("FromMainToSubTargetVolume",FromMainToSubTargetVolumeFunction);
         //ulに対してイベントを定義
