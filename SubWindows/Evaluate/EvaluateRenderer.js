@@ -1909,7 +1909,7 @@ class HausdorffDistance95{
 }
 class HausdorffDistance100 extends HausdorffDistance95{
     static Parcentile=1;
-    static EvaluateName=`HausDorffDistance${this.Parcentile*100}`;
+    static EvaluateName=`HausdorffDistance${this.Parcentile*100}`;
 }
 //SurfaceDice
 class SurfaceDice{
