@@ -1,7 +1,7 @@
 const {app,BrowserWindow,dialog,ipcMain,screen} = require('electron');
 const path = require('path');
 const fs = require('fs');
-const detach=!app.isPackaged&&true;//パッケージ化されてない、かつユーザーが望んだ場合に開発者ツールを開く
+const detach=(!app.isPackaged)&&true;//パッケージ化されてない、かつユーザーが望んだ場合に開発者ツールを開く
 const WindowManager=new Map();
 let AllowAddOrDeleteFlag=true;//データの追加・削除をしていい状態にあるか
 //メインウィンドウの作成
