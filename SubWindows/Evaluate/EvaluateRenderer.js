@@ -2600,6 +2600,10 @@ class DoseVolumeHistgram{
         const height=SelectedArea.get("height");
         const startslice=SelectedArea.get("startslice");
         const endslice=SelectedArea.get("endslice");
+        const startw=w0;
+        const endw=startw+width-1;
+        const starth=h0;
+        const endh=starth+height-1;
 
         const SelectedCanvasInfoMap=CalculateData.get("SelectedCanvasInfoMap");
         //SelectedCanvasInfoMap={CanvasID:{DataType:???,DataID:???},...}
@@ -2625,8 +2629,41 @@ class DoseVolumeHistgram{
         if(ExtraDataMap.has("ColorMapLabelArray")){//存在するときに新しく代入するよ
             this.ColorMapLabelList=ExtraDataMap.get("ColorMapLabelArray");//表示するときにこのラベルを使う
         }
-        
-
+        //MASKの組織ごとの線量値を収集する＆最大値、最小値の探索
+        const MaskValueDOSEValueArrayMap=new Map();//{maskvalue:[...]}
+        //オリジナルのサイズはどちらも一致するという前提のもと、マスクデータのサイズを基にインデックスを計算していく
+        const OriginalSize=MASKVolumeMap.get("Size");
+        const OriginalWidth=OriginalSize.get("width");
+        const OriginalHeight=OriginalSize.get("height");
+        const MASKVolume=MASKVolumeMap.get("Volume");
+        const DOSEVolume=DOSEVolumeMap.get("Volume");
+        let MinDoseValue=Infinity;
+        let MaxDoseValue=-Infinity;
+        for(let z=startslice;z<=endslice;z++){
+            for(let h=starth;h<=endh;h++){
+                for(let w=startw;w<=endw;w++){
+                    const Index=(z*OriginalHeight+h)*OriginalWidth+w;
+                    const MASKValue=MASKVolume[Index];
+                    const DOSEValue=DOSEVolume[Index];
+                    //最大値最小値のチェック
+                    if(MinDoseValue>DOSEValue){
+                        MinDoseValue=DOSEValue;
+                    }
+                    if(MaxDoseValue<DOSEValue){
+                        MaxDoseValue=DOSEValue;
+                    }
+                    //マスクごとの集計
+                    if(MaskValueDOSEValueArrayMap.has(MASKValue)){
+                        MaskValueDOSEValueArrayMap.get(MASKValue).push(DOSEValue);
+                    }else{
+                        MaskValueDOSEValueArrayMap.set(MASKValue,[DOSEValue]);
+                    }
+                }
+            }
+        }
+        //マスクごとの線量を抽出したデータが完成したので、最小値、最大値を基にGyのビンの幅を決定し、カウントしていく
+        /*どれほどデータが大きくなるか未知数であるため、とりあえず1Gyの幅でカウントをしていく*/
+        const DoseBinRange=1;//Gy
         
         const DVHMap=new Map();
         this.CalculateHistory.set(CalculateID,new Map([
