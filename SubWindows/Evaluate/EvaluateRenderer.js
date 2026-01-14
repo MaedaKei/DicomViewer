@@ -945,15 +945,15 @@ class VolumetricDSC{
         //this.InputNum=2;
         //this.TargetDataType="MASK";
         const TargetDataTypeArray=["MASK"];
-        this.TargetDataTypeSet=new Set(TargetDataTypeArray);
+        this.TargetDataTypeSet=new Set(TargetDataTypeArray.sort());
         this.TargetDataTypeText=`${TargetDataTypeArray.join(", ")}`;
         //this.InputNum=2;//可変数の入力を受け付ける関数は下限値、上限値などの境界値を表す変数とする。
         //this.InputNumConditionText=`=${this.InputNum}`;//可変長の場合は>=1のようにする。この条件はInputNumConditionCheckで表現する
         /*Canvasの入力数に関するパラメータ*/
         this.CanvasInputRequiredNum=2;//条件に合うCanvasを２つ入力する必要がある
         this.CalculateRepetitionsNum=1;//一度Calculateが押されたときに何回評価を行うか＝最終的にCalculateIDがどれだけ増加するか
-        this.CalculatableSelectNum=this.CanvasInputRequiredNum*this.CalculateRepetitionsNum;//選択数がこれと一致する時なのか、これ以下のときなのかは関数による
-        this.InputNumConditionText=`=${this.CalculatableSelectNum}`;
+        
+        this.InputNumConditionText=`${this.CanvasInputRequiredNum} x ${this.CalculateRepetitionsNum}`;
         this.CalculateHistory=new Map();//{ID:{Result,SelectedArea}}
         this.setResultTemplate();
         this.setUserEvents();
@@ -971,8 +971,8 @@ class VolumetricDSC{
     //この評価関数が受け付ける入力数の条件をチェックしてtrueかfalseで返す。これはすべての評価関数でもたなければならない
     CheckCalculatable(InputNum){
         //この評価関数は入力数2のときに計算可能である。
-        if(InputNum%2===0){//２の倍数
-            if(InputNum/2===this.CalculateRepetitionsNum){//計算ワンセット分のみの入力数
+        if(InputNum%this.CanvasInputRequiredNum===0){//２の倍数
+            if(InputNum/this.CanvasInputRequiredNum===this.CalculateRepetitionsNum){//計算ワンセット分のみの入力数
                 return true;
             }
         }
@@ -1310,13 +1310,13 @@ class HausdorffDistance95{
         //this.EvaluatonName=this.constructor.name
         //this.InputNum=2;
         const TargetDataTypeArray=["MASK"];
-        this.TargetDataTypeSet=new Set(TargetDataTypeArray);
+        this.TargetDataTypeSet=new Set(TargetDataTypeArray.sort());
         this.TargetDataTypeText=`${TargetDataTypeArray.join(", ")}`;
         /*Canvasの入力数に関するパラメータ*/
         this.CanvasInputRequiredNum=2;//条件に合うCanvasを２つ入力する必要がある
         this.CalculateRepetitionsNum=1;//一度Calculateが押されたときに何回評価を行うか＝最終的にCalculateIDがどれだけ増加するか
-        this.CalculatableSelectNum=this.CanvasInputRequiredNum*this.CalculateRepetitionsNum;//選択数がこれと一致する時なのか、これ以下のときなのかは関数による
-        this.InputNumConditionText=`=${this.CalculatableSelectNum}`;
+        
+        this.InputNumConditionText=`${this.CanvasInputRequiredNum} x ${this.CalculateRepetitionsNum}`;
         this.CalculateHistory=new Map();//{ID:{Result,SelectedArea}}
         this.setResultTemplate();
         this.setUserEvents();
@@ -1334,8 +1334,8 @@ class HausdorffDistance95{
     //この評価関数が受け付ける入力数の条件をチェックしてtrueかfalseで返す。これはすべての評価関数でもたなければならない
     CheckCalculatable(InputNum){
         //この評価関数は入力数2のときに計算可能である。
-        if(InputNum%2===0){//２の倍数
-            if(InputNum/2===this.CalculateRepetitionsNum){//計算ワンセット分のみの入力数
+        if(InputNum%this.CanvasInputRequiredNum===0){//２の倍数
+            if(InputNum/this.CanvasInputRequiredNum===this.CalculateRepetitionsNum){//計算ワンセット分のみの入力数
                 return true;
             }
         }
@@ -1921,13 +1921,12 @@ class SurfaceDice{
         //this.EvaluatonName=this.constructor.name
         //this.InputNum=2;
         const TargetDataTypeArray=["MASK"];
-        this.TargetDataTypeSet=new Set(TargetDataTypeArray);
+        this.TargetDataTypeSet=new Set(TargetDataTypeArray.sort());
         this.TargetDataTypeText=`${TargetDataTypeArray.join(", ")}`;
         /*Canvasの入力数に関するパラメータ*/
         this.CanvasInputRequiredNum=2;//条件に合うCanvasを２つ入力する必要がある
         this.CalculateRepetitionsNum=1;//一度Calculateが押されたときに何回評価を行うか＝最終的にCalculateIDがどれだけ増加するか
-        this.CalculatableSelectNum=this.CanvasInputRequiredNum*this.CalculateRepetitionsNum;//選択数がこれと一致する時なのか、これ以下のときなのかは関数による
-        this.InputNumConditionText=`=${this.CalculatableSelectNum}`;
+        this.InputNumConditionText=`${this.CanvasInputRequiredNum} x ${this.CalculateRepetitionsNum}`;
         this.CalculateHistory=new Map();//{ID:{Result,SelectedArea}}
         this.setResultTemplate();
         this.setUserEvents();
@@ -1945,8 +1944,8 @@ class SurfaceDice{
     //この評価関数が受け付ける入力数の条件をチェックしてtrueかfalseで返す。これはすべての評価関数でもたなければならない
     CheckCalculatable(InputNum){
         //この評価関数は入力数2のときに計算可能である。
-        if(InputNum%2===0){//２の倍数
-            if(InputNum/2===this.CalculateRepetitionsNum){//計算ワンセット分のみの入力数
+        if(InputNum%this.CanvasInputRequiredNum===0){//２の倍数
+            if(InputNum/this.CanvasInputRequiredNum===this.CalculateRepetitionsNum){//計算ワンセット分のみの入力数
                 return true;
             }
         }
@@ -2523,6 +2522,122 @@ class SurfaceDice{
             }
         }
         return DistanceMapVolume;
+    }
+}
+class DoseVolumeHistgram{
+    static EvaluateName="DoseVolumeHistgram";
+    constructor(){
+        //名前。基本的には自身のクラス名を名前とする
+        //this.EvaluatonName=this.constructor.name
+        //this.InputNum=2;
+        const TargetDataTypeArray=["DOSE","MASK"];
+        this.TargetDataTypeSet=new Set(TargetDataTypeArray.sort());
+        this.TargetDataTypeText=`${TargetDataTypeArray.join(", ")}`;
+        /*Canvasの入力数に関するパラメータ*/
+        this.CanvasInputRequiredNum=1;//条件に合うCanvasを２つ入力する必要がある
+        this.CalculateRepetitionsNum=1;//一度Calculateが押されたときに何回評価を行うか＝最終的にCalculateIDがどれだけ増加するか
+        this.InputNumConditionText=`${this.CanvasInputRequiredNum} x ${this.CalculateRepetitionsNum}`;
+        this.CalculateHistory=new Map();//{ID:{Result,SelectedArea}}
+        this.setResultTemplate();
+        this.setUserEvents();
+    }
+    /*
+    DVHは評価結果をテーブルにひとまとめにする必要がない評価関数である
+    よって、計算後にcreateDisplayResultを走らせる必要はない。
+    FocusResultが呼ばれたときに指定されたCalculateIDの結果を画面に反映する
+    */
+    /*どの関数でも必要*/
+    //与えられたCanvasButtonのクラス＝読み込んであるデータタイプをチェックして、この関数への入力として選択できるキャンバスであるかチェックする
+    CheckSelectable(CanvasButtonElement){//ButtonElementに付与されているデータタイプを見てこのCanvasIDが選択可能か判定する
+        let ButtonSelectableFlag=true;
+        for(const TargetDataType of this.TargetDataTypeSet){
+            ButtonSelectableFlag=ButtonSelectableFlag&&CanvasButtonElement.classList.contains(TargetDataType);
+        }
+        return ButtonSelectableFlag;
+    }
+    /*どの関数でも必要*/
+    //この評価関数が受け付ける入力数の条件をチェックしてtrueかfalseで返す。これはすべての評価関数でもたなければならない
+    CheckCalculatable(InputNum){
+        //この評価関数は入力数2のときに計算可能である。
+        if(InputNum%this.CanvasInputRequiredNum===0){//２の倍数
+            if(InputNum/this.CanvasInputRequiredNum===this.CalculateRepetitionsNum){//計算ワンセット分のみの入力数
+                return true;
+            }
+        }
+        return false;
+    }
+    /*
+    選択されたCanvasIDに読み込まれているデータタイプをチェックして、Evaluateに要求するデータを申請するメソッド
+    評価指標によっては、MASKとDOSEを同一キャンバスにオーバーレイした状態で、１つを選択⇒そこに読み込まれているこれらを送信させる、というように従来の仕様の枠をはみ出した動きが必要になるので
+    評価関数ごとの専用実装部分とすることにした
+    */
+    OrderNecessaryData(CurrentSelectedCanvasIDSet,CanvasIDDataTypeMap){//[{CanvasID:{Mask:DataID,CT:DataID,...}},{CanvasID:{}}]のような形式で送られてくるはず
+        const OrderCanvasIDDataTypeDataIDMap=new Map();
+        for(const CanvasID of CurrentSelectedCanvasIDSet){
+            const CanvasIDMap=new Map();
+            const SelectedCanvasIDDataTypeDataIDMap=CanvasIDDataTypeMap.get(CanvasID);
+            /*この評価関数では、MASKのみを使用する*/
+            for(const TargetDataType of this.TargetDataTypeSet){
+                const DataID=SelectedCanvasIDDataTypeDataIDMap.get(TargetDataType);
+                CanvasIDMap.set(TargetDataType,DataID);
+            }
+            OrderCanvasIDDataTypeDataIDMap.set(CanvasID,CanvasIDMap);
+        }
+        return OrderCanvasIDDataTypeDataIDMap;
+    }
+    Calculate(CalculateData){
+        /*
+        SelectedAreaはどの関数でも共通の引数として、
+        w0,h0,width,height,startslice,endsliceについて定めたMapとする
+        */
+        //console.log(CalculateData);
+        const CalculateID=CalculateData.get("CalculateID");
+
+        const SelectedArea=CalculateData.get("SelectedArea");
+        const w0=SelectedArea.get("w0");
+        const h0=SelectedArea.get("h0");
+        const width=SelectedArea.get("width");
+        const height=SelectedArea.get("height");
+        const startslice=SelectedArea.get("startslice");
+        const endslice=SelectedArea.get("endslice");
+
+        const SelectedCanvasInfoMap=CalculateData.get("SelectedCanvasInfoMap");
+        //SelectedCanvasInfoMap={CanvasID:{DataType:???,DataID:???},...}
+        const InputVolumeMap=CalculateData.get("InputVolumeMap");//{CID:{"Path",path,"Size":{width:???,height:???},"Volume":Volume}}をvalueとするMap
+        //SelectedCanvasInfoMapからInputVolumeKeyArrayを作成する
+        const InputVolumekeyPathMap=new Map();//入力されたInputVolumeKeyと評価したデータのパスを保持しておく。
+        //CanvasInputRequiredNum=1なのでかならずCanvasInfoMapの要素は一つだけになるはず
+        const DataTypeDataIDMap=Array.from(SelectedCanvasInfoMap.values())[0];
+        //MASKのデータの抽出
+        const TargetDataTypeMASK="MASK";
+        const MASKDataID=DataTypeDataIDMap.get(TargetDataTypeMASK);
+        const MASKVolumeKey=Evaluate.Array2String([TargetDataTypeMASK,MASKDataID]);
+        const MASKVolumeMap=InputVolumeMap.get(MASKVolumeKey);
+        InputVolumekeyPathMap.set(MASKVolumeKey,MASKVolumeMap.get("Path"));
+        //DOSEのデータ抽出
+        const TargetDataTypeDOSE="DOSE";
+        const DOSEDataID=DataTypeDataIDMap.get(TargetDataTypeDOSE);
+        const DOSEVolumeKey=Evaluate.Array2String([TargetDataTypeDOSE,DOSEDataID]);
+        const DOSEVolumeMap=InputVolumeMap.get(DOSEVolumeKey);
+        InputVolumekeyPathMap.set(DOSEVolumeMap,DOSEVolumeMap.get("Path"));
+        
+        const ExtraDataMap=CalculateData.get("ExtraDataMap");
+        if(ExtraDataMap.has("ColorMapLabelArray")){//存在するときに新しく代入するよ
+            this.ColorMapLabelList=ExtraDataMap.get("ColorMapLabelArray");//表示するときにこのラベルを使う
+        }
+        
+
+        
+        const DVHMap=new Map();
+        this.CalculateHistory.set(CalculateID,new Map([
+            ["SelectedCanvasInfoMap",SelectedCanvasInfoMap],
+            ["InputVolumeKeyPathMap",InputVolumekeyPathMap],//InputVolumeKeyとPathのマップ
+            ["SelectedArea",SelectedArea],
+            ["Result",DVHMap],
+        ]));
+        console.log(`${this.constructor.EvaluateName}の計算終了`);
+        console.log(DVHMap);
+        this.CreateResultDisplay();
     }
 }
 /*
