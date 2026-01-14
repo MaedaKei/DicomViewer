@@ -2526,6 +2526,7 @@ class SurfaceDice{
 }
 class DoseVolumeHistgram{
     static EvaluateName="DoseVolumeHistgram";
+    static DoseBinRange=1;//Gy
     constructor(){
         //名前。基本的には自身のクラス名を名前とする
         //this.EvaluatonName=this.constructor.name
@@ -2630,7 +2631,7 @@ class DoseVolumeHistgram{
             this.ColorMapLabelList=ExtraDataMap.get("ColorMapLabelArray");//表示するときにこのラベルを使う
         }
         //MASKの組織ごとの線量値を収集する＆最大値、最小値の探索
-        const MaskValueDOSEValueArrayMap=new Map();//{maskvalue:[...]}
+        const MASKValueDOSEValueArrayMap=new Map();//{maskvalue:[...]}
         //オリジナルのサイズはどちらも一致するという前提のもと、マスクデータのサイズを基にインデックスを計算していく
         const OriginalSize=MASKVolumeMap.get("Size");
         const OriginalWidth=OriginalSize.get("width");
@@ -2653,18 +2654,26 @@ class DoseVolumeHistgram{
                         MaxDoseValue=DOSEValue;
                     }
                     //マスクごとの集計
-                    if(MaskValueDOSEValueArrayMap.has(MASKValue)){
-                        MaskValueDOSEValueArrayMap.get(MASKValue).push(DOSEValue);
+                    if(MASKValueDOSEValueArrayMap.has(MASKValue)){
+                        MASKValueDOSEValueArrayMap.get(MASKValue).push(DOSEValue);
                     }else{
-                        MaskValueDOSEValueArrayMap.set(MASKValue,[DOSEValue]);
+                        MASKValueDOSEValueArrayMap.set(MASKValue,[DOSEValue]);
                     }
                 }
             }
         }
         //マスクごとの線量を抽出したデータが完成したので、最小値、最大値を基にGyのビンの幅を決定し、カウントしていく
         /*どれほどデータが大きくなるか未知数であるため、とりあえず1Gyの幅でカウントをしていく*/
-        const DoseBinRange=1;//Gy
-        
+        //const DoseBinRange=1;//Gy
+        const BinNum=Math.ceil(MaxDoseValue/this.constructor.DoseBinRange)+1;//絶対に0になるビンを追加する
+        //BinNum=nとして、n番目のビンの線量の範囲はn*DoseBinRange<d<=(n+1)*DoseBinRangeとする
+        for(const [MASKValue,DOSEValueArray] of MASKValueDOSEValueArrayMap.entries()){
+            if(MASKValue!==0){//BGは無視する
+                const SortedDOSEValueArray=DOSEValueArray.sort((a,b)=>a-b);//昇順にソートする
+                const BinCountMap=new Map();//小数の場合のBinにも対応するために配列ではなくMapとする
+                let BinLevel=0;//BinNum-1まで上昇する
+            }
+        }
         const DVHMap=new Map();
         this.CalculateHistory.set(CalculateID,new Map([
             ["SelectedCanvasInfoMap",SelectedCanvasInfoMap],
