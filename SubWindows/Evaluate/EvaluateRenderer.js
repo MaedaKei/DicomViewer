@@ -2541,7 +2541,7 @@ class DoseVolumeHistgram{
         this.InputNumConditionText=`${this.CanvasInputRequiredNum} x ${this.CalculateRepetitionsNum}`;
         this.CalculateHistory=new Map();//{ID:{Result,SelectedArea}}
         this.setResultTemplate();
-        this.setUserEvents();
+        //this.setUserEvents();
     }
     /*
     DVHは評価結果をテーブルにひとまとめにする必要がない評価関数である

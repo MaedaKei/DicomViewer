@@ -15,8 +15,8 @@ body{
     display: flex;
     position:relative;
     flex-direction: row;
-    --InputContainerWidth:30%;
-    --ResultContainerWidth:calc(100% - var(--InputContainerWidth));
+    --InputContainerWidth:250px;/*ここは固定の幅*/
+    --ResultContainerWidth:300px;/*ここは表示する関数によって幅と高さが変わる*/
     background-color: rgb(67, 67, 67);
 }
 dialog#InputSelectDialog{
@@ -39,7 +39,7 @@ dialog#InputSelectDialog[open]{
     flex-direction: column;
     /*ちょうどよく重なるように調整した*/
     top:5%;
-    left:25%;
+    left:var(--InputContainerWidth);
     background-color: black;
 }
 dialog#InputSelectDialog[open]>div#InputSelectDialogInfoAndButtonContainer{
