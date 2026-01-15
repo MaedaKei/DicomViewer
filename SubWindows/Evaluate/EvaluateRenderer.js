@@ -65,6 +65,7 @@ class Evaluate{
             [SurfaceDice.EvaluateName,new SurfaceDice()],
             [HausdorffDistance95.EvaluateName,new HausdorffDistance95()],
             [HausdorffDistance100.EvaluateName,new HausdorffDistance100()],
+            [DoseVolumeHistgram.EvaluateName,new DoseVolumeHistgram()],
         ]);
         //関数セレクト周辺への反映
         this.EvaluationFunctionSelecter.innerHTML="";
@@ -2560,7 +2561,7 @@ class DoseVolumeHistgram{
     //この評価関数が受け付ける入力数の条件をチェックしてtrueかfalseで返す。これはすべての評価関数でもたなければならない
     CheckCalculatable(InputNum){
         //この評価関数は入力数2のときに計算可能である。
-        if(InputNum%this.CanvasInputRequiredNum===0){//２の倍数
+        if(InputNum%this.CanvasInputRequiredNum===0){
             if(InputNum/this.CanvasInputRequiredNum===this.CalculateRepetitionsNum){//計算ワンセット分のみの入力数
                 return true;
             }
@@ -2585,6 +2586,9 @@ class DoseVolumeHistgram{
             OrderCanvasIDDataTypeDataIDMap.set(CanvasID,CanvasIDMap);
         }
         return OrderCanvasIDDataTypeDataIDMap;
+    }
+    setResultTemplate(){
+        
     }
     Calculate(CalculateData){
         /*
@@ -2665,16 +2669,27 @@ class DoseVolumeHistgram{
         //マスクごとの線量を抽出したデータが完成したので、最小値、最大値を基にGyのビンの幅を決定し、カウントしていく
         /*どれほどデータが大きくなるか未知数であるため、とりあえず1Gyの幅でカウントをしていく*/
         //const DoseBinRange=1;//Gy
+        console.log("BGにこの線量が照射されている可能性もあり、かならずしもヒストグラムがここまで伸びるとは限らない",MinDoseValue,MaxDoseValue);
         const BinNum=Math.ceil(MaxDoseValue/this.constructor.DoseBinRange)+1;//絶対に0になるビンを追加する
         //BinNum=nとして、n番目のビンの線量の範囲はn*DoseBinRange<d<=(n+1)*DoseBinRangeとする
+        const DVHMap=new Map();
         for(const [MASKValue,DOSEValueArray] of MASKValueDOSEValueArrayMap.entries()){
             if(MASKValue!==0){//BGは無視する
                 const SortedDOSEValueArray=DOSEValueArray.sort((a,b)=>a-b);//昇順にソートする
-                const BinCountMap=new Map();//小数の場合のBinにも対応するために配列ではなくMapとする
-                let BinLevel=0;//BinNum-1まで上昇する
+                const BinCountArray=new Array(BinNum).fill(0);//小数の場合のBinにも対応するために配列ではなくMapとする. indexはBinLebel
+                let BinLevel=0;//BinNum-1まで遷移する
+                for(const DOSEValue of SortedDOSEValueArray){
+                    //収まるBinLevelのところにインクリメントする
+                    while((BinLevel+1)*this.constructor.DoseBinRange<DOSEValue){
+                        BinLevel++;
+                    }
+                    BinCountArray[BinLevel]++;
+                }
+                //BinCountArrayには[500,450,...20]のように各ビンに該当する個数が格納されている。この値の合計がSortedDOSEValueArrayの要素数の合計に一致するはずである
+                DVHMap.set(MASKValue,BinCountArray);
             }
         }
-        const DVHMap=new Map();
+        
         this.CalculateHistory.set(CalculateID,new Map([
             ["SelectedCanvasInfoMap",SelectedCanvasInfoMap],
             ["InputVolumeKeyPathMap",InputVolumekeyPathMap],//InputVolumeKeyとPathのマップ
@@ -2683,7 +2698,12 @@ class DoseVolumeHistgram{
         ]));
         console.log(`${this.constructor.EvaluateName}の計算終了`);
         console.log(DVHMap);
-        this.CreateResultDisplay();
+        //this.CreateResultDisplay();
+    }
+    FocusResult(FocusCalculateID){
+        const dammyh1=document.createElement("h1");
+        dammyh1.textContent="やまちゃんはやめへんで～!!";
+        return dammyh1;
     }
 }
 /*
