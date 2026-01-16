@@ -15,8 +15,14 @@ body{
     display: flex;
     position:relative;
     flex-direction: row;
-    --InputContainerWidth:250px;/*ここは固定の幅*/
-    --ResultContainerWidth:300px;/*ここは表示する関数によって幅と高さが変わる*/
+    /*
+    --InputContainerWidth:250px;
+    --InputContainerHeight:600px;
+    */
+    /*
+    --ResultContainerWidth:300px;
+    --ResultContainerHeight:600px;
+    */
     background-color: rgb(67, 67, 67);
 }
 dialog#InputSelectDialog{
@@ -39,7 +45,7 @@ dialog#InputSelectDialog[open]{
     flex-direction: column;
     /*ちょうどよく重なるように調整した*/
     top:5%;
-    left:var(--InputContainerWidth);
+    left:250px;
     background-color: black;
 }
 dialog#InputSelectDialog[open]>div#InputSelectDialogInfoAndButtonContainer{
@@ -131,7 +137,7 @@ dialog#InputSelectDialog[open]>div#CanvasSelectButtonContainer>button:disabled{
 
 
 div#InputContainer{
-    width:var(--InputContainerWidth);
+    width:250px;
     height:100%;
     --EvaluationIndexSettingHeight:calc(30px * (2 + 1));
     --AreaSelectContainerHeight:calc(30px * (6 + 1));
@@ -356,7 +362,7 @@ ul#CalculateHistoryList>li.CalculateHistoryListItem>div.CalculateHistoryListItem
 /*ResultContainer*/
 div#ResultContainer{
     width:var(--ResultContainerWidth);
-    height:100%;
+    height:var(--ResultContainerHeight);
     /*border:1px solid rgb(0, 0, 0);*/
     background-color: rgb(220, 220, 220);
 }
@@ -372,8 +378,12 @@ EvaluationTableForMaskのResultに関するCSS
 ---------------------------------------------
 */
 div#ResultContainer>div.EvaluationTableForMaskResultContainer{
-    width:100%;
-    height:100%;
+    /*
+    --OrderResultContainerWidth:300px;
+    --OrderResultContainerHeight:600px;
+    */
+    width:500px;
+    height:800px;
     display:flex;
     flex-direction: column;
     --EvaluationNameH3Height:40px;

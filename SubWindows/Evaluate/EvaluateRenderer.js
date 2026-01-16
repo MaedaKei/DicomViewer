@@ -89,6 +89,21 @@ class Evaluate{
         //評価関数にどのCanvasIDがどのデータを指しているかを示すためのデータ
         //Calculateが押されたときに、評価関数にCanvasIDと読み込まれているデータを渡し、そちら側で作った同形式のものを格納する
         this.InputCanvasIDDataTypeDataIDMap=new Map();
+        /*
+        InputContainerのサイズを取得しておく
+        InputContainerWidthと関数ごとのwidthを足した幅でリサイズ
+        InputContainerHeightと関数ごとのheightで大きいほうのサイズでリサイズ
+        InputContainerHeightのCalculateHistory欄が残り幅いっぱいに広がるのでサイズ差分を吸収可能
+        結果表示が切り替わるタイミングでウィンドウをリサイズする
+        */
+        const InputContainer=document.getElementById("InputContainer");
+        const InputContainerStyle=getComputedStyle(InputContainer);
+        this.BasicInputContainerWidth=parseFloat(InputContainerStyle.getPropertyValue("width").trim());//初期のサイズが標準となる
+        this.BasicInputContainerHeight=parseFloat(InputContainerStyle.getPropertyValue("height").trim());//初期のサイズが標準となる
+        console.log(this.BasicInputContainerWidth,this.BasicInputContainerHeight);
+        this.ContentsWidth=null;//現在のウィンドウコンテンツのサイズ
+        this.ContentsHeight=null;//現在のウィンドウコンテンツのサイズ
+        //console.log(this.BasicInputContainerWidth,this.BasicInputContainerHeight);
         
         this.VolumeStock=new Map();//KeyはDataType:DataIDとする
         this.originalimagewidth=99999;
@@ -497,6 +512,23 @@ class Evaluate{
             const ResultDomTree=SelectedFunction.FocusResult(CalculateID);//イベント設定用にthisも渡す
             this.ResultContainer.innerHTML="";
             this.ResultContainer.appendChild(ResultDomTree);
+            /*表示結果のサイズを計算する*/
+            const ResultDomTreeStyle=getComputedStyle(ResultDomTree);
+            const ResultContainerWidth=parseFloat(ResultDomTreeStyle.getPropertyValue("width").trim());
+            const ResultContainerHeight=parseFloat(ResultDomTreeStyle.getPropertyValue("height").trim());
+            const NewContentsWidth=this.BasicInputContainerWidth+ResultContainerWidth;
+            const NewContentsHeight=Math.max(this.BasicInputContainerHeight,ResultContainerHeight);
+            console.log(ResultContainerWidth,ResultContainerHeight);
+            if(NewContentsWidth!==this.ContentsWidth||NewContentsHeight!==this.ContentsHeight){//WindowSizeの変更が必要だ
+                console.log("windowsize changed");
+                this.ContentsWidth=NewContentsWidth;
+                this.ContentsHeight=NewContentsHeight;
+                console.log(NewContentsWidth,NewContentsHeight);
+                //ウィンドウサイズ変更
+                window.SubWindowResizeAPI(NewContentsWidth,NewContentsHeight);
+                //見切れていたら移動
+                window.SubWindowMoveAPI();
+            }
         }
     }
     /*
