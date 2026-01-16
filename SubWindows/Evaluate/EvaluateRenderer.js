@@ -719,6 +719,7 @@ class Evaluate{
             if(!CurrentSelectedFunction.CheckSelectable(button)){
                 //このCanvasIDは選択可能なものではないので、選択状態ではなくする
                 button.classList.remove("Selected");
+                const CanvasID=parseInt(button.value);
                 this.CurrentSelectedCanvasIDSet.delete(CanvasID);
                 CanvasSelectChangedFlag=true;
                 ChangeCount++;
