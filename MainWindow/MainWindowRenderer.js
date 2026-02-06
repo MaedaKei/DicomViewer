@@ -434,7 +434,60 @@ class CTclass{
         const WindowingButton=document.createElement("button");
         WindowingButton.className="CT";//DataTypeをクラス名に持つ要素で絞り込みをして、それを表示するためのクラス名
         WindowingButton.textContent="CT 階調";
+        WindowingButton.value=CanvasID;
+        const CanvasInstance=CanvasClassDictionary.get(CanvasID);
         ContextMenuButtonContainer.appendChild(WindowingButton);
+        //ボタンを押すとサブウィンドウが開く
+        Canvas.EventSetHelper(CanvasID,WindowingButton,"mouseup",(e)=>{
+            if(e.button===0){
+                const CanvasID=parseInt(e.target.value);
+                this.OpenWindowingSubWindow(CanvasID);
+            }
+        });
+        FromMainProcessToMainFunctions.set("ChangeWindowing",(data)=>{
+            this.ChangeWindowingFunction(data);
+        });
+    }
+    static OpenWindowingSubWindow(CanvasID){
+        const CanvasInstance=CanvasClassDictionary.get(CanvasID);
+        const Layer="CT";
+        const DataID=CanvasInstance.LayerDataMap.get(Layer).get("DataID");
+        const DicomDataInfoMap=DicomDataClassDictionary.get(Layer).get(DataID);
+        const DicomDataInstance=DicomDataInfoMap.get("Data");
+        const WindowSize=[400,300];
+        const AllowAddOrDeleteFlag=false;
+        const data=new Map([
+            ["vMin",DicomDataInstance.vMin],
+            ["vMax",DicomDataInstance.vMax],
+            ["histgram",DicomDataInstance.histgram],
+
+            ["windowsize",WindowSize],
+            ["AllowAddOrDeleteFlag",AllowAddOrDeleteFlag],
+            ["Layer",Layer],
+            ["CanvasID",CanvasID]
+        ]);
+        const InitializeData=new Map([
+            ["action","Windowing"],
+            ["data",data],
+        ]);
+        Canvas.openSubWindow(InitializeData);
+    }
+    //サブウィンドウから階調幅が送られてきたときの動き
+    static ChangeWindowingFunction(data){
+        //console.log("関数の実態に到達");
+        const ReceivedDataBody=data.get("data");
+        const CanvasID=ReceivedDataBody.get("CanvasID");
+        const CanvasInstance=CanvasClassDictionary.get(CanvasID);
+        const TargetLayer=ReceivedDataBody.get("Layer");
+        const DataType=TargetLayer;
+        const DataID=CanvasInstance.LayerDataMap.get(TargetLayer).get("DataID");
+        const DataInfoMap=DicomDataClassDictionary.get(DataType).get(DataID);
+        const DicomDataInstance=DataInfoMap.get("Data");
+        DicomDataInstance.vMin=ReceivedDataBody.get("vMin");
+        DicomDataInstance.vMax=ReceivedDataBody.get("vMax");
+        CanvasInstance.DrawStatus.set("regenerate",true);
+        //console.log("あとは再描画だけ");
+        CanvasInstance.Layerdraw(TargetLayer);
     }
     /*ここから下はインスタンスとしての動き*/
     constructor(loadPath,loadedData){
@@ -3100,6 +3153,51 @@ class Canvas{
             //console.log(`EventSettingError\n${error}`);
         }
     }
+    /*サブウィンドウ関連*/
+    static openSubWindow(initializedata){//一応ラッパー
+        OrderSubWindowOpen(initializedata);
+    }
+    // データの送受信の窓口を作る
+    // ユーザーイベントはここからサブウィンドウにデータを送信し、サブウィンドウからのデータはいったんキャンバスが受け取ってから対象へと渡す
+    // メインウィンドウ⇒サブウィンドウへの通信のトリガーはOPモードがONのときの選択範囲変化時
+    static PassChangesToSubWindow(data){
+        //現時点ではOP層による選択範囲変更をサブウィンドウに通知する
+        window.MainWindowRendererMainProcessAPI.FromMainToMainProcess(data);
+    }
+    // サブウィンドウからメインウィンドウへの通信は入力欄で範囲選択が変わったときや、ヒストグラムで諧調をしたとき、ROIを選択したときなど
+    static ReceiveChangesFromSubWindow(data){
+        //dataの形式
+        //header:action(Windowing, MaskModifyなどを含む)
+        //body:action(changeRectangleなど)
+        //get(body_actioin)で取得できるように関数を管理する
+        //console.log(data);
+        const bodyaction=data.get("action");
+        const CanvasID=data.get("data").get("CanvasID");
+        const CanvasInstance=CanvasClassDictionary.get(CanvasID);
+        const Function=CanvasInstance.FromMainProcessToMainFunctions.get(bodyaction);
+        console.log(Function);
+        Function(data);
+    }
+    dispose(CanvasID){
+        //必要ならサブウィンドウにも通知を送らなければならない
+        //現時点であるレイヤーの参照数をデクリメントし、削除を試みる
+        const CanvasInstance=CanvasClassDictionary.get(CanvasID);
+        for(const [DataType,LayerData] of CanvasInstance.LayerDataMap.entries()){
+            const DataID=LayerData.get("DataID");
+            //参照数のデクリメントをする
+            const DicomData=DicomDataClassDictionary.get(DataType).get(DataID);
+            DicomData.set("RefCount",DicomData.get("RefCount")-1);
+            LoadAndLayout.TryDeleteDicomData(DataType,DataID);
+        }
+        /*イベントの解除を行う*/
+        for(const [element,eventMap] of CanvasInstance.ElementsWithEvents){
+            for(const [event,callback] of eventMap){
+                element.removeEventListener(event,callback);
+            }
+        }
+        /*this.Blockがこのクラスの最上位エレメントなので、これをDOMツリーから除外する*/
+        CanvasInstance.Block.remove();
+    }
     /*基本的なFlag群*/
     static ZoomPanKeyPressedFlagFunction(CanvasInstance){
         return CanvasInstance.pressedkey.has("ControlLeft")||CanvasInstance.pressedkey.has("ControlRight");
@@ -3315,6 +3413,7 @@ class Canvas{
                 DataMap.set("RefCount",DataMap.get("RefCount")+1);
                 //新しいレイヤーが追加された＝コンテキストメニューアクティブ化
                 //this.ActivateContextMenuButton(DataType);
+                console.log(this.FromMainProcessToMainFunctions);
             }
             //this.Layerdraw(DataType);
         }
@@ -3430,6 +3529,7 @@ class Canvas{
         this.ContextMenuButtonContainer.style.height=`${VisibleCount*30}px`;
         this.ContextMenuContainer.style.height=this.ContextMenuTextContainer.style.height+this.ContextMenuButtonContainer.style.height;
     }
+    /*
     ActivateContextMenuButton(DataType){
         //指定されたDataTypeのボタンを可視化する
         const DataTypeContextMenuButtonList=this.ContextMenuButtonContainer.getElementsByClassName(DataType);
@@ -3438,10 +3538,12 @@ class Canvas{
         }
         this.UpdateContextMenuSize();
     }
+    */
     //読み込まれたデータごとのコンテキストメニューの設定関数
     //メインレイヤーのCTorBGCTのCT両方から呼ばれるため、どちらであるかを引数で知らせる
+    /*
     setCTContext(){//or BGLayer
-        /*階調*/
+        //階調
         const WindowingButton=document.createElement("button");
         WindowingButton.className="CT";//DataTypeをクラス名に持つ要素で絞り込みをして、それを表示するためのクラス名
         WindowingButton.textContent="CT 階調";
@@ -3474,7 +3576,7 @@ class Canvas{
         //最後に、このボタンを非表示にする
         WindowingButton.style.display="none";
         this.ContextMenuButtonContainer.appendChild(WindowingButton);
-        /*サブウィンドウからの更新用の関数を定義する*/
+        //サブウィンドウからの更新用の関数を定義する
         const ChangeWindowingFunction=(data)=>{
             const ReceivedDataBody=data.get("data");
             const targetLayer=ReceivedDataBody.get("Layer");
@@ -3492,6 +3594,7 @@ class Canvas{
         };
         this.FromMainProcessToMainFunctions.set("ChangeWindowing",ChangeWindowingFunction);
     }
+    */
     setMASKContext(){
         /*マスク修正*/
         const MaskModifingButton=document.createElement("button");
@@ -4591,50 +4694,7 @@ class Canvas{
                 ["SelectedArea",SelectedArea]
             ])]
         ]);
-        this.PassChangesToSubWindow(data);
-    }
-
-    /*サブウィンドウ関連*/
-    openSubWindow(initializedata){//一応ラッパー
-        initializedata.get("data").set("CanvasID",this.id.get("CanvasID"));//CanvasIDを追加
-        OrderSubWindowOpen(initializedata);
-    }
-    // データの送受信の窓口を作る
-    // ユーザーイベントはここからサブウィンドウにデータを送信し、サブウィンドウからのデータはいったんキャンバスが受け取ってから対象へと渡す
-    // メインウィンドウ⇒サブウィンドウへの通信のトリガーはOPモードがONのときの選択範囲変化時
-    PassChangesToSubWindow(data){
-        //現時点ではOP層による選択範囲変更をサブウィンドウに通知する
-        window.MainWindowRendererMainProcessAPI.FromMainToMainProcess(data);
-    }
-    // サブウィンドウからメインウィンドウへの通信は入力欄で範囲選択が変わったときや、ヒストグラムで諧調をしたとき、ROIを選択したときなど
-    ReceiveChangesFromSubWindow(data){
-        //dataの形式
-        //header:action(Windowing, MaskModifyなどを含む)
-        //body:action(changeRectangleなど)
-        //get(body_actioin)で取得できるように関数を管理する
-        //console.log(data);
-        const bodyaction=data.get("action");
-        //console.log(bodyaction);
-        this.FromMainProcessToMainFunctions.get(bodyaction)(data);
-    }
-    dispose(){
-        //必要ならサブウィンドウにも通知を送らなければならない
-        //現時点であるレイヤーの参照数をデクリメントし、削除を試みる
-        for(const [DataType,LayerData] of this.LayerDataMap.entries()){
-            const DataID=LayerData.get("DataID");
-            //参照数のデクリメントをする
-            const DicomData=DicomDataClassDictionary.get(DataType).get(DataID);
-            DicomData.set("RefCount",DicomData.get("RefCount")-1);
-            LoadAndLayout.TryDeleteDicomData(DataType,DataID);
-        }
-        /*イベントの解除を行う*/
-        for(const [element,eventMap] of this.ElementsWithEvents){
-            for(const [event,callback] of eventMap){
-                element.removeEventListener(event,callback);
-            }
-        }
-        /*this.Blockがこのクラスの最上位エレメントなので、これをDOMツリーから除外する*/
-        this.Block.remove();
+        Canvas.PassChangesToSubWindow(data);
     }
 }
 //ファイル選択～ArrayBufferを返すまでの関数←これはどこも共通
@@ -5749,10 +5809,12 @@ function OrderSubWindowOpen(SendingData){
     //このリスナーはサブウィンドウとメインウィンドウの双方向通信用であるため、一つのサブウィンドウにしか開通しない
     window.MainWindowRendererMainProcessAPI.RemoveFMPTM();
     window.MainWindowRendererMainProcessAPI.FromMainProcessToMain((event,data)=>{
-        const ReceivedDataBody=data.get("data");
-        const CanvasID=ReceivedDataBody.get("CanvasID");
-        const targetCanvasClass=CanvasClassDictionary.get(CanvasID);
-        targetCanvasClass.ReceiveChangesFromSubWindow(data);
+        //const ReceivedDataBody=data.get("data");
+        //const CanvasID=ReceivedDataBody.get("CanvasID");
+        //const targetCanvasClass=CanvasClassDictionary.get(CanvasID);
+        //targetCanvasClass.ReceiveChangesFromSubWindow(data);
+        console.log("SubWindowからデータが届いたよ");
+        Canvas.ReceiveChangesFromSubWindow(data);
     });
 }
 /*
@@ -5802,11 +5864,13 @@ class Evaluate{
             const dammydata=new Map([
                 ["action","ChangeSelectedArea"],
                 ["data",new Map([
+                    ["CanvasID",targetCID],
                     ["SelectedArea",SelectedArea]
                 ])]
             ]);
-            const targetCanvasClass=CanvasClassDictionary.get(targetCID);
-            targetCanvasClass.ReceiveChangesFromSubWindow(dammydata);
+            //const targetCanvasClass=CanvasClassDictionary.get(targetCID);
+            //targetCanvasClass.ReceiveChangesFromSubWindow(dammydata);
+            Canvas.ReceiveChangesFromSubWindow(dammydata);
         }
         this.FromMainProcessToMainFunctions.set("ChangeCanvasesSelectedArea",ChangeSelectedAreaFunction);
         
@@ -5826,10 +5890,11 @@ class Evaluate{
                     const SelectedAreaData=new Map([
                         ["action","ChangeSelectedArea"],
                         ["data",new Map([
+                            ["CanvasID",CanvasID],
                             ["SelectedArea",SelectedArea]
                         ])]
                     ]);
-                    CanvasClass.ReceiveChangesFromSubWindow(SelectedAreaData);
+                    Canvas.ReceiveChangesFromSubWindow(SelectedAreaData);
                     //選択されたCanvasのサイズを送って、入力欄の境界判定に利用する
                     //共通のサイズの画像を比較することは前提条件だが、念のため通知しておくこととする
                     //MultiUseLayerのサイズは実際の画像サイズより大きく設定されることがあるため
@@ -5837,6 +5902,7 @@ class Evaluate{
                     const SendingData=new Map([
                         ["action","FromMainToSubCanvasSize"],
                         ["data",new Map([
+                            ["CanvasID",CanvasID],
                             ["originalimagewidth",CanvasClass.DrawStatus.get("originalimagewidth")],//Xサイズ
                             ["originalimageheight",CanvasClass.DrawStatus.get("originalimageheight")],//Yサイズ
                             ["originalslidermax",CanvasClass.DrawStatus.get("originalslidermax")]//Zサイズ-1
