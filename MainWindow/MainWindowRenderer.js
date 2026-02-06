@@ -3175,7 +3175,7 @@ class Canvas{
         const CanvasID=data.get("data").get("CanvasID");
         const CanvasInstance=CanvasClassDictionary.get(CanvasID);
         const Function=CanvasInstance.FromMainProcessToMainFunctions.get(bodyaction);
-        console.log(Function);
+        //console.log(Function);
         Function(data);
     }
     dispose(CanvasID){
@@ -5813,7 +5813,7 @@ function OrderSubWindowOpen(SendingData){
         //const CanvasID=ReceivedDataBody.get("CanvasID");
         //const targetCanvasClass=CanvasClassDictionary.get(CanvasID);
         //targetCanvasClass.ReceiveChangesFromSubWindow(data);
-        console.log("SubWindowからデータが届いたよ");
+        //console.log("SubWindowからデータが届いたよ");
         Canvas.ReceiveChangesFromSubWindow(data);
     });
 }
