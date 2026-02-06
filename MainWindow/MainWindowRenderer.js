@@ -3111,11 +3111,6 @@ class Canvas{
         this.CanvasWidth=0;
         this.CanvasHeight=0;
         this.SliderLength=0;//スライダーの最大値決定に使用する
-        const LayerZindexKeyList=["MultiUseLayer","FocusedLayer","CONTOUR","DOSE","MASKDIFF","MASK","CT"];
-        this.LayerZindexMap=new Map();
-        for(let i=0;i<LayerZindexKeyList.length;i++){
-            this.LayerZindexMap.set(LayerZindexKeyList[i],(i+1)*(-1));//-1,-2,-3,...;
-        }
         this.LayerZindexMap.set("ContextMenu",10);
         //コンテキストメニューを初期化する。
         this.createContextMenu();
@@ -3130,7 +3125,7 @@ class Canvas{
         //ユーザー操作の可視化など、補助的な表示に使う
         this.MultiUseLayer=document.createElement("canvas");
         this.MultiUseLayer.className="Canvas";
-        this.MultiUseLayer.style.zIndex=this.LayerZindexMap.get("MultiUseLayer");
+        this.MultiUseLayer.style.zIndex=-1;
         this.MultiUseLayer.style.display="none";//有効化する時は""で
         //スライダー
         this.slider=this.setslider();//Depthがあるデータタイプの値を基に設定する優先順位CT>MASK ただし、基本的には同じ枚数のものをオーバーレイすることを想定している。
@@ -3141,13 +3136,13 @@ class Canvas{
         this.CanvasBlock.appendChild(this.MultiUseLayer);
         this.Block.appendChild(this.slider);
         //OPCanvasのサイズも同様に決めておく
-        this.MultiUseLayer.width=this.CanvasWidth;
-        this.MultiUseLayer.height=this.CanvasHeight;
+        //this.MultiUseLayer.width=this.CanvasWidth;
+        //this.MultiUseLayer.height=this.CanvasHeight;
 
         CanvasContainer.appendChild(this.Block);
         //CanvasBlockの要求サイズを決定する
-        this.Width=this.CanvasWidth;//Canvas
-        this.Height=this.CanvasHeight+16;//absoluteのキャンバスを離すにはマージンを付けるしかない
+        //this.Width=this.CanvasWidth;//Canvas
+        //this.Height=this.CanvasHeight+16;//absoluteのキャンバスを離すにはマージンを付けるしかない
 
         //this.createContextMenu();
         //this.createBGCanvas();
@@ -3182,6 +3177,17 @@ class Canvas{
             this.CanvasWidth=this.CanvasWidth||DicomDataWidth;
             this.CanvasHeight=this.CanvasHeight||DicomDataHeight;
             this.SliderLength=this.SliderLength||DicomDataDepth;
+            /*
+            このキャンバスブロックに関するサイズを更新する
+            MultiUseLayerのサイズ
+            this.Width
+            this.Height
+            this.SliderLength
+            */
+            this.MultiUseLayer.width=this.CanvasWidth;
+            this.MultiUseLayer.height=this.CanvasHeight;
+            this.Width=this.CanvasWidth;
+            this.Height=this.CanvasHeight+16;
             //すでにこのDataTypeのLayerが存在するかのフラグ
             if(this.LayerDataMap.has(DataType)){
                 //このDataTypeのレイヤーはすでに存在する
