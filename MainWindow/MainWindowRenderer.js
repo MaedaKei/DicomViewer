@@ -3094,6 +3094,96 @@ class Canvas{
             //console.log(`EventSettingError\n${error}`);
         }
     }
+    /*基本的なFlag群*/
+    static ZoomPanKeyPressedFlagFunction(CanvasInstance){
+        return CanvasInstance.pressedkey.get("ControlLeft")||CanvasInstance.pressedkey.get("ControlRight");
+    }
+    static AreaSelectKeyPressedFlagFunction(CanvasInstance){
+
+    }
+    FlagManager(){
+        //const MouseWheelSwitchingKeyArray=["ControlLeft","ControlRight","KeyD"];//マウスホイールやドラッグ＆ドロップの切り替えのトリガーとなるキーのリスト
+        //LocalSliceAndAlign
+        //PositionStanp
+        //画像内にマウスあり、かつコントロール押されていない、かつDボタンが押されていない
+        //マウスホイールがＺoomPanやエリアセレクト時の拡縮と競合する。
+        const ZoomPanKeyPressed=(this.pressedkey.get("ControlLeft")||this.pressedkey.get("ControlRight"));
+        const AreaSelectKeyPressed=this.pressedkey.get("KeyD");
+
+        if(this.mouseenter&&!ZoomPanKeyPressed&&!AreaSelectKeyPressed){
+            this.LocalSliceAndAlignFlag=true;
+        }else{
+            this.LocalSliceAndAlignFlag=false;
+        }
+        //PositionStanp
+        //画像内にマウスあり、かつコントロール押されていない
+        /*
+        if(this.mouseenter&&!Controlpressed){
+            this.PositionStampFlag=true;
+        }else{
+            this.PositionStampFlag=false;
+        }
+        */
+        //Zoom&Pan
+        //SubWindowが開かれていない
+        //画像内にマウスがあり、かつコントロールが押されている
+        //ズームとパンのフラグを分離することでドラッグアンドドロップの検知(マウスが押されたか離れたか)をこちらで行わせる。
+        //関数本体を簡素化する目的
+        //Zoomの条件がパンよりも緩いかつ、ズームパン状態の同期やリセットの条件はZoom状態の時でいいので、関数本体ではzoomフラグをチェックする
+        if(this.mouseenter&&ZoomPanKeyPressed){
+            this.ZoomFlag=true;
+            if(this.mouseClicked.get(0)){
+                this.PanFlag=true;
+            }else{
+                this.PanFlag=false;
+            }
+        }else{
+            this.ZoomFlag=false;
+            this.PanFlag=false;
+        }
+        /*
+        MultiUseLayerMode関連イベント判定
+        常にON状態にある画像のズームパンとの兼ね合いだけ考慮して設定すればOK
+        */
+        //AreaSelect
+        //D押下時にON状態にすることで、ZoomPanとの併用を可能にする
+        //D押してないときのドラッグ&ドロップ⇒範囲選択
+        //ズームパンとは異なり、ここでマウスが押されているかは条件としない
+        //マウスが押されたポイントを始点とする必要があるため、本体の中で定義する
+        if(this.MultiUseLayerModeFlagSet.has("AreaSelect")&&this.mouseenter&&!ZoomPanKeyPressed&&!AreaSelectKeyPressed){
+            this.AreaSelectSliceCropFlag=true;
+            this.AreaSelectPanFlag=true;
+        }else{
+            this.AreaSelectSliceCropFlag=false;
+            this.AreaSelectPanFlag=false;
+        }
+        //Ctrl押しているときのドラッグ&ドロップ⇒選択範囲長方形のパン
+        //Ctrl押しているときのホイール⇒選択範囲の拡縮
+        //ドラッグ操作があるが、どちらの機能もマウスアップ時に整数に調整させるため、ここではマウス押下を条件に加えない
+        if(this.MultiUseLayerModeFlagSet.has("AreaSelect")&&this.mouseenter&&!ZoomPanKeyPressed&&AreaSelectKeyPressed){
+            this.AreaSelectDrawRectangleFlag=true;
+            this.AreaSelectZoomFlag=true;
+        }else{
+            this.AreaSelectDrawRectangleFlag=false;
+            this.AreaSelectZoomFlag=false;
+        }
+        //CONTOURROIClick
+        //ZoomPanと競合しないようにしたい
+        //Ctrl押していないときのクリックでROI内にあるか判定して送信する
+        if(this.MultiUseLayerModeFlagSet.has("CONTOURROIClick")&&this.mouseenter&&!ZoomPanKeyPressed){
+            this.CONTOURROIClickFlag=true;
+        }else{
+            this.CONTOURROIClickFlag=false;
+        }
+        //MASKClick
+        //ZoomPanと競合しないようにしたい
+        //Ctrl押していないときのクリックでマスクValueを送信する
+        if(this.MultiUseLayerModeFlagSet.has("MASKClick")&&this.mouseenter&&!ZoomPanKeyPressed){
+            this.MASKClickFlag=true;
+        }else{
+            this.MASKClickFlag=false;
+        }
+    }
     constructor(CanvasID){
         //一応一時的にデータにアクセスしておく
         this.id=new Map([
@@ -3104,7 +3194,7 @@ class Canvas{
         this.ElementsWithEvents=new Map();//element:Map(event:[func1,func2...])という風にする
         /*サブウィンドウ関連の機能の登録*/
         this.FromMainProcessToMainFunctions=new Map();
-
+        this.FlagMap=new Map();//{FlagName:{"Flag":,"Func":}}
         //キャンバスをまとめるブロック
         this.Block=document.createElement("div");
         this.Block.className="Block";
@@ -3566,6 +3656,9 @@ class Canvas{
     /*
     ここまで、MultiUseLayerModeの切り替え用関数群
     */
+    SetPrimitiveFlags(){
+
+    }
     FlagManager(){
         //const MouseWheelSwitchingKeyArray=["ControlLeft","ControlRight","KeyD"];//マウスホイールやドラッグ＆ドロップの切り替えのトリガーとなるキーのリスト
         //LocalSliceAndAlign
@@ -3701,7 +3794,7 @@ class Canvas{
         });
         //マウスの動き監視
         Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"mousedown",(e)=>{
-            this.mouseClicked.set(e.button,true);
+            this.mouseClicked.set(e.button);
             //console.log(this.mouseClicked);
         });
         Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"mouseup",(e)=>{
@@ -4037,7 +4130,7 @@ class Canvas{
             11/26時点でこのメソッドが起動しているときはZoomPan状態がリセットされているはず
             12/05、ZoomPan状態でも行えるように一般化する
             */
-            if(this.AreaSelectDrawRectangleFlag&&this.mouseClicked.get(0)){
+            if(this.AreaSelectDrawRectangleFlag&&this.mouseClicked.has(0)){
                 const newX=this.MouseTrack.get("current").get("x");
                 const newY=this.MouseTrack.get("current").get("y");
                 const rect=this.CanvasBlock.getBoundingClientRect();
@@ -4056,7 +4149,7 @@ class Canvas{
             }
         });
         Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"mousemove",(e)=>{
-            if(this.AreaSelectDrawRectangleFlag&&this.mouseClicked.get(0)){
+            if(this.AreaSelectDrawRectangleFlag&&this.mouseClicked.has(0)){
                 //mousedown時に保持した始点からの距離をwidthとheightとする
                 const newX=this.MouseTrack.get("current").get("x");
                 const newY=this.MouseTrack.get("current").get("y");
@@ -4269,7 +4362,7 @@ class Canvas{
         //マウスドラッグ系イベントはmouseup時に整数にするようにしよう
         //マウスが押された状態でマウスが動くと起動する
         Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"mousemove",(e)=>{
-            if(this.SelectedAreaStatus.get("drawed")&&this.mouseClicked.get(0)&&this.AreaSelectPanFlag){
+            if(this.SelectedAreaStatus.get("drawed")&&this.mouseClicked.has(0)&&this.AreaSelectPanFlag){
                 //拡大されてないとパンは実質無効
                 const oldX=this.MouseTrack.get("previous").get("x"),oldY=this.MouseTrack.get("previous").get("y");
                 const newX=this.MouseTrack.get("current").get("x"),newY=this.MouseTrack.get("current").get("y");
