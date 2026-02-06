@@ -3068,7 +3068,7 @@ class DOSEclass{
     }
 }
 class Canvas{
-    constructor(CanvasID,DataInfoMap){
+    constructor(CanvasID){
         //一応一時的にデータにアクセスしておく
         this.id=new Map([
             ["CanvasID",CanvasID],
@@ -3096,7 +3096,7 @@ class Canvas{
         追加された順にコンテキストメニューボタンを追加すると順番が都度代わってしまうため、コンテキストメニューの更新が必要な時にまとめて作り直すようにする
         なお、コンテキストメニューの更新が必要なタイミングはあたらしいDataTypeが追加されたとき、すなわち新しくレイヤーが作られるときである。
         データの差し替え時は必要ない
-        この関数はcreateContextMenuという名前でメソッド化する
+        この関数はInitializeContextMenuという名前でメソッド化する
         */
        //このBlockに設定されるCanvasのwidth,heightをCanvas作成と同時に設定する。基本的にCT、MASKの画像サイズに一致させる。sliderと同様にCT>MASKの優先順位で決定する
         /*
@@ -3112,13 +3112,9 @@ class Canvas{
         this.CanvasHeight=0;
         this.SliderLength=0;//スライダーの最大値決定に使用する
         //コンテキストメニューを初期化する。
-        this.createContextMenu();
+        this.InitializeContextMenu();
         //LayerはCT＞MASK＞CONTOUR,MASKDIFFの順で作成していく
         //LayerのZindexは奥から順にCT＞MASK、MASKDIFF＞CONTOUR、DOSEとする
-        this.LayerDataMap=new Map();//{DataType:{DataID:,Layer:}}の形式で保持する
-        //SetLayerには{DataType:DataID,...}の形式を渡す
-        //SetLayer内ではsetContextMenuを呼び出す.
-        this.SetLayer(DataInfoMap);
 
         //多用途的なキャンバス
         //ユーザー操作の可視化など、補助的な表示に使う
@@ -3127,7 +3123,8 @@ class Canvas{
         this.MultiUseLayer.style.zIndex=-1;
         this.MultiUseLayer.style.display="none";//有効化する時は""で
         //スライダー
-        this.slider=this.setslider();//Depthがあるデータタイプの値を基に設定する優先順位CT>MASK ただし、基本的には同じ枚数のものをオーバーレイすることを想定している。
+        this.slider=document.createElement("input");
+        this.slider.type="range";
         this.slider.className="localSlider";
         //コンテキストメニューはCanvasBlockに設定する
         this.Block.appendChild(this.CanvasBlock);
@@ -3143,10 +3140,19 @@ class Canvas{
         //this.Width=this.CanvasWidth;//Canvas
         //this.Height=this.CanvasHeight+16;//absoluteのキャンバスを離すにはマージンを付けるしかない
 
-        //this.createContextMenu();
+        //this.InitializeContextMenu();
         //this.createBGCanvas();
+        this.LayerDataMap=new Map();//{DataType:{DataID:,Layer:}}の形式で保持する
+        //SetLayerには{DataType:DataID,...}の形式を渡す
+        //SetLayer内ではsetContextMenuを呼び出す.
+    }
+    InitializeEventFunctions(DataInfoMap){
+        //Canvasのインスタンスを一度CanvasClassDictionaryに登録してから
         this.setObserverEvents();
+        this.SetLayer(DataInfoMap);
+        this.SetSliderParameter();//スライダーのパラメータを決定する
         this.setUserEvents();
+        this.SetContextMenuFunctions();
         //すべての準備が整ったので描画開始
         this.Alldraw();
     }
@@ -3247,7 +3253,7 @@ class Canvas{
         const DicomInfoMap=DicomDataClassDictionary.get(DataType).get(DataID);//{Data,RefCount}
         DicomInfoMap.get("Data").draw(ctx,this.DrawStatus);
     }
-    createContextMenu(){
+    InitializeContextMenu(){
         //コンテキストメニューの初期化
         this.ContextMenuContainer=document.createElement("div");
         this.ContextMenuContainer.className="ContextMenuContainer";
@@ -3264,6 +3270,29 @@ class Canvas{
         this.CanvasBlock.appendChild(this.ContextMenuContainer);
         this.ContextMenuButtonContainer.style.height="30px";
         this.ContextMenuContainer.style.height=this.ContextMenuTextContainer.style.height+this.ContextMenuButtonContainer.style.height;//25*2
+        //データの追加ボタン
+        //各データタイプのコンテキストメニュー設定(ボタン設置＆イベント定義)
+        //this.setCTContext();
+        //this.setMASKContext();
+        //this.setCONTOURContext();
+        
+        const DataChangeButton=document.createElement("button");
+        DataChangeButton.style.display="block";
+        DataChangeButton.textContent="データ追加";
+        this.DataChangeButton=DataChangeButton;
+        this.ContextMenuButtonContainer.appendChild(DataChangeButton);
+        
+        //削除ボタンの追加
+        const delateButton=document.createElement("button");
+        delateButton.style.display="block";
+        delateButton.textContent="削 除";
+        delateButton.style.color="#FF0000";
+        this.delateButton=delateButton;
+        //delateli.setAttribute("data-action","delate");//delateボタンには不要かもしれない
+        this.ContextMenuButtonContainer.appendChild(delateButton);
+        //this.UpdateContextMenuSize();
+    }
+    SetContextMenuFunctions(){
         //イベント定義
         this.EventSetHelper(this.CanvasBlock,"mouseup",(e)=>{
             if(e.button==2){
@@ -3290,35 +3319,17 @@ class Canvas{
                 this.ContextMenuContainer.style.display="none";
             }
         });
-        //データの追加ボタン
-        //各データタイプのコンテキストメニュー設定(ボタン設置＆イベント定義)
-        this.setCTContext();
-        this.setMASKContext();
-        this.setCONTOURContext();
-        
-        const DataChangeButton=document.createElement("button");
-        DataChangeButton.style.display="block";
-        DataChangeButton.textContent="データ追加";
-        this.EventSetHelper(DataChangeButton,"click",(e)=>{
+        this.EventSetHelper(this.DataChangeButton,"click",(e)=>{
             if(e.button===0){
                 LoadAndLayoutFunctions.LoadDialogOpen(this.id.get("CanvasID"),"AllDataType");
             }
         });
-        this.ContextMenuButtonContainer.appendChild(DataChangeButton);
-        //削除ボタンの追加
-        const delateButton=document.createElement("button");
-        delateButton.style.display="block";
-        delateButton.textContent="削 除";
-        delateButton.style.color="#FF0000";
-        //delateli.setAttribute("data-action","delate");//delateボタンには不要かもしれない
-        this.EventSetHelper(delateButton,"click",(e)=>{
+        this.EventSetHelper(this.delateButton,"click",(e)=>{
             if(e.button===0){
                 //console.log("削除発動");
                 LoadAndLayoutFunctions.delateCanvas(this.id.get("CanvasID"));
             }
         });
-        this.ContextMenuButtonContainer.appendChild(delateButton);
-        this.UpdateContextMenuSize();
     }
     UpdateContextMenuSize(){
         //可視化状態(display=block)にあるボタンをカウントしてコンテキストメニューの高さを調整する
@@ -3517,17 +3528,13 @@ class Canvas{
         }
         this.FromMainProcessToMainFunctions.set("ChangeROIStatusSet",ChangeROIStatusSetFunction);
     }
-    setslider(){
+    SetSliderParameter(){
         //MainlayerとBGの有無から、スライダーを設定する
-        const max=this.SliderLength-1;
-        const slider=document.createElement("input");
-        slider.type="range";
-        slider.min=0;
-        slider.max=max;
-        slider.value=0;
-        slider.step=1;
-        slider.style.zIndex=1;
-        return slider;
+        this.slider.min=0;
+        this.slider.max=this.SliderLength-1;
+        this.slider.value=0;
+        this.slider.step=1;
+        this.slider.style.zIndex=1;
     }
     /*
     ここまで、MultiUseLayerModeの切り替え用関数群
@@ -5414,8 +5421,9 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
     CreateNewCanvasBlock(DataInfoMap){
         //キャンバスの作成と登録
         const NewCanvasID=CanvasNextID;
-        const NewCanvas=new Canvas(NewCanvasID,DataInfoMap);
+        const NewCanvas=new Canvas(NewCanvasID);
         CanvasClassDictionary.set(NewCanvasID,NewCanvas);
+        NewCanvas.InitializeEventFunctions(DataInfoMap);
         CanvasNextID++;
         //キャンバスの作成と、IDとgridの紐づけを行う
         //現在空いている場所はあるか？
