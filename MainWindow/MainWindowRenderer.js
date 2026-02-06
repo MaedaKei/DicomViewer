@@ -3096,93 +3096,52 @@ class Canvas{
     }
     /*基本的なFlag群*/
     static ZoomPanKeyPressedFlagFunction(CanvasInstance){
-        return CanvasInstance.pressedkey.get("ControlLeft")||CanvasInstance.pressedkey.get("ControlRight");
+        return CanvasInstance.pressedkey.has("ControlLeft")||CanvasInstance.pressedkey.has("ControlRight");
     }
     static AreaSelectKeyPressedFlagFunction(CanvasInstance){
-
+        return CanvasInstance.pressedkey.has("keyD");
     }
-    FlagManager(){
-        //const MouseWheelSwitchingKeyArray=["ControlLeft","ControlRight","KeyD"];//マウスホイールやドラッグ＆ドロップの切り替えのトリガーとなるキーのリスト
-        //LocalSliceAndAlign
-        //PositionStanp
-        //画像内にマウスあり、かつコントロール押されていない、かつDボタンが押されていない
-        //マウスホイールがＺoomPanやエリアセレクト時の拡縮と競合する。
-        const ZoomPanKeyPressed=(this.pressedkey.get("ControlLeft")||this.pressedkey.get("ControlRight"));
-        const AreaSelectKeyPressed=this.pressedkey.get("KeyD");
-
-        if(this.mouseenter&&!ZoomPanKeyPressed&&!AreaSelectKeyPressed){
-            this.LocalSliceAndAlignFlag=true;
-        }else{
-            this.LocalSliceAndAlignFlag=false;
-        }
-        //PositionStanp
-        //画像内にマウスあり、かつコントロール押されていない
-        /*
-        if(this.mouseenter&&!Controlpressed){
-            this.PositionStampFlag=true;
-        }else{
-            this.PositionStampFlag=false;
-        }
-        */
-        //Zoom&Pan
-        //SubWindowが開かれていない
-        //画像内にマウスがあり、かつコントロールが押されている
-        //ズームとパンのフラグを分離することでドラッグアンドドロップの検知(マウスが押されたか離れたか)をこちらで行わせる。
-        //関数本体を簡素化する目的
-        //Zoomの条件がパンよりも緩いかつ、ズームパン状態の同期やリセットの条件はZoom状態の時でいいので、関数本体ではzoomフラグをチェックする
-        if(this.mouseenter&&ZoomPanKeyPressed){
-            this.ZoomFlag=true;
-            if(this.mouseClicked.get(0)){
-                this.PanFlag=true;
-            }else{
-                this.PanFlag=false;
-            }
-        }else{
-            this.ZoomFlag=false;
-            this.PanFlag=false;
-        }
-        /*
-        MultiUseLayerMode関連イベント判定
-        常にON状態にある画像のズームパンとの兼ね合いだけ考慮して設定すればOK
-        */
-        //AreaSelect
-        //D押下時にON状態にすることで、ZoomPanとの併用を可能にする
-        //D押してないときのドラッグ&ドロップ⇒範囲選択
-        //ズームパンとは異なり、ここでマウスが押されているかは条件としない
-        //マウスが押されたポイントを始点とする必要があるため、本体の中で定義する
-        if(this.MultiUseLayerModeFlagSet.has("AreaSelect")&&this.mouseenter&&!ZoomPanKeyPressed&&!AreaSelectKeyPressed){
-            this.AreaSelectSliceCropFlag=true;
-            this.AreaSelectPanFlag=true;
-        }else{
-            this.AreaSelectSliceCropFlag=false;
-            this.AreaSelectPanFlag=false;
-        }
-        //Ctrl押しているときのドラッグ&ドロップ⇒選択範囲長方形のパン
-        //Ctrl押しているときのホイール⇒選択範囲の拡縮
-        //ドラッグ操作があるが、どちらの機能もマウスアップ時に整数に調整させるため、ここではマウス押下を条件に加えない
-        if(this.MultiUseLayerModeFlagSet.has("AreaSelect")&&this.mouseenter&&!ZoomPanKeyPressed&&AreaSelectKeyPressed){
-            this.AreaSelectDrawRectangleFlag=true;
-            this.AreaSelectZoomFlag=true;
-        }else{
-            this.AreaSelectDrawRectangleFlag=false;
-            this.AreaSelectZoomFlag=false;
-        }
-        //CONTOURROIClick
-        //ZoomPanと競合しないようにしたい
-        //Ctrl押していないときのクリックでROI内にあるか判定して送信する
-        if(this.MultiUseLayerModeFlagSet.has("CONTOURROIClick")&&this.mouseenter&&!ZoomPanKeyPressed){
-            this.CONTOURROIClickFlag=true;
-        }else{
-            this.CONTOURROIClickFlag=false;
-        }
-        //MASKClick
-        //ZoomPanと競合しないようにしたい
-        //Ctrl押していないときのクリックでマスクValueを送信する
-        if(this.MultiUseLayerModeFlagSet.has("MASKClick")&&this.mouseenter&&!ZoomPanKeyPressed){
-            this.MASKClickFlag=true;
-        }else{
-            this.MASKClickFlag=false;
-        }
+    /*
+    static MouseEnterInCanvasAreaFlagFunction(CanvasInstance){
+        return CanvasInstance.mouseenter;
+    }
+    */
+    static LocalSliceAndAlignFlagFunction(CanvasInstance){
+        const MouseEnterInCanvasAreaFlag=CanvasInstance.mouseenter;
+        const ZoomPanKeyPressedFlag=CanvasInstance.FlagMap.get("ZoomPanKeyPressed").get("Flag");
+        const AreaSelectKeyPressedFlag=CanvasInstance.FlagMap.get("AreaSelectKeyPressed").get("Flag");
+        return MouseEnterInCanvasAreaFlag&&!ZoomPanKeyPressedFlag&&!AreaSelectKeyPressedFlag;
+    }
+    static ZoomFlagFunction(CanvasInstance){
+        const MouseEnterInCanvasAreaFlag=CanvasInstance.mouseenter;
+        const ZoomPanKeyPressedFlag=CanvasInstance.FlagMap.get("ZoomPanKeyPressed").get("Flag");
+        return MouseEnterInCanvasAreaFlag&&ZoomPanKeyPressedFlag;
+    }
+    static PanFlagFunction(CanvasInstance){
+        const ZoomFlag=CanvasInstance.FlagMap.get("Zoom").get("Flag");
+        return ZoomFlag&&CanvasInstance.mouseClicked.has(0);
+    }
+    static AreaSelectPanFlagFunction(CanvasInstance){
+        const MultiUseLayerModeFlag=CanvasInstance.MultiUseLayerModeFlagSet.has("AreaSelect");
+        const MouseEnterInCanvasAreaFlag=CanvasInstance.mouseenter;
+        const ZoomPanKeyPressedFlag=CanvasInstance.FlagMap.get("ZoomPanKeyPressed").get("Flag");
+        const AreaSelectKeyPressedFlag=CanvasInstance.FlagMap.get("AreaSelectKeyPressed").get("Flag");
+        return MultiUseLayerModeFlag&&MouseEnterInCanvasAreaFlag&&!ZoomPanKeyPressedFlag&&!AreaSelectKeyPressedFlag;
+    }
+    static AreaSelectSliceCropFlagFunction(CanvasInstance){
+        const AreaSelectPanFlag=CanvasInstance.FlagMap.get("AreaSelectPan").get("Flag");
+        return AreaSelectPanFlag;
+    }
+    static AreaSelectDrawRectangleFlagFunction(CanvasInstance){
+        const MultiUseLayerModeFlag=CanvasInstance.MultiUseLayerModeFlagSet.has("AreaSelect");
+        const MouseEnterInCanvasAreaFlag=CanvasInstance.mouseenter;
+        const ZoomPanKeyPressedFlag=CanvasInstance.FlagMap.get("ZoomPanKeyPressed").get("Flag");
+        const AreaSelectKeyPressedFlag=CanvasInstance.FlagMap.get("AreaSelectKeyPressed").get("Flag");
+        return MultiUseLayerModeFlag&&MouseEnterInCanvasAreaFlag&&!ZoomPanKeyPressedFlag&&AreaSelectKeyPressedFlag;
+    }
+    static AreaSelectZoomFlagFunction(CanvasInstance){
+        const AreaSelectDrawRectangleFlag=CanvasInstance.FlagMap.get("AreaSelectDrawRectangle").get("Flag");
+        return AreaSelectDrawRectangleFlag;
     }
     constructor(CanvasID){
         //一応一時的にデータにアクセスしておく
@@ -3238,6 +3197,9 @@ class Canvas{
         this.MultiUseLayer.className="Canvas";
         this.MultiUseLayer.style.zIndex=-1;
         this.MultiUseLayer.style.display="none";//有効化する時は""で
+        /*MultiUseLayerに関する機能*/
+        this.MultiUseLayerModeFlagSet=new Set();
+
         //スライダー
         this.slider=document.createElement("input");
         this.slider.type="range";
@@ -3265,6 +3227,7 @@ class Canvas{
     InitializeEventFunctions(DataInfoMap){
         //Canvasのインスタンスを一度CanvasClassDictionaryに登録してから
         this.setObserverEvents();
+        this.SetPrimitiveFlags();
         this.SetLayer(DataInfoMap);
         this.SetSliderParameter();//スライダーのパラメータを決定する
         this.setUserEvents();
@@ -3657,8 +3620,24 @@ class Canvas{
     ここまで、MultiUseLayerModeの切り替え用関数群
     */
     SetPrimitiveFlags(){
-
+        this.FlagMap.set("ZoomPanKeyPressed",new Map([["Flag",false],["Func",Canvas.ZoomPanKeyPressedFlagFunction]]));
+        this.FlagMap.set("AreaSelectKeyPressed",new Map([["Flag",false],["Func",Canvas.AreaSelectKeyPressedFlagFunction]]));
+        this.FlagMap.set("LocalSliceAndAlign",new Map([["Flag",false],["Func",Canvas.LocalSliceAndAlignFlagFunction]]));
+        this.FlagMap.set("Zoom",new Map([["Flag",false],["Func",Canvas.ZoomFlagFunction]]));
+        this.FlagMap.set("Pan",new Map([["Flag",false],["Func",Canvas.PanFlagFunction]]));
+        this.FlagMap.set("AreaSelectPan",new Map([["Flag",false],["Func",Canvas.AreaSelectPanFlagFunction]]));
+        this.FlagMap.set("AreaSelectSliceCrop",new Map([["Flag",false],["Func",Canvas.AreaSelectSliceCropFlagFunction]]));
+        this.FlagMap.set("AreaSelectDrawRectangle",new Map([["Flag",false],["Func",Canvas.AreaSelectDrawRectangleFlagFunction]]));
+        this.FlagMap.set("AreaSelectZoom",new Map([["Flag",false],["Func",Canvas.AreaSelectZoomFlagFunction]]));
     }
+    FlagUpdater(){
+        for(const FlagFunctionMap of this.FlagMap.values()){
+            const Func=FlagFunctionMap.get("Func");
+            const NewStatus=Func(this);//キャンバスインスタンスを渡す
+            FlagFunctionMap.set("Flag",NewStatus);
+        }
+    }
+    /*
     FlagManager(){
         //const MouseWheelSwitchingKeyArray=["ControlLeft","ControlRight","KeyD"];//マウスホイールやドラッグ＆ドロップの切り替えのトリガーとなるキーのリスト
         //LocalSliceAndAlign
@@ -3673,21 +3652,6 @@ class Canvas{
         }else{
             this.LocalSliceAndAlignFlag=false;
         }
-        //PositionStanp
-        //画像内にマウスあり、かつコントロール押されていない
-        /*
-        if(this.mouseenter&&!Controlpressed){
-            this.PositionStampFlag=true;
-        }else{
-            this.PositionStampFlag=false;
-        }
-        */
-        //Zoom&Pan
-        //SubWindowが開かれていない
-        //画像内にマウスがあり、かつコントロールが押されている
-        //ズームとパンのフラグを分離することでドラッグアンドドロップの検知(マウスが押されたか離れたか)をこちらで行わせる。
-        //関数本体を簡素化する目的
-        //Zoomの条件がパンよりも緩いかつ、ズームパン状態の同期やリセットの条件はZoom状態の時でいいので、関数本体ではzoomフラグをチェックする
         if(this.mouseenter&&ZoomPanKeyPressed){
             this.ZoomFlag=true;
             if(this.mouseClicked.get(0)){
@@ -3699,10 +3663,10 @@ class Canvas{
             this.ZoomFlag=false;
             this.PanFlag=false;
         }
-        /*
-        MultiUseLayerMode関連イベント判定
-        常にON状態にある画像のズームパンとの兼ね合いだけ考慮して設定すればOK
-        */
+        
+        //MultiUseLayerMode関連イベント判定
+        //常にON状態にある画像のズームパンとの兼ね合いだけ考慮して設定すればOK
+        
         //AreaSelect
         //D押下時にON状態にすることで、ZoomPanとの併用を可能にする
         //D押してないときのドラッグ&ドロップ⇒範囲選択
@@ -3742,13 +3706,13 @@ class Canvas{
             this.MASKClickFlag=false;
         }
     }
-
+    */
     setObserverEvents(){
         /*イベント関連のフラグ*/
         //マウスホイール、キーダウンを監視
         this.mouseenter=false;
-        this.pressedkey=new Map();//押されたキーにTrueを入れる、押されなくなったらdelateする
-        this.mouseClicked=new Map();
+        this.pressedkey=new Set();//押されたキーにTrueを入れる、押されなくなったらdelateする
+        this.mouseClicked=new Set();
         this.MouseTrack=new Map([
             ["previous",new Map()],
             ["current",new Map()]
@@ -3762,7 +3726,7 @@ class Canvas{
             //CanvasBlockにフォーカスさせる
             e.target.focus();
             //console.log("mouseenter",this.mouseenter);
-            this.FlagManager();
+            this.FlagUpdater();
         });
 
         Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"mouseleave",(e)=>{
@@ -3778,23 +3742,23 @@ class Canvas{
             //キャンバスブロックの外に出たらコンテキストメニューもOFFにする
             this.ContextMenuContainer.style.display="none";
             //console.log("mouseenter",this.mouseenter);
-            this.FlagManager();
+            this.FlagUpdater();
         });
         //キーボードが押されているかを監視
         //キーボードが押されっぱなしのときは一定間隔で連続発火する。
         Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"keydown",(e)=>{
-            this.pressedkey.set(e.code,true);
+            this.pressedkey.add(e.code);
             //console.log(this.pressedkey);
-            this.FlagManager();
+            this.FlagUpdater();
         });
         Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"keyup",(e)=>{
             this.pressedkey.delete(e.code);
             //console.log(this.pressedkey);
-            this.FlagManager();
+            this.FlagUpdater();
         });
         //マウスの動き監視
         Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"mousedown",(e)=>{
-            this.mouseClicked.set(e.button);
+            this.mouseClicked.add(e.button);
             //console.log(this.mouseClicked);
         });
         Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"mouseup",(e)=>{
@@ -3851,8 +3815,6 @@ class Canvas{
         this.setLocalSliceAndAlign();
         //this.setPositionStamp();
         this.setZoomPan();
-        /*MultiUseLayerに関する機能*/
-        this.MultiUseLayerModeFlagSet=new Set();
         /*
         イベント発火自体はthis.CanvasBlockに設定すること
         イベント設置要素を一つにまとめた
@@ -3942,6 +3904,7 @@ class Canvas{
         }
         this.FromMainProcessToMainFunctions.set("CONTOURROIClickModeSwitching",CONTOURROIClickModeSwitchingFunction);
         this.setCONTOURROIClick();
+
         const MASKClickModeSwitchingFunction=(data)=>{
             const ReceivedDataBody=data.get("data");
             const Activate=ReceivedDataBody.get("Activate");
@@ -3958,7 +3921,7 @@ class Canvas{
     }
     setLocalSliceAndAlign(){
         const CanvasID=this.id.get("CanvasID");
-        this.LocalSliceAndAlignFlag=false;
+        //this.LocalSliceAndAlignFlag=false;
         this.LocalSliceAndAlignKeydownEventFlag=true;//keydownするとfalseに、keyupするとtrueになる。falseのときは長押し状態=GlobalSliceモード
         Canvas.EventSetHelper(CanvasID,this.slider,"input",(e)=>{
             this.DrawStatus.set("index",parseInt(e.target.value));
@@ -3970,7 +3933,7 @@ class Canvas{
             e.preventDefault();//ウィンドウのスクロールを抑止
             e.stopPropagation();//キャンバスの裏にある親divのスクロールを阻止
             //ローカルスライス
-            if(this.LocalSliceAndAlignFlag){
+            if(this.FlagMap.get("LocalSliceAndAlign").get("Flag")){
                 let changevalue=Math.sign(e.deltaY);//deltaYが正なら1、負なら-1をかえす。ちなみに下に回すと正となる
                 const curretnvalue=parseInt(this.slider.value);
                 const sliderlength=this.DrawStatus.get("originalslidermax")+1;//最小値0は固定、線形性を持たせるためにも0～に移している
@@ -3996,7 +3959,7 @@ class Canvas{
         });
         //スライスの位置合わせ　or ズームパンの同期処理の重さを和らげるため、Space押下時に他の画像と同期することにする
         Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"keydown",(e)=>{
-            if(this.LocalSliceAndAlignFlag&&this.LocalSliceAndAlignKeydownEventFlag&&e.code==="Space"){//長押し状態の連続発火を抑制
+            if(this.FlagMap.get("LocalSliceAndAlign").get("Flag")&&this.LocalSliceAndAlignKeydownEventFlag&&e.code==="Space"){//長押し状態の連続発火を抑制
                 //Flagの更新
                 this.LocalSliceAndAlignKeydownEventFlag=false;
                 //他のキャンバスの位置を自分に合わせる
@@ -4012,7 +3975,7 @@ class Canvas{
             }
         });
         Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"keyup",(e)=>{
-            if(this.LocalSliceAndAlignFlag&&e.code==="Space"){
+            if(this.FlagMap.get("LocalSliceAndAlign").get("Flag")&&e.code==="Space"){
                 //Flagの更新
                 this.LocalSliceAndAlignKeydownEventFlag=true;
             }
@@ -4020,15 +3983,15 @@ class Canvas{
     }
     setZoomPan(){
         const CanvasID=this.id.get("CanvasID");
-        this.ZoomFlag=false;
-        this.PanFlag=false;
+        //this.ZoomFlag=false;
+        //this.PanFlag=false;
         /*ZoomPanのイベントを定義する*/
         //Zoom
         Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"wheel",(e)=>{
             e.preventDefault();//ウィンドウのスクロールを抑止
             e.stopPropagation();//キャンバスの裏にある親divのスクロールを阻止
             //拡大縮小
-            if(this.ZoomFlag){
+            if(this.FlagMap.get("Zoom").get("Flag")){
                 //新しいscaleを計算する。1.0を下回らないようにする
                 const oldscale=this.DrawStatus.get("scale");
                 const newscale=Math.min(Math.max(oldscale-(Math.sign(e.deltaY))/10,1.0),6.0);
@@ -4061,7 +4024,7 @@ class Canvas{
         });
         //クリックイベントコンテキストメニューはそれ専用のイベントもあるようなので分けた方が見やすいかも
         Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"mousedown",(e)=>{
-            if(this.ZoomFlag){
+            if(this.FlagMap.get("Zoom").get("Flag")){
                 if(e.button==1){//中央ボタンクリックでズームパンをリセット
                     this.DrawStatus.set("w0",0);
                     this.DrawStatus.set("h0",0);
@@ -4073,7 +4036,7 @@ class Canvas{
             }
         });
         Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"mousemove",(e)=>{
-            if(this.PanFlag){
+            if(this.FlagMap.get("Pan").get("Flag")){
                 //拡大されてないとパンは実質無効
                 const oldX=this.MouseTrack.get("previous").get("x"),oldY=this.MouseTrack.get("previous").get("y");
                 const newX=this.MouseTrack.get("current").get("x"),newY=this.MouseTrack.get("current").get("y");
@@ -4094,7 +4057,7 @@ class Canvas{
         });
         //描画領域を合わせる
         Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"keydown",(e)=>{
-            if(this.ZoomFlag&&e.code=="Space"){
+            if(this.FlagMap.get("Zoom").get("Flag")&&e.code=="Space"){
                 //DrawFlagの該当箇所を書き換えてAlldrawを呼び出す
                 //並べている画像は同サイズであることを前提としている
                 const w0=this.DrawStatus.get("w0");
@@ -4116,7 +4079,7 @@ class Canvas{
     /*AreaSelectイベント登録*/
     setAreaSelectDrawRectangle(){
         const CanvasID=this.id.get("CanvasID");
-        this.AreaSelectDrawRectangleFlag=false;
+        //this.AreaSelectDrawRectangleFlag=false;
         //始点の更新
         Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"mousedown",(e)=>{
             //DrawRencangleがONであり、かつ左クリックされた
@@ -4130,7 +4093,7 @@ class Canvas{
             11/26時点でこのメソッドが起動しているときはZoomPan状態がリセットされているはず
             12/05、ZoomPan状態でも行えるように一般化する
             */
-            if(this.AreaSelectDrawRectangleFlag&&this.mouseClicked.has(0)){
+            if(this.FlagMap.get("AreaSelectDrawRectangle").get("Flag")&&this.mouseClicked.has(0)){
                 const newX=this.MouseTrack.get("current").get("x");
                 const newY=this.MouseTrack.get("current").get("y");
                 const rect=this.CanvasBlock.getBoundingClientRect();
@@ -4149,7 +4112,7 @@ class Canvas{
             }
         });
         Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"mousemove",(e)=>{
-            if(this.AreaSelectDrawRectangleFlag&&this.mouseClicked.has(0)){
+            if(this.FlagMap.get("AreaSelectDrawRectangle").get("Flag")&&this.mouseClicked.has(0)){
                 //mousedown時に保持した始点からの距離をwidthとheightとする
                 const newX=this.MouseTrack.get("current").get("x");
                 const newY=this.MouseTrack.get("current").get("y");
@@ -4184,7 +4147,7 @@ class Canvas{
         ドラッグ系イベントはmouseupで精査した後の値を送信する
         */
         Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"mouseup",()=>{
-            if(this.AreaSelectDrawRectangleFlag){
+            if(this.FlagMap.get("AreaSelectDrawRectangle").get("Flag")){
                 //console.log("AreaSelectDrawRectangle","mouseup");
                 //ドラッグの始点をリセットする
                 this.SelectedAreaStatus.set("sw",null);
@@ -4216,7 +4179,7 @@ class Canvas{
         });
     }
     setAreaSelectSliceCrop(){
-        this.AreaSelectSliceCropFlag=false;
+        //this.AreaSelectSliceCropFlag=false;
         const CanvasID=this.id.get("CanvasID");
         /*
         keydownイベントは長押しにも対応するために、押している間連続で発火し続けてしまう
@@ -4228,7 +4191,7 @@ class Canvas{
         */
         this.AreaSelectSliceCropKeyDownEventFlag=true;
         Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"keydown",(e)=>{
-            if(this.AreaSelectSliceCropFlag){
+            if(this.FlagMap.get("AreaSelectSliceCrop").get("Flag")){
                 if(this.AreaSelectSliceCropKeyDownEventFlag&&e.code==="Space"){//Spaceが押し込まれたとき
                     //押されたときに可視化を解除
                     //1枚選択もあるのでtrueにしておく
@@ -4245,7 +4208,7 @@ class Canvas{
             }
         });
         Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"wheel",(e)=>{
-            if(this.AreaSelectSliceCropFlag){
+            if(this.FlagMap.get("AreaSelectSliceCrop").get("Flag")){
                 if(!this.AreaSelectSliceCropKeyDownEventFlag){//keydownイベント抑制中＝長押し状態
                     //SliceCrop可視化
                     this.SelectedAreaStatus.set("slicecropdrawed",true);
@@ -4270,7 +4233,7 @@ class Canvas{
             }
         });
         Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"keyup",(e)=>{
-            if(this.AreaSelectSliceCropFlag){
+            if(this.FlagMap.get("AreaSelectSliceCrop").get("Flag")){
                 if(e.code==="Space"){
                     /*
                     let startslice=this.SelectedAreaStatus.get("startslice");
@@ -4301,7 +4264,7 @@ class Canvas{
     }
     setAreaSelectZoom(){
         const CanvasID=this.id.get("CanvasID");
-        this.AreaSelectZoomFlag=false;
+        //this.AreaSelectZoomFlag=false;
         //OperatioinZoomの定義
         Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"wheel",(e)=>{
             e.preventDefault();
@@ -4309,7 +4272,7 @@ class Canvas{
             /*
             wheelによる拡大縮小時も送信する
             */
-            if(this.SelectedAreaStatus.get("drawed")&&this.AreaSelectZoomFlag){
+            if(this.SelectedAreaStatus.get("drawed")&&this.FlagMap.get("AreaSelectZoom").get("Flag")){
                 //上に回すと拡大、下に回すと縮小にする
                 const sizechangevalue=(-1)*Math.sign(e.deltaY);//deltaYが正なら1、負なら-1をかえす。ちなみに下に回すと正となる
                 const w0=this.SelectedAreaStatus.get("w0");
@@ -4357,12 +4320,12 @@ class Canvas{
     setAreaSelectPan(){
         const CanvasID=this.id.get("CanvasID");
         //ZoomPanではdrawの編集は行わない
-        this.AreaSelectPanFlag=false;
+        //this.AreaSelectPanFlag=false;
         //OperatioinPanの定義
         //マウスドラッグ系イベントはmouseup時に整数にするようにしよう
         //マウスが押された状態でマウスが動くと起動する
         Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"mousemove",(e)=>{
-            if(this.SelectedAreaStatus.get("drawed")&&this.mouseClicked.has(0)&&this.AreaSelectPanFlag){
+            if(this.SelectedAreaStatus.get("drawed")&&this.mouseClicked.has(0)&&this.FlagMap.get("AreaSelectPan").get("Flag")){
                 //拡大されてないとパンは実質無効
                 const oldX=this.MouseTrack.get("previous").get("x"),oldY=this.MouseTrack.get("previous").get("y");
                 const newX=this.MouseTrack.get("current").get("x"),newY=this.MouseTrack.get("current").get("y");
@@ -4391,7 +4354,7 @@ class Canvas{
         ドラッグ系イベントはmouseupで精査した後の値を送信する
         */
         Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"mouseup",(e)=>{
-            if(this.SelectedAreaStatus.get("drawed")&&this.AreaSelectPanFlag){
+            if(this.SelectedAreaStatus.get("drawed")&&this.FlagMap.get("AreaSelectPan").get("Flag")){
                 //現在のSelectedAreaを精査して値を変更する
                 //console.log("AreaSelectZoomPan","mouseup");
                 let sw=this.SelectedAreaStatus.get("w0");
