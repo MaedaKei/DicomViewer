@@ -3111,7 +3111,6 @@ class Canvas{
         this.CanvasWidth=0;
         this.CanvasHeight=0;
         this.SliderLength=0;//スライダーの最大値決定に使用する
-        this.LayerZindexMap.set("ContextMenu",10);
         //コンテキストメニューを初期化する。
         this.createContextMenu();
         //LayerはCT＞MASK＞CONTOUR,MASKDIFFの順で作成していく
@@ -3252,7 +3251,7 @@ class Canvas{
         //コンテキストメニューの初期化
         this.ContextMenuContainer=document.createElement("div");
         this.ContextMenuContainer.className="ContextMenuContainer";
-        this.ContextMenuContainer.style.zIndex=this.LayerZindexMap.get("ContextMenu");
+        this.ContextMenuContainer.style.zIndex=10;
         this.ContextMenuTextContainer=document.createElement("div");
         this.ContextMenuTextContainer.className="ContextMenuTextContainer";
         this.ContextMenuTextContainer.textContent=`CanvasID: ${this.id.get("CanvasID")}`;
