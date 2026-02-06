@@ -3203,7 +3203,7 @@ class Canvas{
                 //const NewLayer=document.createElement("canvas");
                 const NewLayer=DicomDataTypeClass.getNewLayer();
                 NewLayer.className="Canvas";
-                NewLayer.style.zIndex=this.LayerZindexMap.get(DataType);
+                //NewLayer.style.zIndex=this.LayerZindexMap.get(DataType);
                 NewLayer.width=this.CanvasWidth;
                 NewLayer.height=this.CanvasHeight;
                 this.CanvasBlock.appendChild(NewLayer);
