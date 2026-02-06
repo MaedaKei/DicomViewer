@@ -3068,6 +3068,32 @@ class DOSEclass{
     }
 }
 class Canvas{
+    static EventSetHelper(CanvasID,element,event,callback){
+        try{
+            const CanvasInstance=CanvasClassDictionary.get(CanvasID);
+            element.addEventListener(event,callback);
+            //ElementsWithEventsに登録
+            if(CanvasInstance.ElementsWithEvents.has(element)){
+                //すでにエレメントが一度登録されている
+                const elementMap=CanvasInstance.ElementsWithEvents.get(element);
+                if(elementMap.has(event)){
+                    //エレメントのeventが一度登録されている
+                    elementMap.get(event).push(callback);
+                }else{
+                    //このイベントは初めてなので新しい配列を作って登録
+                    elementMap.set(event,[callback]);
+                }
+            }else{
+                //この要素が初めてなのでエレメントのMapを登録⇒eventのMAPを登録⇒callbackをプッシュする
+                CanvasInstance.ElementsWithEvents.set(element,new Map([
+                    [event,[callback]]
+                ]));
+            }
+        }catch(error){
+            //console.log(element,event);
+            //console.log(`EventSettingError\n${error}`);
+        }
+    }
     constructor(CanvasID){
         //一応一時的にデータにアクセスしておく
         this.id=new Map([
@@ -3294,7 +3320,8 @@ class Canvas{
     }
     SetContextMenuFunctions(){
         //イベント定義
-        this.EventSetHelper(this.CanvasBlock,"mouseup",(e)=>{
+        const CanvasID=this.id.get("CanvasID");
+        Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"mouseup",(e)=>{
             if(e.button==2){
                 e.preventDefault();
                 e.stopPropagation();
@@ -3319,12 +3346,12 @@ class Canvas{
                 this.ContextMenuContainer.style.display="none";
             }
         });
-        this.EventSetHelper(this.DataChangeButton,"click",(e)=>{
+        Canvas.EventSetHelper(CanvasID,this.DataChangeButton,"click",(e)=>{
             if(e.button===0){
                 LoadAndLayoutFunctions.LoadDialogOpen(this.id.get("CanvasID"),"AllDataType");
             }
         });
-        this.EventSetHelper(this.delateButton,"click",(e)=>{
+        Canvas.EventSetHelper(CanvasID,this.delateButton,"click",(e)=>{
             if(e.button===0){
                 //console.log("削除発動");
                 LoadAndLayoutFunctions.delateCanvas(this.id.get("CanvasID"));
@@ -3355,7 +3382,7 @@ class Canvas{
         const WindowingButton=document.createElement("button");
         WindowingButton.className="CT";//DataTypeをクラス名に持つ要素で絞り込みをして、それを表示するためのクラス名
         WindowingButton.textContent="CT 階調";
-        this.EventSetHelper(WindowingButton,"mouseup",(e)=>{
+        Canvas.EventSetHelper(this.id.get("CanvasID"),WindowingButton,"mouseup",(e)=>{
             if(e.button==0){
                 //現在の参照しているCTデータを取得
                 const Layer="CT";
@@ -3407,7 +3434,7 @@ class Canvas{
         const MaskModifingButton=document.createElement("button");
         MaskModifingButton.className="MASK";//DataTypeをクラス名に持つ要素で絞り込みをして、それを表示するためのクラス名
         MaskModifingButton.textContent="MASK 修正";
-        this.EventSetHelper(MaskModifingButton,"mouseup",(e)=>{
+        Canvas.EventSetHelper(this.id.get("CanvasID"),MaskModifingButton,"mouseup",(e)=>{
             if(e.button==0){
                 const Layer="MASK";
                 const DataID=this.LayerDataMap.get(Layer).get("DataID");
@@ -3475,7 +3502,7 @@ class Canvas{
         const RoiSelectButton=document.createElement("button");
         RoiSelectButton.className="CONTOUR";
         RoiSelectButton.textContent="ROI選択";
-        this.EventSetHelper(RoiSelectButton,"mouseup",(e)=>{
+        Canvas.EventSetHelper(this.id.get("CanvasID"),RoiSelectButton,"mouseup",(e)=>{
             if(e.button==0){
                 const Layer="CONTOUR";
                 const DataID=this.LayerDataMap.get(Layer).get("DataID");
@@ -3633,11 +3660,11 @@ class Canvas{
             ["previous",new Map()],
             ["current",new Map()]
         ]);
-
+        const CanvasID=this.id.get("CanvasID");
         /*イベントマネージャーユーザーの監視*/
         /*Canvasとラップdivの大きさは常に同じにする。そして、画像のズームパン、ローカルスライスやアラインはdivに紐づける*/
         //マウスの位置はcanvas内=CanvasBlockに入っているかで考える
-        this.EventSetHelper(this.CanvasBlock,"mouseenter",(e)=>{
+        Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"mouseenter",(e)=>{
             this.mouseenter=true;
             //CanvasBlockにフォーカスさせる
             e.target.focus();
@@ -3645,7 +3672,7 @@ class Canvas{
             this.FlagManager();
         });
 
-        this.EventSetHelper(this.CanvasBlock,"mouseleave",(e)=>{
+        Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"mouseleave",(e)=>{
             //CanvasBlockからフォーカスを外す
             this.mouseenter=false;
             //その他の監視変数も初期状態に戻す
@@ -3662,26 +3689,26 @@ class Canvas{
         });
         //キーボードが押されているかを監視
         //キーボードが押されっぱなしのときは一定間隔で連続発火する。
-        this.EventSetHelper(this.CanvasBlock,"keydown",(e)=>{
+        Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"keydown",(e)=>{
             this.pressedkey.set(e.code,true);
             //console.log(this.pressedkey);
             this.FlagManager();
         });
-        this.EventSetHelper(this.CanvasBlock,"keyup",(e)=>{
+        Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"keyup",(e)=>{
             this.pressedkey.delete(e.code);
             //console.log(this.pressedkey);
             this.FlagManager();
         });
         //マウスの動き監視
-        this.EventSetHelper(this.CanvasBlock,"mousedown",(e)=>{
+        Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"mousedown",(e)=>{
             this.mouseClicked.set(e.button,true);
             //console.log(this.mouseClicked);
         });
-        this.EventSetHelper(this.CanvasBlock,"mouseup",(e)=>{
+        Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"mouseup",(e)=>{
             this.mouseClicked.delete(e.button);
             //console.log(this.mouseClicked);
         });
-        this.EventSetHelper(this.CanvasBlock,"mousemove",(e)=>{
+        Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"mousemove",(e)=>{
             //座標を更新
             const oldpoints=this.MouseTrack.get("previous");
             const newpoints=this.MouseTrack.get("current");
@@ -3837,15 +3864,16 @@ class Canvas{
         this.setMASKClick();
     }
     setLocalSliceAndAlign(){
+        const CanvasID=this.id.get("CanvasID");
         this.LocalSliceAndAlignFlag=false;
         this.LocalSliceAndAlignKeydownEventFlag=true;//keydownするとfalseに、keyupするとtrueになる。falseのときは長押し状態=GlobalSliceモード
-        this.EventSetHelper(this.slider,"input",(e)=>{
+        Canvas.EventSetHelper(CanvasID,this.slider,"input",(e)=>{
             this.DrawStatus.set("index",parseInt(e.target.value));
             this.DrawStatus.set("regenerate",true);
             this.Alldraw();
         });
         //マウスホイールによるスライス切り替えモード：ズームと衝突しないためにctrlが押されていないときとする
-        this.EventSetHelper(this.CanvasBlock,"wheel",(e)=>{
+        Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"wheel",(e)=>{
             e.preventDefault();//ウィンドウのスクロールを抑止
             e.stopPropagation();//キャンバスの裏にある親divのスクロールを阻止
             //ローカルスライス
@@ -3874,7 +3902,7 @@ class Canvas{
             }
         });
         //スライスの位置合わせ　or ズームパンの同期処理の重さを和らげるため、Space押下時に他の画像と同期することにする
-        this.EventSetHelper(this.CanvasBlock,"keydown",(e)=>{
+        Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"keydown",(e)=>{
             if(this.LocalSliceAndAlignFlag&&this.LocalSliceAndAlignKeydownEventFlag&&e.code==="Space"){//長押し状態の連続発火を抑制
                 //Flagの更新
                 this.LocalSliceAndAlignKeydownEventFlag=false;
@@ -3890,7 +3918,7 @@ class Canvas{
                 }
             }
         });
-        this.EventSetHelper(this.CanvasBlock,"keyup",(e)=>{
+        Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"keyup",(e)=>{
             if(this.LocalSliceAndAlignFlag&&e.code==="Space"){
                 //Flagの更新
                 this.LocalSliceAndAlignKeydownEventFlag=true;
@@ -3898,11 +3926,12 @@ class Canvas{
         });
     }
     setZoomPan(){
+        const CanvasID=this.id.get("CanvasID");
         this.ZoomFlag=false;
         this.PanFlag=false;
         /*ZoomPanのイベントを定義する*/
         //Zoom
-        this.EventSetHelper(this.CanvasBlock,"wheel",(e)=>{
+        Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"wheel",(e)=>{
             e.preventDefault();//ウィンドウのスクロールを抑止
             e.stopPropagation();//キャンバスの裏にある親divのスクロールを阻止
             //拡大縮小
@@ -3938,7 +3967,7 @@ class Canvas{
             }
         });
         //クリックイベントコンテキストメニューはそれ専用のイベントもあるようなので分けた方が見やすいかも
-        this.EventSetHelper(this.CanvasBlock,"mousedown",(e)=>{
+        Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"mousedown",(e)=>{
             if(this.ZoomFlag){
                 if(e.button==1){//中央ボタンクリックでズームパンをリセット
                     this.DrawStatus.set("w0",0);
@@ -3950,7 +3979,7 @@ class Canvas{
                 }
             }
         });
-        this.EventSetHelper(this.CanvasBlock,"mousemove",(e)=>{
+        Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"mousemove",(e)=>{
             if(this.PanFlag){
                 //拡大されてないとパンは実質無効
                 const oldX=this.MouseTrack.get("previous").get("x"),oldY=this.MouseTrack.get("previous").get("y");
@@ -3971,7 +4000,7 @@ class Canvas{
             }
         });
         //描画領域を合わせる
-        this.EventSetHelper(this.CanvasBlock,"keydown",(e)=>{
+        Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"keydown",(e)=>{
             if(this.ZoomFlag&&e.code=="Space"){
                 //DrawFlagの該当箇所を書き換えてAlldrawを呼び出す
                 //並べている画像は同サイズであることを前提としている
@@ -3993,9 +4022,10 @@ class Canvas{
     }
     /*AreaSelectイベント登録*/
     setAreaSelectDrawRectangle(){
+        const CanvasID=this.id.get("CanvasID");
         this.AreaSelectDrawRectangleFlag=false;
         //始点の更新
-        this.EventSetHelper(this.CanvasBlock,"mousedown",(e)=>{
+        Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"mousedown",(e)=>{
             //DrawRencangleがONであり、かつ左クリックされた
             /*
             マウスを押したときにdrawをfalseにしておく。
@@ -4025,7 +4055,7 @@ class Canvas{
                 this.SelectedAreaStatus.set("drawed",false);
             }
         });
-        this.EventSetHelper(this.CanvasBlock,"mousemove",(e)=>{
+        Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"mousemove",(e)=>{
             if(this.AreaSelectDrawRectangleFlag&&this.mouseClicked.get(0)){
                 //mousedown時に保持した始点からの距離をwidthとheightとする
                 const newX=this.MouseTrack.get("current").get("x");
@@ -4060,7 +4090,7 @@ class Canvas{
         /*
         ドラッグ系イベントはmouseupで精査した後の値を送信する
         */
-        this.EventSetHelper(this.CanvasBlock,"mouseup",()=>{
+        Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"mouseup",()=>{
             if(this.AreaSelectDrawRectangleFlag){
                 //console.log("AreaSelectDrawRectangle","mouseup");
                 //ドラッグの始点をリセットする
@@ -4094,6 +4124,7 @@ class Canvas{
     }
     setAreaSelectSliceCrop(){
         this.AreaSelectSliceCropFlag=false;
+        const CanvasID=this.id.get("CanvasID");
         /*
         keydownイベントは長押しにも対応するために、押している間連続で発火し続けてしまう
         そのため、keydown,keyupを1回ずつで対応させるためにフラグを使用する
@@ -4103,7 +4134,7 @@ class Canvas{
         そこで、spaceに反応させることでグローバルスライスをさせつつクロップの範囲選択を行わせる
         */
         this.AreaSelectSliceCropKeyDownEventFlag=true;
-        this.EventSetHelper(this.CanvasBlock,"keydown",(e)=>{
+        Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"keydown",(e)=>{
             if(this.AreaSelectSliceCropFlag){
                 if(this.AreaSelectSliceCropKeyDownEventFlag&&e.code==="Space"){//Spaceが押し込まれたとき
                     //押されたときに可視化を解除
@@ -4120,7 +4151,7 @@ class Canvas{
                 }
             }
         });
-        this.EventSetHelper(this.CanvasBlock,"wheel",(e)=>{
+        Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"wheel",(e)=>{
             if(this.AreaSelectSliceCropFlag){
                 if(!this.AreaSelectSliceCropKeyDownEventFlag){//keydownイベント抑制中＝長押し状態
                     //SliceCrop可視化
@@ -4145,7 +4176,7 @@ class Canvas{
                 }
             }
         });
-        this.EventSetHelper(this.CanvasBlock,"keyup",(e)=>{
+        Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"keyup",(e)=>{
             if(this.AreaSelectSliceCropFlag){
                 if(e.code==="Space"){
                     /*
@@ -4171,14 +4202,15 @@ class Canvas{
         });
         //Sliceチェンジに反応させる
         //Sliceチェンジごとに描画させることになる
-        this.EventSetHelper(this.slider,"input",(e)=>{
+        Canvas.EventSetHelper(CanvasID,this.slider,"input",(e)=>{
             this.SelectedAreaDraw(); 
         });
     }
     setAreaSelectZoom(){
+        const CanvasID=this.id.get("CanvasID");
         this.AreaSelectZoomFlag=false;
         //OperatioinZoomの定義
-        this.EventSetHelper(this.CanvasBlock,"wheel",(e)=>{
+        Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"wheel",(e)=>{
             e.preventDefault();
             e.stopPropagation();
             /*
@@ -4230,12 +4262,13 @@ class Canvas{
         });
     }
     setAreaSelectPan(){
+        const CanvasID=this.id.get("CanvasID");
         //ZoomPanではdrawの編集は行わない
         this.AreaSelectPanFlag=false;
         //OperatioinPanの定義
         //マウスドラッグ系イベントはmouseup時に整数にするようにしよう
         //マウスが押された状態でマウスが動くと起動する
-        this.EventSetHelper(this.CanvasBlock,"mousemove",(e)=>{
+        Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"mousemove",(e)=>{
             if(this.SelectedAreaStatus.get("drawed")&&this.mouseClicked.get(0)&&this.AreaSelectPanFlag){
                 //拡大されてないとパンは実質無効
                 const oldX=this.MouseTrack.get("previous").get("x"),oldY=this.MouseTrack.get("previous").get("y");
@@ -4264,7 +4297,7 @@ class Canvas{
         /*
         ドラッグ系イベントはmouseupで精査した後の値を送信する
         */
-        this.EventSetHelper(this.CanvasBlock,"mouseup",(e)=>{
+        Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"mouseup",(e)=>{
             if(this.SelectedAreaStatus.get("drawed")&&this.AreaSelectPanFlag){
                 //現在のSelectedAreaを精査して値を変更する
                 //console.log("AreaSelectZoomPan","mouseup");
@@ -4411,8 +4444,9 @@ class Canvas{
     //11/26時点ではCONTOUR専用機能
     //そのうち、クリックした座標を取得する機能を分離するかも
     setCONTOURROIClick(){
+        const CanvasID=this.id.get("CanvasID");
         this.CONTOURROIClickFlag=false;
-        this.EventSetHelper(this.CanvasBlock,"mouseup",(e)=>{
+        Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"mouseup",(e)=>{
             if(this.CONTOURROIClickFlag&&this.LayerDataMap.has("CONTOUR")&&e.button===0){
                 //console.log("ROIClicked!!");
                 //現在のZoomPan状態を考慮した画像座標を取得する
@@ -4446,8 +4480,9 @@ class Canvas{
         })
     }
     setMASKClick(){
+        const CanvasID=this.id.get("CanvasID");
         this.MASKClickFlag=false;
-        this.EventSetHelper(this.CanvasBlock,"mouseup",(e)=>{
+        Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"mouseup",(e)=>{
             if(this.MASKClickFlag&&this.LayerDataMap.has("MASK")&&e.button===0){
                 //console.log("ROIClicked!!");
                 //現在のZoomPan状態を考慮した画像座標を取得する
@@ -4515,31 +4550,6 @@ class Canvas{
         const bodyaction=data.get("action");
         //console.log(bodyaction);
         this.FromMainProcessToMainFunctions.get(bodyaction)(data);
-    }
-    EventSetHelper(element,event,callback){
-        try{
-            element.addEventListener(event,callback);
-            //ElementsWithEventsに登録
-            if(this.ElementsWithEvents.has(element)){
-                //すでにエレメントが一度登録されている
-                const elementMap=this.ElementsWithEvents.get(element);
-                if(elementMap.has(event)){
-                    //エレメントのeventが一度登録されている
-                    elementMap.get(event).push(callback);
-                }else{
-                    //このイベントは初めてなので新しい配列を作って登録
-                    elementMap.set(event,[callback]);
-                }
-            }else{
-                //この要素が初めてなのでエレメントのMapを登録⇒eventのMAPを登録⇒callbackをプッシュする
-                this.ElementsWithEvents.set(element,new Map([
-                    [event,[callback]]
-                ]));
-            }
-        }catch(error){
-            //console.log(element,event);
-            //console.log(`EventSettingError\n${error}`);
-        }
     }
     dispose(){
         //必要ならサブウィンドウにも通知を送らなければならない
