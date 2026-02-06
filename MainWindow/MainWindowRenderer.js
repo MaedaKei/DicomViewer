@@ -425,7 +425,7 @@ class CTclass{
     }
     /*CT用のレイヤーを生成する*/
     static LayerZindex=LayerPriorityMap.get(this.DataType);
-    static getNewLayer(){
+    static GetNewLayer(){
         const NewLayer=document.createElement("canvas");
         NewLayer.style.zIndex=this.LayerZindex;
         return NewLayer;
@@ -980,7 +980,7 @@ class MASKclass{
     }
     /*適したレイヤーを生成する*/
     static LayerZindex=LayerPriorityMap.get(this.DataType);
-    static getNewLayer(){
+    static GetNewLayer(){
         const NewLayer=document.createElement("canvas");
         NewLayer.style.zIndex=this.LayerZindex;
         return NewLayer;
@@ -1601,7 +1601,7 @@ class MASKDIFFclass{
     }
     /*適したレイヤーを生成する*/
     static LayerZindex=LayerPriorityMap.get(this.DataType);
-    static getNewLayer(){
+    static GetNewLayer(){
         const NewLayer=document.createElement("canvas");
         NewLayer.style.zIndex=this.LayerZindex;
         return NewLayer;
@@ -2133,7 +2133,7 @@ class CONTOURclass{
     }
     /*適したレイヤーを生成する*/
     static LayerZindex=LayerPriorityMap.get(this.DataType);
-    static getNewLayer(){
+    static GetNewLayer(){
         const NewLayer=document.createElement("canvas");
         NewLayer.style.zIndex=this.LayerZindex;
         return NewLayer;
@@ -2773,7 +2773,7 @@ class DOSEclass{
     }
     /*適したレイヤーを生成する*/
     static LayerZindex=LayerPriorityMap.get(this.DataType);
-    static getNewLayer(){
+    static GetNewLayer(){
         const NewLayer=document.createElement("canvas");
         NewLayer.style.zIndex=this.LayerZindex;
         return NewLayer;
@@ -3247,6 +3247,7 @@ class Canvas{
         */
         //DataInfoMap={DataType:DataID,}
         //console.log(DataInfoMap);
+        const CanvasID=this.id.get("CanvasID");
         for(const [DataType,DataID] of DataInfoMap.entries()){
             //console.log("SetLayer",DataType,DataID);
             const DataMap=DicomDataClassDictionary.get(DataType).get(DataID);//{Data:DicomData,RefCount:x}
@@ -3291,7 +3292,10 @@ class Canvas{
                 //新しいDataTypeの場合はレイヤー生成へ
                 const DicomDataTypeClass=DicomData.constructor;
                 //const NewLayer=document.createElement("canvas");
-                const NewLayer=DicomDataTypeClass.getNewLayer();
+                //各データタイプクラスの方で自由にレイヤーを生成
+                const NewLayer=DicomDataTypeClass.GetNewLayer();
+                //各データタイプに固有の機能等を登録させる
+                DicomDataTypeClass.SetUniqueFunctions(CanvasID,this.FlagMap,this.ContextMenuButtonContainer,this.FromMainProcessToMainFunctions);
                 NewLayer.className="Canvas";
                 //NewLayer.style.zIndex=this.LayerZindexMap.get(DataType);
                 NewLayer.width=this.CanvasWidth;
@@ -3304,7 +3308,7 @@ class Canvas{
                 //参照数の更新
                 DataMap.set("RefCount",DataMap.get("RefCount")+1);
                 //新しいレイヤーが追加された＝コンテキストメニューアクティブ化
-                this.ActivateContextMenuButton(DataType);
+                //this.ActivateContextMenuButton(DataType);
             }
             //this.Layerdraw(DataType);
         }
