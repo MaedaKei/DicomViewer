@@ -16,7 +16,9 @@ cornerstoneWADOImageLoader.configure({ useWebWorkers: false });
 /*
 (CT,MASK)>DOSE>(MASKDIFF,CONTOUR)
 */
-const DicomDataClassDictionary = new Map([["CT",new Map()],["MASK",new Map()],["DOSE",new Map()],["MASKDIFF",new Map()],["CONTOUR",new Map()]]);
+const DicomDataClassDictionary = new Map([["CT",new Map()],["MASK",new Map()],["MASKDIFF",new Map()],["DOSE",new Map()],["CONTOUR",new Map()]]);
+const LayerBaseIndex=-3;
+const LayerPriorityMap=new Map(Array.from(DicomDataClassDictionary.keys()).reverse().map((DataType,Index)=>[DataType,-3-Index]));
 const DicomNextID = new Map(DicomDataClassDictionary.keys().map(key => [key, 0]));
 //キャンバスに関する情報を管理するクラスをまとめた辞書型オブジェクト
 const CanvasClassDictionary = new Map();
@@ -422,8 +424,10 @@ class CTclass{
         return NewPathArray;
     }
     /*CT用のレイヤーを生成する*/
+    static LayerZindex=LayerPriorityMap.get(this.DataType);
     static getNewLayer(){
         const NewLayer=document.createElement("canvas");
+        NewLayer.style.zIndex=this.LayerZindex;
         return NewLayer;
     }
     /*ここから下はインスタンスとしての動き*/
@@ -975,8 +979,10 @@ class MASKclass{
         return NewPathArray;
     }
     /*適したレイヤーを生成する*/
+    static LayerZindex=LayerPriorityMap.get(this.DataType);
     static getNewLayer(){
         const NewLayer=document.createElement("canvas");
+        NewLayer.style.zIndex=this.LayerZindex;
         return NewLayer;
     }
     /*ここから下はインスタンスとしての動き*/
@@ -1594,8 +1600,10 @@ class MASKDIFFclass{
         return NewPathArray;
     }
     /*適したレイヤーを生成する*/
+    static LayerZindex=LayerPriorityMap.get(this.DataType);
     static getNewLayer(){
         const NewLayer=document.createElement("canvas");
+        NewLayer.style.zIndex=this.LayerZindex;
         return NewLayer;
     }
     constructor(loadPath,loadedData){
@@ -2124,8 +2132,10 @@ class CONTOURclass{
         */
     }
     /*適したレイヤーを生成する*/
+    static LayerZindex=LayerPriorityMap.get(this.DataType);
     static getNewLayer(){
         const NewLayer=document.createElement("canvas");
+        NewLayer.style.zIndex=this.LayerZindex;
         return NewLayer;
     }
     //Contour専用のカラーマップ生成関数
@@ -2762,8 +2772,10 @@ class DOSEclass{
         return NewPathArray;
     }
     /*適したレイヤーを生成する*/
+    static LayerZindex=LayerPriorityMap.get(this.DataType);
     static getNewLayer(){
         const NewLayer=document.createElement("canvas");
+        NewLayer.style.zIndex=this.LayerZindex;
         return NewLayer;
     }
     static JetColorMap(t){
