@@ -421,6 +421,11 @@ class CTclass{
         }
         return NewPathArray;
     }
+    /*CT用のレイヤーを生成する*/
+    static getNewLayer(){
+        const NewLayer=document.createElement("canvas");
+        return NewLayer;
+    }
     /*ここから下はインスタンスとしての動き*/
     constructor(loadPath,loadedData){
         this.Path=loadPath;//読み込みパス。これを読み込めばまた自身のデータを取得できる
@@ -968,6 +973,11 @@ class MASKclass{
             NewPathArray[i]=Middle2AfterPath;
         }
         return NewPathArray;
+    }
+    /*適したレイヤーを生成する*/
+    static getNewLayer(){
+        const NewLayer=document.createElement("canvas");
+        return NewLayer;
     }
     /*ここから下はインスタンスとしての動き*/
     constructor(loadPath,loadedData){
@@ -1583,6 +1593,11 @@ class MASKDIFFclass{
         }
         return NewPathArray;
     }
+    /*適したレイヤーを生成する*/
+    static getNewLayer(){
+        const NewLayer=document.createElement("canvas");
+        return NewLayer;
+    }
     constructor(loadPath,loadedData){
         /*
         このクラスはloadPathが"CanvasIDvsCanvasID"の形式である
@@ -2107,6 +2122,11 @@ class CONTOURclass{
         }
         return NewPathArray;
         */
+    }
+    /*適したレイヤーを生成する*/
+    static getNewLayer(){
+        const NewLayer=document.createElement("canvas");
+        return NewLayer;
     }
     //Contour専用のカラーマップ生成関数
     static hsv2rgb(h,s=1,v=1){
@@ -2741,6 +2761,11 @@ class DOSEclass{
         }
         return NewPathArray;
     }
+    /*適したレイヤーを生成する*/
+    static getNewLayer(){
+        const NewLayer=document.createElement("canvas");
+        return NewLayer;
+    }
     static JetColorMap(t){
         //0~1となっているtを受け取り、RGBAの配列を返す。この時、値は0～255となる
         let R=0,G=0,B=0,A=0;
@@ -3162,7 +3187,9 @@ class Canvas{
                 LoadAndLayout.TryDeleteDicomData(DataType,OldDataID);//関数名は仮決め
             }else{
                 //新しいDataTypeの場合はレイヤー生成へ
-                const NewLayer=document.createElement("canvas");
+                const DicomDataTypeClass=DicomData.constructor;
+                //const NewLayer=document.createElement("canvas");
+                const NewLayer=DicomDataTypeClass.getNewLayer();
                 NewLayer.className="Canvas";
                 NewLayer.style.zIndex=this.LayerZindexMap.get(DataType);
                 NewLayer.width=this.CanvasWidth;
