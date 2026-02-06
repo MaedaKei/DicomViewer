@@ -430,6 +430,12 @@ class CTclass{
         NewLayer.style.zIndex=this.LayerZindex;
         return NewLayer;
     }
+    static SetUniqueFunctions(CanvasID,FlagMap,ContextMenuButtonContainer,FromMainProcessToMainFunctions){
+        const WindowingButton=document.createElement("button");
+        WindowingButton.className="CT";//DataTypeをクラス名に持つ要素で絞り込みをして、それを表示するためのクラス名
+        WindowingButton.textContent="CT 階調";
+        ContextMenuButtonContainer.appendChild(WindowingButton);
+    }
     /*ここから下はインスタンスとしての動き*/
     constructor(loadPath,loadedData){
         this.Path=loadPath;//読み込みパス。これを読み込めばまた自身のデータを取得できる
