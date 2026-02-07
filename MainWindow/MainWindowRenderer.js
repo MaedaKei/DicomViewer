@@ -2394,6 +2394,143 @@ class CONTOURclass{
         NewLayer.style.zIndex=this.LayerZindex;
         return NewLayer;
     }
+    static SetUniqueFunctions(CanvasID){
+        /*ここで変更を加えるオブジェクトにアクセス*/
+        const CanvasInstance=CanvasClassDictionary.get(CanvasID);
+        const FlagMap=CanvasInstance.FlagMap;
+        const ContextMenuButtonContainer=CanvasInstance.ContextMenuButtonContainer;
+        const FromMainProcessToMainFunctions=CanvasInstance.FromMainProcessToMainFunctions;
+        const CanvasBlock=CanvasInstance.CanvasBlock;
+
+        const ROISelectButton=document.createElement("button");
+        ROISelectButton.className="CONTOUR";//DataTypeをクラス名に持つ要素で絞り込みをして、それを表示するためのクラス名
+        ROISelectButton.textContent="ROI選択";
+        ROISelectButton.value=CanvasID;
+        ContextMenuButtonContainer.appendChild(ROISelectButton);
+        //ボタンを押すとサブウィンドウが開く
+        Canvas.EventSetHelper(CanvasID,ROISelectButton,"mouseup",(e)=>{
+            if(e.button===0){
+                const CanvasID=parseInt(e.target.value);
+                this.OpenROISelectSubWindow(CanvasID);
+            }
+        });
+        //FlagMapにCONTOURROIClickモード用のフラグを追加
+        FlagMap.set("CONTOURROIClick",new Map([["Flag",false],["Func",this.CONTOURROIClickFlagFunction]]));
+        //マスククリックモードを有効化する/無効化するための関数を登録
+        FromMainProcessToMainFunctions.set("CONTOURROIClickModeSwitching",(data)=>{
+            this.CONTOURROIClickModeSwitchingFunction(data);
+        });
+        Canvas.EventSetHelper(CanvasID,CanvasBlock,"mousedown",(e)=>{
+            if(e.button===0){
+                const CanvasBlock=e.target.closest("div.CanvasBlock");
+                const CanvasID=parseInt(CanvasBlock.getAttribute("data-CanvasID"));
+                this.CONTOURROIClickedFunction(CanvasID);
+            }
+        });
+        FromMainProcessToMainFunctions.set("ChangeROIStatusSet",(data)=>{
+            this.ChangeROIStatusSetFunction(data);
+        });
+    }
+    static OpenROISelectSubWindow(CanvasID){
+        /*輪郭の選択画面*/
+        const CanvasInstance=CanvasClassDictionary.get(CanvasID);
+        const Layer=this.DataType;
+        const DataID=CanvasInstance.LayerDataMap.get(Layer).get("DataID");
+        const DicomDataInfoMap=DicomDataClassDictionary.get(Layer).get(DataID);
+        const DicomDataInstance=DicomDataInfoMap.get("Data");
+        const windowsize=[300,400];//ROINameの最長＆ROIの個数を基に動的に変える必要がある
+        const AllowAddOrDeleteFlag=false;
+        const data=new Map([
+            ["ROINameColorMap",DicomDataInstance.ContourColorMap],//{ROIName:Hex} ROI名と色の表示に必要
+            ["ROISelectStatusSet",DicomDataInstance.ROISelectStatusSet],//現時点で何が選ばれているかを示す
+            ["ROIMemoryStatusSet",DicomDataInstance.ROIMemoryStatusSet],//現時点で何が記憶されていたかを示す
+            /*["ROISelectWindowStyleMap",DicomDataInstance.ROISelectWindowStyleMap],*/ //ボタンサイズなどの諸設定
+            ["windowsize",windowsize],
+            ["AllowAddOrDeleteFlag",AllowAddOrDeleteFlag],
+            ["Layer",Layer],
+            ["CanvasID",CanvasID]
+        ]);
+        const Initialalldata=new Map([
+            ["action","ROISelect"],
+            ["data",data],
+        ]);
+        Canvas.openSubWindow(Initialalldata);
+    }
+    static CONTOURROIClickFlagFunction(CanvasInstance){
+        /*
+        if(this.MultiUseLayerModeFlagSet.has("MASKClick")&&this.mouseenter&&!ZoomPanKeyPressed){
+            this.MASKClickFlag=true;
+        }else{
+            this.MASKClickFlag=false;
+        }
+        */
+        const MultiUseLayerModeFlag=CanvasInstance.MultiUseLayerModeFlagSet.has("CONTOURROIClick");
+        const ZoomPanKeyPressedFlag=CanvasInstance.FlagMap.get("ZoomPanKeyPressed").get("Flag");
+        return MultiUseLayerModeFlag&&CanvasInstance.mouseenter&&!ZoomPanKeyPressedFlag;
+    }
+    static CONTOURROIClickModeSwitchingFunction(data){
+        const ReceivedDataBody=data.get("data");
+        const CanvasID=ReceivedDataBody.get("CanvasID");
+        const CanvasInstance=CanvasClassDictionary.get(CanvasID);
+        const Activate=ReceivedDataBody.get("Activate");
+        const ModeFlagName="CONTOURROIClick";
+        if(Activate){
+            CanvasInstance.MultiUseLayerModeFlagSet.add(ModeFlagName);
+        }else{
+            CanvasInstance.MultiUseLayerModeFlagSet.delete(ModeFlagName);
+        }
+        CanvasInstance.FlagUpdater();
+    }
+    static CONTOURROIClickedFunction(CanvasID){
+        const CanvasInstance=CanvasClassDictionary.get(CanvasID);
+        const CONTOURROIClickFlag=CanvasInstance.FlagMap.get("CONTOURROIClick").get("Flag");
+        if(CONTOURROIClickFlag&&CanvasInstance.LayerDataMap.has("CONTOUR")){
+            const MouuseTrack=CanvasInstance.MouseTrack;
+            const NewX=MouuseTrack.get("current").get("x");
+            const NewY=MouuseTrack.get("current").get("y");
+            const Rect=CanvasInstance.CanvasBlock.getBoundingClientRect();
+            const DrawStatus=CanvasInstance.DrawStatus;
+            const Currentw0=DrawStatus.get("w0");
+            const Currenth0=DrawStatus.get("h0");
+            const Currentwidth=DrawStatus.get("width");
+            const Currentheight=DrawStatus.get("height");
+            const CurrentIndex=DrawStatus.get("index");
+            //現在描画領域を考慮した座標を計算
+            const ClickedPointX=Currentwidth*(NewX/Rect.width)+Currentw0;
+            const ClickedPointY=Currentheight*(NewY/Rect.height)+Currenth0;
+            //Maskclassに判定依頼、その場所のMaskValueが返ってくる
+            const LayerData=CanvasInstance.LayerDataMap.get("CONTOUR");
+            const ctx=LayerData.get("Layer").getContext("2d");
+            const DataID=LayerData.get("DataID");
+            const DicomDataInstance=DicomDataClassDictionary.get("CONTOUR").get(DataID).get("Data");
+            const ClickedROISet=DicomDataInstance.getClickedROISet(ctx,CurrentIndex,ClickedPointX,ClickedPointY);
+            const data=new Map([
+                ["action","CONTOURROIClicked"],
+                ["data",new Map([
+                    ["CanvasID",CanvasID],
+                    ["ClickedROISet",ClickedROISet]
+                ])]
+            ]);
+            Canvas.PassChangesToSubWindow(data);
+        }
+    }
+    static ChangeROIStatusSetFunction(data){
+        const ReceivedDataBody=data.get("data");
+        const CanvasID=ReceivedDataBody.get("CanvasID");
+        const CanvasInstance=CanvasClassDictionary.get(CanvasID);
+        const TargetLayer=ReceivedDataBody.get("Layer");
+        const DataType=TargetLayer;
+        const DataID=CanvasInstance.LayerDataMap.get(TargetLayer).get("DataID");
+        const DicomDataInfoMap=DicomDataClassDictionary.get(DataType).get(DataID);
+        const DicomDataInstance=DicomDataInfoMap.get("Data");
+        const Mode=ReceivedDataBody.get("Mode");//"Select" or "Memory"
+        DicomDataInstance.ChangeROIStatusSet(data);
+        if(Mode==="Select"){
+            //SelectStatusの変更だったら再描画必要
+            CanvasInstance.DrawStatus.set("regenerate",true);
+            CanvasInstance.Layerdraw(TargetLayer);
+        }
+    }
     //Contour専用のカラーマップ生成関数
     static hsv2rgb(h,s=1,v=1){
         // 引数処理
@@ -3863,8 +4000,9 @@ class Canvas{
         this.FromMainProcessToMainFunctions.set("ChangeLabel",ChangeLabelFunction);
     }
     */
+    /*
     setCONTOURContext(){
-        /*輪郭の選択画面*/
+        //輪郭の選択画面
         const RoiSelectButton=document.createElement("button");
         RoiSelectButton.className="CONTOUR";
         RoiSelectButton.textContent="ROI選択";
@@ -3883,7 +4021,7 @@ class Canvas{
                     ["ROINameColorMap",DicomDataClass.ContourColorMap],//{ROIName:Hex} ROI名と色の表示に必要
                     ["ROISelectStatusSet",DicomDataClass.ROISelectStatusSet],//現時点で何が選ばれているかを示す
                     ["ROIMemoryStatusSet",DicomDataClass.ROIMemoryStatusSet],//現時点で何が記憶されていたかを示す
-                    /*["ROISelectWindowStyleMap",DicomDataClass.ROISelectWindowStyleMap],*/ //ボタンサイズなどの諸設定
+                    //["ROISelectWindowStyleMap",DicomDataClass.ROISelectWindowStyleMap],//ボタンサイズなどの諸設定
                     
                     ["windowsize",windowsize],
                     ["AllowAddOrDeleteFlag",AllowAddOrDeleteFlag],
@@ -3899,7 +4037,7 @@ class Canvas{
         });
         RoiSelectButton.style.display="none";
         this.ContextMenuButtonContainer.appendChild(RoiSelectButton);
-         /*サブウィンドウからの更新用の関数を定義する*/
+        //サブウィンドウからの更新用の関数を定義する
         const ChangeROIStatusSetFunction=(data)=>{
             //ROISelectStatusもROIMemoryStatusSetも全く同じ形式のデータなので、わざわざ関数を分ける必要もないと感じた。
             //しかも、現時点ではMemoryはサブウィンドウ終了時の一回のみなので、なおさら関数を専用に作る必要がないと感じた。
@@ -3921,6 +4059,7 @@ class Canvas{
         }
         this.FromMainProcessToMainFunctions.set("ChangeROIStatusSet",ChangeROIStatusSetFunction);
     }
+    */
     SetSliderParameter(){
         //MainlayerとBGの有無から、スライダーを設定する
         this.slider.min=0;
@@ -4200,6 +4339,7 @@ class Canvas{
         */
         //CONTOURROIClickモードアクティベーター
         //MultiUseLayerは使わなくてもいいのでここでは操作しないかも
+        /*
         const CONTOURROIClickModeSwitchingFunction=(data)=>{
             const ReceivedDataBody=data.get("data");
             const Activate=ReceivedDataBody.get("Activate");//True or False
@@ -4217,6 +4357,7 @@ class Canvas{
         }
         this.FromMainProcessToMainFunctions.set("CONTOURROIClickModeSwitching",CONTOURROIClickModeSwitchingFunction);
         this.setCONTOURROIClick();
+        */
         /*
         const MASKClickModeSwitchingFunction=(data)=>{
             const ReceivedDataBody=data.get("data");
@@ -4813,6 +4954,7 @@ class Canvas{
     /*CONTOURROIClickイベント登録*/
     //11/26時点ではCONTOUR専用機能
     //そのうち、クリックした座標を取得する機能を分離するかも
+    /*
     setCONTOURROIClick(){
         const CanvasID=this.id.get("CanvasID");
         this.CONTOURROIClickFlag=false;
@@ -4849,6 +4991,7 @@ class Canvas{
             }
         })
     }
+    */
     /*
     setMASKClick(){
         const CanvasID=this.id.get("CanvasID");
@@ -4976,8 +5119,8 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
             [MASKclass.DataType,MASKclass],
             //[DOSEclass.DataType,DOSEclass],
             [MASKDIFFclass.DataType,MASKDIFFclass],
-            [CONTOURclass.DataType,CONTOURclass],
             [DOSEclass.DataType,DOSEclass],
+            [CONTOURclass.DataType,CONTOURclass],
         ]);
         //Resize用
         //console.log("PixelRatio",window.devicePixelRatio);
