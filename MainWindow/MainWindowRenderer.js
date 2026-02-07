@@ -23,6 +23,7 @@ const DicomNextID = new Map(DicomDataClassDictionary.keys().map(key => [key, 0])
 //キャンバスに関する情報を管理するクラスをまとめた辞書型オブジェクト
 const CanvasClassDictionary = new Map();
 let CanvasNextID = 0;
+const SVGNameSpace="http://www.w3.org/2000/svg";//普通にcreateElementでsvg要素を作るとHTMLの要素として作られてしまうため、名前空間を指定して作成する必要がある
 
 //各データの読み込みクラス、必要な情報の保持
 //CT&BGCT:シリーズデータ、ヒストグラム、i2zの紐づけ,getメソッド
@@ -612,7 +613,9 @@ class CTclass{
         this.currentImageBitmap=null;
         //p2iはPositionが昇順になるようにソートする。i2pはインデックスですでに昇順になっている。こいつはあくまでインデックスからポジションの逆引き用
     }
-    async draw(ctx,DrawStatus){
+    async draw(canvas,DrawStatus){
+        const ctx=canvas.getContext("2d");
+        ctx.imageSmoothingEnabled=false;
         const dWidth=ctx.canvas.width,dHeight=ctx.canvas.height;
         ctx.clearRect(0,0,dWidth,dHeight);
         //vMin,vMaxは階調時に変更され、そのあと再描画させることで反映される
@@ -1345,7 +1348,9 @@ class MASKclass{
         this.ContourIndexSet=new Set();
         this.UpdateContourIndexSet(0,this.depth-1,0,this.height,0,this.width);//全域に対してチェック
     }
-    async draw(ctx,DrawStatus){
+    async draw(canvas,DrawStatus){
+        const ctx=canvas.getContext("2d");
+        ctx.imageSmoothingEnabled=false;
         const dWidth=ctx.canvas.width,dHeight=ctx.canvas.height;
         ctx.clearRect(0,0,dWidth,dHeight);
         //vMin,vMaxは階調時に変更され、そのあと再描画させることで反映される
@@ -1931,7 +1936,9 @@ class MASKDIFFclass{
         //console.log(vMin,"~",vMax);
         this.currentImageBitmap=null;
     }
-    async draw(ctx,DrawStatus){
+    async draw(canvas,DrawStatus){
+        const ctx=canvas.getContext("2d");
+        ctx.imageSmoothingEnabled=false;
         const dWidth=ctx.canvas.width,dHeight=ctx.canvas.height;
         ctx.clearRect(0,0,dWidth,dHeight);
         //vMin,vMaxは階調時に変更され、そのあと再描画させることで反映される
@@ -2393,7 +2400,9 @@ class CONTOURclass{
     /*適したレイヤーを生成する*/
     static LayerZindex=LayerPriorityMap.get(this.DataType);
     static GetNewLayer(){
+        /*CONTOURはcanvasではなくSVGを使う*/
         const NewLayer=document.createElement("canvas");
+        //const NewLayer=document.createElementNS(SVGNameSpace,"svg");
         NewLayer.style.zIndex=this.LayerZindex;
         return NewLayer;
     }
@@ -2701,7 +2710,9 @@ class CONTOURclass{
         //console.log(this.ContourColorMap);
         //console.log(this.ContourDataMap);
     }
-    draw(ctx,DrawStatus){
+    async draw(canvas,DrawStatus){
+        const ctx=canvas.getContext("2d");
+        ctx.imageSmoothingEnabled=false;
         const dx=0,dy=0,dWidth=ctx.canvas.width,dHeight=ctx.canvas.height;
         const index=DrawStatus.get("index");
         ctx.clearRect(0,0,dWidth,dHeight);//初期化
@@ -3425,7 +3436,9 @@ class DOSEclass{
         this.vMax=vMax;
         console.log(vMin,vMax);
     }
-    async draw(ctx,DrawStatus){
+    async draw(canvas,DrawStatus){
+        const ctx=canvas.getContext("2d");
+        ctx.imageSmoothingEnabled=false;
         const dWidth=ctx.canvas.width,dHeight=ctx.canvas.height;
         ctx.clearRect(0,0,dWidth,dHeight);
         //vMin,vMaxは階調時に変更され、そのあと再描画させることで反映される
@@ -3777,11 +3790,8 @@ class Canvas{
         const DataType=Layer;
         const DataID=LayerData.get("DataID");
         const Canvas=LayerData.get("Layer");
-        const ctx=Canvas.getContext("2d");
-        ctx.imageSmoothingEnabled=false;
-        //ctx.imageSmoothingQuality='low'; // 'low' | 'medium' | 'high'
         const DicomInfoMap=DicomDataClassDictionary.get(DataType).get(DataID);//{Data,RefCount}
-        DicomInfoMap.get("Data").draw(ctx,this.DrawStatus);
+        DicomInfoMap.get("Data").draw(Canvas,this.DrawStatus);
     }
     InitializeContextMenu(){
         //コンテキストメニューの初期化
