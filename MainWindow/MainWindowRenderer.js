@@ -1862,6 +1862,9 @@ class MASKDIFFclass{
         NewLayer.style.zIndex=this.LayerZindex;
         return NewLayer;
     }
+    static SetUniqueFunctions(CanvasID){
+        console.log("MASKDIFFClassには固有関数はありません");
+    }
     constructor(loadPath,loadedData){
         /*
         このクラスはloadPathが"CanvasIDvsCanvasID"の形式である
@@ -3171,6 +3174,9 @@ class DOSEclass{
         NewLayer.style.zIndex=this.LayerZindex;
         return NewLayer;
     }
+    static SetUniqueFunctions(CanvasID){
+        console.log("DOSEclassには固有関数はありません");
+    }
     static JetColorMap(t){
         //0~1となっているtを受け取り、RGBAの配列を返す。この時、値は0～255となる
         let R=0,G=0,B=0,A=0;
@@ -3749,6 +3755,7 @@ class Canvas{
                 //新しいレイヤーが追加された＝コンテキストメニューアクティブ化
                 //this.ActivateContextMenuButton(DataType);
                 //console.log(this.FromMainProcessToMainFunctions);
+                this.UpdateContextMenuSize();//新しくボタンが追加されるのでコンテキストメニューのサイズを変更する
             }
             //this.Layerdraw(DataType);
         }
@@ -3857,12 +3864,12 @@ class Canvas{
     }
     UpdateContextMenuSize(){
         //可視化状態(display=block)にあるボタンをカウントしてコンテキストメニューの高さを調整する
-        const VisibleButtonList=Array.from(this.ContextMenuButtonContainer.children).filter((button)=>{return button.style.display==="block";});
-        const VisibleCount=VisibleButtonList.length;
+        const ButtonList=Array.from(this.ContextMenuButtonContainer.children);
+        const ButtonNum=ButtonList.length;
         //console.log(VisibleButtonList);
         //console.log("VisibleCount",VisibleCount);
-        this.ContextMenuButtonContainer.style.height=`${VisibleCount*30}px`;
-        this.ContextMenuContainer.style.height=this.ContextMenuTextContainer.style.height+this.ContextMenuButtonContainer.style.height;
+        this.ContextMenuButtonContainer.style.height=`${ButtonNum*30}px`;
+        this.ContextMenuContainer.style.height=`${40+ButtonNum*30}px`;
     }
     /*
     ActivateContextMenuButton(DataType){
