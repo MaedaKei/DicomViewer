@@ -2442,6 +2442,10 @@ class CONTOURclass{
         FromMainProcessToMainFunctions.set("ChangeROIStatusSet",(data)=>{
             this.ChangeROIStatusSetFunction(data);
         });
+        FromMainProcessToMainFunctions.set("ChangeROISelect",(data)=>{
+            //console.log("一個だけ変更");
+            this.ChangeROISelectFunction(data);
+        });
     }
     static OpenROISelectSubWindow(CanvasID){
         /*輪郭の選択画面*/
@@ -2542,6 +2546,42 @@ class CONTOURclass{
             CanvasInstance.DrawStatus.set("regenerate",true);
             CanvasInstance.Layerdraw(TargetLayer);
         }
+    }
+    static ChangeROISelectFunction(data){
+        const ReceivedDataBody=data.get("data");
+        const CanvasID=ReceivedDataBody.get("CanvasID");
+        const CanvasInstance=CanvasClassDictionary.get(CanvasID);
+        const TargetLayer=ReceivedDataBody.get("Layer");
+        const DataType=TargetLayer;
+        const DataID=CanvasInstance.LayerDataMap.get(TargetLayer).get("DataID");
+        const DicomDataInfoMap=DicomDataClassDictionary.get(DataType).get(DataID);
+        const DicomDataInstance=DicomDataInfoMap.get("Data");
+        //指定されたROINameを選択状態集合に追加/削除する。その後、その組織の出現するスライスの最大値と最小値を返す
+        const [MinIndex,MaxIndex]=DicomDataInstance.ChangeROISelect(data);
+        const CurrentIndex=CanvasInstance.DrawStatus.get("index");//現在のスライスインデックスになっているはず
+        const Selected=ReceivedDataBody.get("Selected");//trueなら追加、falseなら削除
+        const JunpIndex=[MinIndex,CurrentIndex,MaxIndex].sort((a,b)=>a-b)[1];
+        /*
+        再描画の方法は二つ
+        1．CONTOURレイヤーのみの再描画⇒削除時、現在のスライスが範囲内にあるとき or 追加時、現在のスライスが範囲内にあるとき
+        2．全レイヤーの再描画⇒追加時、現在のスライスが範囲外のとき、最大値と最小値の近いほうにジャンプする
+        つまり、現在のスライスが範囲内にあるときかならず層のみの再描画を行う
+        範囲外のとき、Select時のみジャンプを走らせる
+        */
+        if(CurrentIndex===JunpIndex){
+            //範囲内
+            CanvasInstance.DrawStatus.set("regenerate",true);
+            CanvasInstance.Layerdraw(TargetLayer);
+        }else{
+            if(Selected){
+                //範囲外に追加された場合のみジャンプを走らせる
+                console.log("ジャンプ走らせる",[MinIndex,CurrentIndex,MaxIndex],"=>",JunpIndex);
+                const Slider=CanvasInstance.slider;
+                Slider.value=JunpIndex;
+                Slider.dispatchEvent(new Event("input"));    
+            }
+        }
+                
     }
     //Contour専用のカラーマップ生成関数
     static hsv2rgb(h,s=1,v=1){
@@ -2748,6 +2788,23 @@ class CONTOURclass{
         }else if(Mode==="Memory"){
             this.ROIMemoryStatusSet=NewROIStatusSet;
         }
+    }
+    ChangeROISelect(data){
+        const ReceivedDataBody=data.get("data");
+        const ROIName=ReceivedDataBody.get("ROIName");
+        const Selected=ReceivedDataBody.get("Selected");//trueなら追加、falseなら削除
+        if(Selected){
+            this.ROISelectStatusSet.add(ROIName);
+        }else{
+            this.ROISelectStatusSet.delete(ROIName);
+        }
+        //このROINameが存在するスライスの最小値、最大値を返す
+        const ROIContourDataMap=this.ContourDataMap.get(ROIName);
+        const SliceIndexArray=Array.from(ROIContourDataMap.keys());
+        //現時点ではKeyは昇順に並んでおらず、どうやら降順に並んでいるようだ
+        const MaxIndex=SliceIndexArray[0];
+        const MinIndex=SliceIndexArray[SliceIndexArray.length-1];
+        return [MinIndex,MaxIndex];
     }
     getClickedROISet(ctx,Z,X,Y){
         //console.log("ClicekdXY",X,Y);

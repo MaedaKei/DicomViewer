@@ -236,23 +236,26 @@ class ROISelectClass{
                     //console.log(ClickedButton);
                     /*押されたボタンがSelectedの状態にあるかどうかを確認する*/
                     const SelectedROIName=ClickedButton.value;
+                    let SelectStatus=false;
                     if(ClickedButton.classList.contains("Selected")){
-                        //属する場合、解除する
+                        //属する場合は解除する
                         ClickedButton.classList.remove("Selected");
                         //StatusSetからも要素を除外
                         this.ROISelectStatusSet.delete(SelectedROIName);
                         //ClickPointsInROIAreaはSelectが解除されるタイミングで一緒に解除する
                         ClickedButton.classList.remove("ClickPointsInROIArea");
                         this.ROIClickStatusSet.delete(SelectedROIName);
+                        SelectStatus=false;
                     }else{
                         //ない場合
                         ClickedButton.classList.add("Selected");
                         this.ROISelectStatusSet.add(SelectedROIName);
+                        SelectStatus=true;
                     }
                     //要素数を更新
                     this.CountSelectedROINum();
                     //StatusSetをMainWindowに送信する
-                    this.SendROISelectStatusSet();//ラッパー
+                    this.SendROISelectChange(SelectedROIName,SelectStatus);
                 }
             }
         });
@@ -332,8 +335,21 @@ class ROISelectClass{
     PassChangesToMainWindow(data){
         window.SubWindowMainProcessAPI.FromSubToMainProcess(data);
     }
+    SendROISelectChange(ROIName,SelectStatus){
+        //どのROIが選択されたか、または解除されたかを送る
+        const FromSubToMainProcessData=new Map([
+            ["action","ChangeROISelect"],
+            ["data",new Map([
+                ["ROIName",ROIName],
+                ["Selected",SelectStatus],
+                ["CanvasID",this.TargetCanvasID],
+                ["Layer",this.TargetLayer],
+            ])]
+        ]);
+        this.PassChangesToMainWindow(FromSubToMainProcessData);
+    }
     SendROISelectStatusSet(){
-        //データを作成して送信する
+        //選択状態を丸ごと送信する
         const FromSubToMainProcessData=new Map([
             ["action","ChangeROIStatusSet"],//選択集合などを丸ごと変えるときのアクション名。全解除、全選択、メモリ読み出し、メモリ上書きはこれで対応する。
             ["data",new Map([
