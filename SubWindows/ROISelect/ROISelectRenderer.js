@@ -335,7 +335,7 @@ class ROISelectClass{
     SendROISelectStatusSet(){
         //データを作成して送信する
         const FromSubToMainProcessData=new Map([
-            ["action","ChangeROIStatusSet"],
+            ["action","ChangeROIStatusSet"],//選択集合などを丸ごと変えるときのアクション名。全解除、全選択、メモリ読み出し、メモリ上書きはこれで対応する。
             ["data",new Map([
                 ["Mode","Select"],
                 ["ROIStatusSet",this.ROISelectStatusSet],
