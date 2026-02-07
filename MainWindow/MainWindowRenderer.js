@@ -430,12 +430,17 @@ class CTclass{
         NewLayer.style.zIndex=this.LayerZindex;
         return NewLayer;
     }
-    static SetUniqueFunctions(CanvasID,FlagMap,ContextMenuButtonContainer,FromMainProcessToMainFunctions){
+    static SetUniqueFunctions(CanvasID){
+        /*ここで変更を加えるオブジェクトにアクセス*/
+        const CanvasInstance=CanvasClassDictionary.get(CanvasID);
+        const FlagMap=CanvasInstance.FlagMap;
+        const ContextMenuButtonContainer=CanvasInstance.ContextMenuButtonContainer;
+        const FromMainProcessToMainFunctions=CanvasInstance.FromMainProcessToMainFunctions;
+
         const WindowingButton=document.createElement("button");
         WindowingButton.className="CT";//DataTypeをクラス名に持つ要素で絞り込みをして、それを表示するためのクラス名
         WindowingButton.textContent="CT 階調";
         WindowingButton.value=CanvasID;
-        const CanvasInstance=CanvasClassDictionary.get(CanvasID);
         ContextMenuButtonContainer.appendChild(WindowingButton);
         //ボタンを押すとサブウィンドウが開く
         Canvas.EventSetHelper(CanvasID,WindowingButton,"mouseup",(e)=>{
@@ -483,8 +488,11 @@ class CTclass{
         const DataID=CanvasInstance.LayerDataMap.get(TargetLayer).get("DataID");
         const DataInfoMap=DicomDataClassDictionary.get(DataType).get(DataID);
         const DicomDataInstance=DataInfoMap.get("Data");
+        /*
         DicomDataInstance.vMin=ReceivedDataBody.get("vMin");
         DicomDataInstance.vMax=ReceivedDataBody.get("vMax");
+        */
+        DicomDataInstance.ChangeWindowing(data);
         CanvasInstance.DrawStatus.set("regenerate",true);
         //console.log("あとは再描画だけ");
         CanvasInstance.Layerdraw(TargetLayer);
@@ -643,6 +651,11 @@ class CTclass{
         const imageData=new ImageData(rgbArray,this.width,this.height);
         //console.log("imageData",imageData);
         return createImageBitmap(imageData);
+    }
+    ChangeWindowing(data){
+        const ReceivedDataBody=data.get("data");
+        this.vMin=ReceivedDataBody.get("vMin");
+        this.vMax=ReceivedDataBody.get("vMax");
     }
 }
 class ColorMapforMASK{
@@ -1039,10 +1052,194 @@ class MASKclass{
     }
     /*適したレイヤーを生成する*/
     static LayerZindex=LayerPriorityMap.get(this.DataType);
-    static GetNewLayer(){
+     static GetNewLayer(){
         const NewLayer=document.createElement("canvas");
         NewLayer.style.zIndex=this.LayerZindex;
         return NewLayer;
+    }
+    static SetUniqueFunctions(CanvasID){
+        /*ここで変更を加えるオブジェクトにアクセス*/
+        const CanvasInstance=CanvasClassDictionary.get(CanvasID);
+        const FlagMap=CanvasInstance.FlagMap;
+        const ContextMenuButtonContainer=CanvasInstance.ContextMenuButtonContainer;
+        const FromMainProcessToMainFunctions=CanvasInstance.FromMainProcessToMainFunctions;
+        const CanvasBlock=CanvasInstance.CanvasBlock;
+
+        const MaskModifingButton=document.createElement("button");
+        MaskModifingButton.className="MASK";//DataTypeをクラス名に持つ要素で絞り込みをして、それを表示するためのクラス名
+        MaskModifingButton.textContent="MASK 修正";
+        MaskModifingButton.value=CanvasID;
+        ContextMenuButtonContainer.appendChild(MaskModifingButton);
+        //ボタンを押すとサブウィンドウが開く
+        Canvas.EventSetHelper(CanvasID,MaskModifingButton,"mouseup",(e)=>{
+            if(e.button===0){
+                const CanvasID=parseInt(e.target.value);
+                this.OpenMaskModifingSubWindow(CanvasID);
+            }
+        });
+        //FlagMapにMASKClickモード用のフラグを追加
+        FlagMap.set("MASKClick",new Map([["Flag",false],["Func",this.MASKClickFlagFunction]]));
+        //マスククリックモードを有効化する/無効化するための関数を登録
+        FromMainProcessToMainFunctions.set("MASKClickModeSwitching",(data)=>{
+            this.MASKClickModeSwitchingFunction(data);
+        });
+        Canvas.EventSetHelper(CanvasID,CanvasBlock,"mousedown",(e)=>{
+            if(e.button===0){
+                const CanvasBlock=e.target.closest("div.CanvasBlock");
+                const CanvasID=parseInt(CanvasBlock.getAttribute("data-CanvasID"));
+                this.MASKClickedFunction(CanvasID);
+            }
+        });
+        //サブウィンドウからのマスク変更命令を受け取る関数を登録
+        FromMainProcessToMainFunctions.set("ChangeMask",(data)=>{
+            this.ChangeMaskFunction(data);
+        });
+        //サブウィンドウからのラベル変更命令を受け取る関数を登録
+        FromMainProcessToMainFunctions.set("ChangeLabel",(data)=>{
+            this.ChangeLabelFunction(data);
+        });
+    }
+    static OpenMaskModifingSubWindow(CanvasID){
+        const Layer=this.DataType;
+        const CanvasInstance=CanvasClassDictionary.get(CanvasID);
+        const DataID=CanvasInstance.LayerDataMap.get(Layer).get("DataID");
+        const DicomDataInfoMap=DicomDataClassDictionary.get(Layer).get(DataID);
+        const DicomDataInstance=DicomDataInfoMap.get("Data");
+        const windowsize=[300,400];
+        const AllowAddOrDeleteFlag=false;
+        const SelectedAreaStatus=CanvasInstance.SelectedAreaStatus;
+        const SelectedArea=new Map([
+            //初期表示用の値を送る
+            ["w0",SelectedAreaStatus.get("w0")],
+            ["h0",SelectedAreaStatus.get("h0")],
+            ["width",SelectedAreaStatus.get("width")],
+            ["height",SelectedAreaStatus.get("height")],
+            ["startslice",SelectedAreaStatus.get("startslice")],
+            ["endslice",SelectedAreaStatus.get("endslice")],
+        ]);
+        const data=new Map([
+            //ユーザーが選択範囲を手入力で変更する際、範囲境界の判定に使う
+            ["originalimagewidth",SelectedAreaStatus.get("originalimagewidth")],
+            ["originalimageheight",SelectedAreaStatus.get("originalimageheight")],
+            ["originalslidermax",SelectedAreaStatus.get("originalslidermax")],
+            ["SelectedArea",SelectedArea],
+            //修正対象選択用に使う
+            ["histgram",DicomDataInstance.histgram],//ヒストグラムのkeys()はイテレータとなっており、これが送れないみたい
+            ["colormap",colormapformask.colormap],//カラーマップの本体だけ送る。クラスインスタンスは構造化オブジェクトじゃないらしいから送れない
+            ["MaskLabel",colormapformask.label],
+
+            ["windowsize",windowsize],
+            ["AllowAddOrDeleteFlag",AllowAddOrDeleteFlag],
+            ["Layer",Layer],
+            ["CanvasID",CanvasID],
+        ]);
+        const initializedata=new Map([
+            ["action","MaskModifing"],
+            ["data",data],
+        ]);
+        Canvas.openSubWindow(initializedata);
+    }
+    static MASKClickFlagFunction(CanvasInstance){
+        /*
+        if(this.MultiUseLayerModeFlagSet.has("MASKClick")&&this.mouseenter&&!ZoomPanKeyPressed){
+            this.MASKClickFlag=true;
+        }else{
+            this.MASKClickFlag=false;
+        }
+        */
+        const MultiUseLayerModeFlag=CanvasInstance.MultiUseLayerModeFlagSet.has("MASKClick");
+        const ZoomPanKeyPressedFlag=CanvasInstance.FlagMap.get("ZoomPanKeyPressed").get("Flag");
+        return MultiUseLayerModeFlag&&CanvasInstance.mouseenter&&!ZoomPanKeyPressedFlag;
+    }
+    static MASKClickModeSwitchingFunction(data){
+        const ReceivedDataBody=data.get("data");
+        const CanvasID=ReceivedDataBody.get("CanvasID");
+        const CanvasInstance=CanvasClassDictionary.get(CanvasID);
+        const Activate=ReceivedDataBody.get("Activate");
+        const ModeFlagName="MASKClick";
+        console.log("MASKClickModeSwitchingFunction:",Activate);
+        if(Activate){
+            CanvasInstance.MultiUseLayerModeFlagSet.add(ModeFlagName);
+        }else{
+            CanvasInstance.MultiUseLayerModeFlagSet.delete(ModeFlagName);
+        }
+        CanvasInstance.FlagUpdater();
+    }
+    static MASKClickedFunction(CanvasID){
+        const CanvasInstance=CanvasClassDictionary.get(CanvasID);
+        const MASKClickFlag=CanvasInstance.FlagMap.get("MASKClick").get("Flag");
+        if(MASKClickFlag&&CanvasInstance.LayerDataMap.has("MASK")){
+            const MouuseTrack=CanvasInstance.MouseTrack;
+            const NewX=MouuseTrack.get("current").get("x");
+            const NewY=MouuseTrack.get("current").get("y");
+            const Rect=CanvasInstance.CanvasBlock.getBoundingClientRect();
+            const DrawStatus=CanvasInstance.DrawStatus;
+            const Currentw0=DrawStatus.get("w0");
+            const Currenth0=DrawStatus.get("h0");
+            const Currentwidth=DrawStatus.get("width");
+            const Currentheight=DrawStatus.get("height");
+            const CurrentIndex=DrawStatus.get("index");
+            //現在描画領域を考慮した座標を計算
+            const ClickedPointX=Currentwidth*(NewX/Rect.width)+Currentw0;
+            const ClickedPointY=Currentheight*(NewY/Rect.height)+Currenth0;
+            //Maskclassに判定依頼、その場所のMaskValueが返ってくる
+            const LayerData=CanvasInstance.LayerDataMap.get("MASK");
+            const DataID=LayerData.get("DataID");
+            const DicomDataInstance=DicomDataClassDictionary.get("MASK").get(DataID).get("Data");
+            const ClickedMaskValue=DicomDataInstance.getClickedMASKValue(CurrentIndex,ClickedPointX,ClickedPointY);
+            const data=new Map([
+                ["action","MASKClicked"],
+                ["data",new Map([
+                    ["CanvasID",CanvasID],
+                    ["ClickedMASKValue",ClickedMaskValue]
+                ])]
+            ]);
+            Canvas.PassChangesToSubWindow(data);
+        }
+        Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"mouseup",(e)=>{
+            if(this.MASKClickFlag&&this.LayerDataMap.has("MASK")&&e.button===0){
+                //console.log("ROIClicked!!");
+                //現在のZoomPan状態を考慮した画像座標を取得する
+                const newX=this.MouseTrack.get("current").get("x");
+                const newY=this.MouseTrack.get("current").get("y");
+                const rect=this.CanvasBlock.getBoundingClientRect();
+                const currentw0=this.DrawStatus.get("w0");
+                const currenth0=this.DrawStatus.get("h0");
+                const currentwidth=this.DrawStatus.get("width");
+                const currentheight=this.DrawStatus.get("height");
+                const currentIndex=this.DrawStatus.get("index");
+                //現在描画領域を考慮した座標を計算
+                const ClickedPointX=currentwidth*(newX/rect.width)+currentw0;
+                const ClickedPointY=currentheight*(newY/rect.height)+currenth0;
+                //Maskclassに判定依頼、その場所のMaskValueが返ってくる
+                const LayerData=this.LayerDataMap.get("MASK");
+                const TargetDataID=LayerData.get("DataID");
+                const TargetDicomDataClass=DicomDataClassDictionary.get("MASK").get(TargetDataID).get("Data");
+                const ClickedMaskValue=TargetDicomDataClass.getClickedMASKValue(currentIndex,ClickedPointX,ClickedPointY);
+                const data=new Map([
+                    ["action","MASKClicked"],
+                    ["data",new Map([
+                        ["ClickedMASKValue",ClickedMaskValue]
+                    ])]
+                ]);
+                this.PassChangesToSubWindow(data);
+            }
+        });
+    }
+    static ChangeMaskFunction(data){
+        const ReceivedDataBody=data.get("data");
+        const CanvasID=ReceivedDataBody.get("CanvasID");
+        const CanvasInstance=CanvasClassDictionary.get(CanvasID);
+        const TargetLayer=ReceivedDataBody.get("Layer");
+        const DataType=TargetLayer;
+        const DataID=CanvasInstance.LayerDataMap.get(TargetLayer).get("DataID");
+        const DicomDataInfoMap=DicomDataClassDictionary.get(DataType).get(DataID);
+        const DicomDataInstance=DicomDataInfoMap.get("Data");
+        DicomDataInstance.ChangeMask(data);
+        CanvasInstance.Layerdraw(TargetLayer);
+    }
+    static ChangeLabelFunction(data){
+        colormapformask.ChangeLabel(data);
     }
     /*ここから下はインスタンスとしての動き*/
     constructor(loadPath,loadedData){
@@ -3178,7 +3375,7 @@ class Canvas{
         //console.log(Function);
         Function(data);
     }
-    dispose(CanvasID){
+    static dispose(CanvasID){
         //必要ならサブウィンドウにも通知を送らなければならない
         //現時点であるレイヤーの参照数をデクリメントし、削除を試みる
         const CanvasInstance=CanvasClassDictionary.get(CanvasID);
@@ -3203,7 +3400,7 @@ class Canvas{
         return CanvasInstance.pressedkey.has("ControlLeft")||CanvasInstance.pressedkey.has("ControlRight");
     }
     static AreaSelectKeyPressedFlagFunction(CanvasInstance){
-        return CanvasInstance.pressedkey.has("keyD");
+        return CanvasInstance.pressedkey.has("KeyD");
     }
     /*
     static MouseEnterInCanvasAreaFlagFunction(CanvasInstance){
@@ -3264,6 +3461,7 @@ class Canvas{
         this.CanvasBlock=document.createElement("div");
         this.CanvasBlock.className="CanvasBlock";
         this.CanvasBlock.tabIndex="-1";//JSでのみフォーカス可能
+        this.CanvasBlock.setAttribute("data-CanvasID",CanvasID);//Valueを持てない要素なので属性でCanvasIDを持たせる
         //DataLoadMapからの情報を基にレイヤーを生成
         /*
         ここでしなければいけないのはレイヤー生成とコンテキストメニューの設定
@@ -3399,7 +3597,7 @@ class Canvas{
                 //各データタイプクラスの方で自由にレイヤーを生成
                 const NewLayer=DicomDataTypeClass.GetNewLayer();
                 //各データタイプに固有の機能等を登録させる
-                DicomDataTypeClass.SetUniqueFunctions(CanvasID,this.FlagMap,this.ContextMenuButtonContainer,this.FromMainProcessToMainFunctions);
+                DicomDataTypeClass.SetUniqueFunctions(CanvasID);
                 NewLayer.className="Canvas";
                 //NewLayer.style.zIndex=this.LayerZindexMap.get(DataType);
                 NewLayer.width=this.CanvasWidth;
@@ -3413,7 +3611,7 @@ class Canvas{
                 DataMap.set("RefCount",DataMap.get("RefCount")+1);
                 //新しいレイヤーが追加された＝コンテキストメニューアクティブ化
                 //this.ActivateContextMenuButton(DataType);
-                console.log(this.FromMainProcessToMainFunctions);
+                //console.log(this.FromMainProcessToMainFunctions);
             }
             //this.Layerdraw(DataType);
         }
@@ -3595,8 +3793,9 @@ class Canvas{
         this.FromMainProcessToMainFunctions.set("ChangeWindowing",ChangeWindowingFunction);
     }
     */
+    /*
     setMASKContext(){
-        /*マスク修正*/
+        //マスク修正
         const MaskModifingButton=document.createElement("button");
         MaskModifingButton.className="MASK";//DataTypeをクラス名に持つ要素で絞り込みをして、それを表示するためのクラス名
         MaskModifingButton.textContent="MASK 修正";
@@ -3643,7 +3842,7 @@ class Canvas{
         });
         MaskModifingButton.style.display="none";
         this.ContextMenuButtonContainer.appendChild(MaskModifingButton);
-        /*サブウィンドウからの更新用の関数を定義する*/
+        //サブウィンドウからの更新用の関数を定義する
         const ChangeMaskFunction=(data)=>{
             const ReceivedDataBody=data.get("data");
             const targetLayer=ReceivedDataBody.get("Layer");
@@ -3663,6 +3862,7 @@ class Canvas{
         }
         this.FromMainProcessToMainFunctions.set("ChangeLabel",ChangeLabelFunction);
     }
+    */
     setCONTOURContext(){
         /*輪郭の選択画面*/
         const RoiSelectButton=document.createElement("button");
@@ -3963,7 +4163,7 @@ class Canvas{
             this.SelectedAreaStatus.set("slicecropdrawed",Activate);
             this.CroppedSliceFill();
             //this.CroppedSliceFill();
-            this.FlagManager();
+            this.FlagUpdater();
         }
         this.FromMainProcessToMainFunctions.set("AreaSelectModeSwitching",AreaSelectModeSwitchingFunction);
         //下４つはサブウィンドウに送信する関数
@@ -4013,11 +4213,11 @@ class Canvas{
                 //console.log("CONTOURROIClick Deactivate");
                 this.MultiUseLayerModeFlagSet.delete(ModeFlagName);
             }
-            this.FlagManager();
+            this.FlagUpdater();
         }
         this.FromMainProcessToMainFunctions.set("CONTOURROIClickModeSwitching",CONTOURROIClickModeSwitchingFunction);
         this.setCONTOURROIClick();
-
+        /*
         const MASKClickModeSwitchingFunction=(data)=>{
             const ReceivedDataBody=data.get("data");
             const Activate=ReceivedDataBody.get("Activate");
@@ -4031,6 +4231,7 @@ class Canvas{
         }
         this.FromMainProcessToMainFunctions.set("MASKClickModeSwitching",MASKClickModeSwitchingFunction);
         this.setMASKClick();
+        */
     }
     setLocalSliceAndAlign(){
         const CanvasID=this.id.get("CanvasID");
@@ -4648,9 +4849,10 @@ class Canvas{
             }
         })
     }
+    /*
     setMASKClick(){
         const CanvasID=this.id.get("CanvasID");
-        this.MASKClickFlag=false;
+        //this.MASKClickFlag=false;
         Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"mouseup",(e)=>{
             if(this.MASKClickFlag&&this.LayerDataMap.has("MASK")&&e.button===0){
                 //console.log("ROIClicked!!");
@@ -4681,6 +4883,7 @@ class Canvas{
             }
         });
     }
+    */
     //本当は作る必要ないが、複数で全く同じ処理をするのでここに関数として記録しておく
     //確定した選択範囲を様式に沿って構成し、PassChangesToSubを使って送信する
     SendSelectedArea(){
@@ -5594,7 +5797,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
     async delateCanvas(CanvasID,UpdateCanvasIDDataTypeMapFlag=true){
         if(await LoadAndLayout.CheckPossibilityLoadORDelete()){
             console.log("delateCanvas");
-            const CanvasClass=CanvasClassDictionary.get(CanvasID);
+            //const CanvasClass=CanvasClassDictionary.get(CanvasID);
             //削除対象で参照されているデータを消そうとしてみる
             /*
             for(const [DataType,LayerData] of CanvasClass.LayerDataMap.entries()){
@@ -5610,7 +5813,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
             */
             //キャンバスクラスを削除する
             //内部でイベント解除、参照しているデータの削除、DOMツリー切り離しが行われる。
-            CanvasClass.dispose();
+            Canvas.dispose(CanvasID);
             CanvasClassDictionary.delete(CanvasID);//Mapから削除。これでガーベージコレクションが動くはず
             colormapformask.update();//変化がなければ何も起こらないので気軽に呼び出してOK
             //削除によるRowとColumnの変更はしないものとする。
@@ -6043,9 +6246,6 @@ window.MainWindowRendererMainProcessAPI.CloseSubWindowFromMainProcessToMain((eve
         //headerにターゲットが書いてあるので見る
         //ヘッダーによってターゲットを指定するコンテキストメニューでも使用しているため、
         //bodyではなくヘッダーによるターゲットの指定を行っている。
-        const ReceivedDataBody=ClosingData.get("data");
-        const CanvasID=ReceivedDataBody.get("CanvasID");
-        const targetCanvasClass=CanvasClassDictionary.get(CanvasID);
-        targetCanvasClass.ReceiveChangesFromSubWindow(ClosingData);
+        Canvas.ReceiveChangesFromSubWindow(ClosingData);
     }
 });
