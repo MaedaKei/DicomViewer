@@ -1052,7 +1052,7 @@ class MASKclass{
     }
     /*適したレイヤーを生成する*/
     static LayerZindex=LayerPriorityMap.get(this.DataType);
-     static GetNewLayer(){
+    static GetNewLayer(){
         const NewLayer=document.createElement("canvas");
         NewLayer.style.zIndex=this.LayerZindex;
         return NewLayer;
