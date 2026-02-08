@@ -2560,7 +2560,8 @@ class CONTOURclass{
         const [MinIndex,MaxIndex]=DicomDataInstance.ChangeROISelect(data);
         const CurrentIndex=CanvasInstance.DrawStatus.get("index");//現在のスライスインデックスになっているはず
         const Selected=ReceivedDataBody.get("Selected");//trueなら追加、falseなら削除
-        const JunpIndex=[MinIndex,CurrentIndex,MaxIndex].sort((a,b)=>a-b)[1];
+        const CenterIndex=[MinIndex,CurrentIndex,MaxIndex].sort((a,b)=>a-b)[1];
+        const JunpIndex=MinIndex;//範囲外のとき、その組織の先頭スライスに移動する。最大知か最小値のどちらかに近いほうにジャンプする方法では、どちら側に輪郭が続くかわかりづらいので、常に最小値にジャンプする方法をとる。
         /*
         再描画の方法は二つ
         1．CONTOURレイヤーのみの再描画⇒削除時、現在のスライスが範囲内にあるとき or 追加時、現在のスライスが範囲内にあるとき
@@ -2568,14 +2569,14 @@ class CONTOURclass{
         つまり、現在のスライスが範囲内にあるときかならず層のみの再描画を行う
         範囲外のとき、Select時のみジャンプを走らせる
         */
-        if(CurrentIndex===JunpIndex){
+        if(CurrentIndex===CenterIndex){
             //範囲内
             CanvasInstance.DrawStatus.set("regenerate",true);
             CanvasInstance.Layerdraw(TargetLayer);
         }else{
             if(Selected){
                 //範囲外に追加された場合のみジャンプを走らせる
-                console.log("ジャンプ走らせる",[MinIndex,CurrentIndex,MaxIndex],"=>",JunpIndex);
+                //console.log("ジャンプ走らせる",[MinIndex,CurrentIndex,MaxIndex],"=>",JunpIndex);
                 const Slider=CanvasInstance.slider;
                 Slider.value=JunpIndex;
                 Slider.dispatchEvent(new Event("input"));    
@@ -2720,7 +2721,9 @@ class CONTOURclass{
             }
             //ROIContourDataMapをContourDataMapに追加するKeyはROIName
             if(ROIContourDataMap.size>0){//輪郭が追加されていれば、少なくとも一つは表示しないといけない輪郭がある
-                this.ContourDataMap.set(ROIName,ROIContourDataMap);
+                //Zの昇順となるようにソートしておく
+                const SortedROIContourDataMap=new Map(Array.from(ROIContourDataMap.entries()).sort((a,b)=>a[0]-b[0]));
+                this.ContourDataMap.set(ROIName,SortedROIContourDataMap);
             }
         }
         //ROINameごとの色を決定する
@@ -2801,9 +2804,10 @@ class CONTOURclass{
         //このROINameが存在するスライスの最小値、最大値を返す
         const ROIContourDataMap=this.ContourDataMap.get(ROIName);
         const SliceIndexArray=Array.from(ROIContourDataMap.keys());
+        //console.log("SliceIndexArray",SliceIndexArray);
         //現時点ではKeyは昇順に並んでおらず、どうやら降順に並んでいるようだ
-        const MaxIndex=SliceIndexArray[0];
-        const MinIndex=SliceIndexArray[SliceIndexArray.length-1];
+        const MinIndex=SliceIndexArray[0];
+        const MaxIndex=SliceIndexArray[SliceIndexArray.length-1];
         return [MinIndex,MaxIndex];
     }
     getClickedROISet(ctx,Z,X,Y){
