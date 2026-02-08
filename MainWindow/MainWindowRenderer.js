@@ -3712,7 +3712,8 @@ class Canvas{
 
         //多用途的なキャンバス
         //ユーザー操作の可視化など、補助的な表示に使う
-        this.MultiUseLayer=document.createElement("canvas");
+        //this.MultiUseLayer=document.createElement("canvas");
+        this.MultiUseLayer=document.createElementNS("http://www.w3.org/1999/xhtml","svg");
         this.MultiUseLayer.className="Canvas";
         this.MultiUseLayer.style.zIndex=-1;
         this.MultiUseLayer.style.display="none";//有効化する時は""で
@@ -4642,6 +4643,8 @@ class Canvas{
                 this.SelectedAreaStatus.set("sh",newh0);
                 //この時点での描画はされない
                 this.SelectedAreaStatus.set("drawed",false);
+                //SVGの子要素として長方形を追加するが、可視化はしない
+                this.SelectAreaRectangle=document.createElementNS("http://www.w3.org/2000/svg","rect");
             }
         });
         Canvas.EventSetHelper(CanvasID,this.CanvasBlock,"mousemove",(e)=>{
