@@ -269,7 +269,7 @@ div.CanvasBlock{
     width:100%;
     height:calc(100% - 16px);
 }
-div.CanvasBlock>canvas.Canvas{
+div.CanvasBlock>.Canvas{
     position:absolute;
     top:0;
     left:0;

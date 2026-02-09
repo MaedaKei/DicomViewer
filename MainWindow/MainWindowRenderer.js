@@ -3712,9 +3712,8 @@ class Canvas{
 
         //多用途的なキャンバス
         //ユーザー操作の可視化など、補助的な表示に使う
-        //this.MultiUseLayer=document.createElement("canvas");
-        this.MultiUseLayer=document.createElementNS("http://www.w3.org/1999/xhtml","svg");
-        this.MultiUseLayer.className="Canvas";
+        this.MultiUseLayer=document.createElementNS(SVGNameSpace,"svg");
+        this.MultiUseLayer.classList.add("Canvas");//svgはclassNameが使えないみたい
         this.MultiUseLayer.style.zIndex=-1;
         this.MultiUseLayer.style.display="none";//有効化する時は""で
         /*MultiUseLayerに関する機能*/
@@ -3789,8 +3788,8 @@ class Canvas{
             this.Height
             this.SliderLength
             */
-            this.MultiUseLayer.width=this.CanvasWidth;
-            this.MultiUseLayer.height=this.CanvasHeight;
+            this.MultiUseLayer.setAttribute("width",this.CanvasWidth);
+            this.MultiUseLayer.setAttribute("height",this.CanvasHeight);
             this.Width=this.CanvasWidth;
             this.Height=this.CanvasHeight+16;
             //すでにこのDataTypeのLayerが存在するかのフラグ
@@ -3943,202 +3942,7 @@ class Canvas{
         this.ContextMenuButtonContainer.style.height=`${ButtonNum*30}px`;
         this.ContextMenuContainer.style.height=`${40+ButtonNum*30}px`;
     }
-    /*
-    ActivateContextMenuButton(DataType){
-        //指定されたDataTypeのボタンを可視化する
-        const DataTypeContextMenuButtonList=this.ContextMenuButtonContainer.getElementsByClassName(DataType);
-        for(const button of DataTypeContextMenuButtonList){
-            button.style.display="block";
-        }
-        this.UpdateContextMenuSize();
-    }
-    */
-    //読み込まれたデータごとのコンテキストメニューの設定関数
-    //メインレイヤーのCTorBGCTのCT両方から呼ばれるため、どちらであるかを引数で知らせる
-    /*
-    setCTContext(){//or BGLayer
-        //階調
-        const WindowingButton=document.createElement("button");
-        WindowingButton.className="CT";//DataTypeをクラス名に持つ要素で絞り込みをして、それを表示するためのクラス名
-        WindowingButton.textContent="CT 階調";
-        Canvas.EventSetHelper(this.id.get("CanvasID"),WindowingButton,"mouseup",(e)=>{
-            if(e.button==0){
-                //現在の参照しているCTデータを取得
-                const Layer="CT";
-                const DataID=this.LayerDataMap.get(Layer).get("DataID");
-                const DicomDataInfoMap=DicomDataClassDictionary.get(Layer).get(DataID);
-                const DicomDataClass=DicomDataInfoMap.get("Data");
-                //const MultiUseLayerModeMap=false;//falseかMapか。MultiLayerModeMap={"Mode":,"Activate":true or false}
-                const windowsize=[400,300];
-                const AllowAddOrDeleteFlag=false;//このサブウィンドウが開いている間、データの追加・削除を許可するか
-                const data=new Map([
-                    ["vMin",DicomDataClass.vMin],
-                    ["vMax",DicomDataClass.vMax],
-                    ["histgram",DicomDataClass.histgram],
-
-                    ["windowsize",windowsize],
-                    ["AllowAddOrDeleteFlag",AllowAddOrDeleteFlag],
-                    ["Layer",Layer],
-                ]);
-                const initializedata=new Map([
-                    ["action","Windowing"],
-                    ["data",data],
-                ]);
-                this.openSubWindow(initializedata);
-            }
-        });
-        //最後に、このボタンを非表示にする
-        WindowingButton.style.display="none";
-        this.ContextMenuButtonContainer.appendChild(WindowingButton);
-        //サブウィンドウからの更新用の関数を定義する
-        const ChangeWindowingFunction=(data)=>{
-            const ReceivedDataBody=data.get("data");
-            const targetLayer=ReceivedDataBody.get("Layer");
-            const DataType=targetLayer;
-            const DataID=this.LayerDataMap.get(targetLayer).get("DataID");
-            const DataInfoMap=DicomDataClassDictionary.get(DataType).get(DataID);
-            const DicomDataClass=DataInfoMap.get("Data");
-            //CTのvMin, vMaxを変更して再描画する
-            //CTクラスに持たせてもいいが、対して大きい処理ではないためここに直接書いた
-            DicomDataClass.vMin=ReceivedDataBody.get("vMin");
-            DicomDataClass.vMax=ReceivedDataBody.get("vMax");
-
-            this.DrawStatus.set("regenerate",true);
-            this.Layerdraw(targetLayer);
-        };
-        this.FromMainProcessToMainFunctions.set("ChangeWindowing",ChangeWindowingFunction);
-    }
-    */
-    /*
-    setMASKContext(){
-        //マスク修正
-        const MaskModifingButton=document.createElement("button");
-        MaskModifingButton.className="MASK";//DataTypeをクラス名に持つ要素で絞り込みをして、それを表示するためのクラス名
-        MaskModifingButton.textContent="MASK 修正";
-        Canvas.EventSetHelper(this.id.get("CanvasID"),MaskModifingButton,"mouseup",(e)=>{
-            if(e.button==0){
-                const Layer="MASK";
-                const DataID=this.LayerDataMap.get(Layer).get("DataID");
-                const DicomDataInfoMap=DicomDataClassDictionary.get("MASK").get(DataID);
-                const DicomDataClass=DicomDataInfoMap.get("Data");
-                //const MultiUseLayerMode="AreaSelect";//範囲選択モード
-                const windowsize=[300,400];
-                const AllowAddOrDeleteFlag=false;
-                const SelectedArea=new Map([
-                    //初期表示用の値を送る
-                    ["w0",this.SelectedAreaStatus.get("w0")],
-                    ["h0",this.SelectedAreaStatus.get("h0")],
-                    ["width",this.SelectedAreaStatus.get("width")],
-                    ["height",this.SelectedAreaStatus.get("height")],
-                    ["startslice",this.SelectedAreaStatus.get("startslice")],
-                    ["endslice",this.SelectedAreaStatus.get("endslice")],
-                ]);
-                const data=new Map([
-                    //ユーザーが選択範囲を手入力で変更する際、範囲境界の判定に使う
-                    ["originalimagewidth",this.SelectedAreaStatus.get("originalimagewidth")],
-                    ["originalimageheight",this.SelectedAreaStatus.get("originalimageheight")],
-                    ["originalslidermax",this.SelectedAreaStatus.get("originalslidermax")],
-                    ["SelectedArea",SelectedArea],
-                    //修正対象選択用に使う
-                    ["histgram",DicomDataClass.histgram],//ヒストグラムのkeys()はイテレータとなっており、これが送れないみたい
-                    ["colormap",colormapformask.colormap],//カラーマップの本体だけ送る。クラスインスタンスは構造化オブジェクトじゃないらしいから送れない
-                    ["MaskLabel",colormapformask.label],
-
-                    ["windowsize",windowsize],
-                    ["AllowAddOrDeleteFlag",AllowAddOrDeleteFlag],
-                    //["MultiUseLayerMode",MultiUseLayerMode],
-                    ["Layer",Layer],
-                ]);
-                const initializedata=new Map([
-                    ["action","MaskModifing"],
-                    ["data",data],
-                ]);
-                this.openSubWindow(initializedata);
-            }
-        });
-        MaskModifingButton.style.display="none";
-        this.ContextMenuButtonContainer.appendChild(MaskModifingButton);
-        //サブウィンドウからの更新用の関数を定義する
-        const ChangeMaskFunction=(data)=>{
-            const ReceivedDataBody=data.get("data");
-            const targetLayer=ReceivedDataBody.get("Layer");
-            const DataType=targetLayer;
-            const DataID=this.LayerDataMap.get(targetLayer).get("DataID");
-            const DicomDataInfoMap=DicomDataClassDictionary.get(DataType).get(DataID);
-            const DicomDataClass=DicomDataInfoMap.get("Data");
-            console.log(data);
-            DicomDataClass.ChangeMask(data);
-            this.DrawStatus.set("regenerate",true);
-            this.Layerdraw(targetLayer);
-        }
-        this.FromMainProcessToMainFunctions.set("ChangeMask",ChangeMaskFunction);
-
-        const ChangeLabelFunction=(data)=>{
-            colormapformask.ChangeLabel(data);
-        }
-        this.FromMainProcessToMainFunctions.set("ChangeLabel",ChangeLabelFunction);
-    }
-    */
-    /*
-    setCONTOURContext(){
-        //輪郭の選択画面
-        const RoiSelectButton=document.createElement("button");
-        RoiSelectButton.className="CONTOUR";
-        RoiSelectButton.textContent="ROI選択";
-        Canvas.EventSetHelper(this.id.get("CanvasID"),RoiSelectButton,"mouseup",(e)=>{
-            if(e.button==0){
-                const Layer="CONTOUR";
-                const DataID=this.LayerDataMap.get(Layer).get("DataID");
-                const DicomDataInfoMap=DicomDataClassDictionary.get(Layer).get(DataID);
-                const DicomDataClass=DicomDataInfoMap.get("Data");
-                //const MultiUseLayerMode=false;
-                //const windowsize=[300,400];//ROINameの最長＆ROIの個数を基に動的に変える必要がある
-                const windowsize=[300,400];//とりあえずのサイズ
-                const AllowAddOrDeleteFlag=false;
-                //console.log(windowsize);
-                const data=new Map([
-                    ["ROINameColorMap",DicomDataClass.ContourColorMap],//{ROIName:Hex} ROI名と色の表示に必要
-                    ["ROISelectStatusSet",DicomDataClass.ROISelectStatusSet],//現時点で何が選ばれているかを示す
-                    ["ROIMemoryStatusSet",DicomDataClass.ROIMemoryStatusSet],//現時点で何が記憶されていたかを示す
-                    //["ROISelectWindowStyleMap",DicomDataClass.ROISelectWindowStyleMap],//ボタンサイズなどの諸設定
-                    
-                    ["windowsize",windowsize],
-                    ["AllowAddOrDeleteFlag",AllowAddOrDeleteFlag],
-                    //["MultiUseLayerMode",MultiUseLayerMode],
-                    ["Layer",Layer],
-                ]);
-                const initialAlldata=new Map([
-                    ["action","ROISelect"],
-                    ["data",data],
-                ]);
-                this.openSubWindow(initialAlldata);
-            }
-        });
-        RoiSelectButton.style.display="none";
-        this.ContextMenuButtonContainer.appendChild(RoiSelectButton);
-        //サブウィンドウからの更新用の関数を定義する
-        const ChangeROIStatusSetFunction=(data)=>{
-            //ROISelectStatusもROIMemoryStatusSetも全く同じ形式のデータなので、わざわざ関数を分ける必要もないと感じた。
-            //しかも、現時点ではMemoryはサブウィンドウ終了時の一回のみなので、なおさら関数を専用に作る必要がないと感じた。
-            const ReceivedDataBody=data.get("data");
-            const targetLayer=ReceivedDataBody.get("Layer");
-            const DataType=targetLayer;
-            const DataID=this.LayerDataMap.get(targetLayer).get("DataID");
-            const DicomDataInfoMap=DicomDataClassDictionary.get(DataType).get(DataID);
-            const DicomDataClass=DicomDataInfoMap.get("Data");
-            //ROISelectStatusSetか、ROIMemoryStatusSetか
-            const Mode=ReceivedDataBody.get("Mode");//"Select" or "Memory"
-            //console.log(ReceivedDataBody.get("data").get("ROISelectStatusSet"));
-            DicomDataClass.ChangeROIStatusSet(data);
-            if(Mode==="Select"){
-                //SelectStatusの変更だったら再描画必要
-                this.DrawStatus.set("regenerate",true);
-                this.Layerdraw(targetLayer);
-            }
-        }
-        this.FromMainProcessToMainFunctions.set("ChangeROIStatusSet",ChangeROIStatusSetFunction);
-    }
-    */
+    
     SetSliderParameter(){
         //MainlayerとBGの有無から、スライダーを設定する
         this.slider.min=0;
@@ -4353,8 +4157,59 @@ class Canvas{
         やっぱり、ここで定義する。コンテキストメニューもデータタイプ読み込まれてなくても設定だけしているし、ここでまとめたほうがみやすい
         */
         /*
-        AreaSelectモード
+        AreaSelectモードの諸設定
         */
+        //MultiUseLayerにエリアセレクトコンポーネントのグループを追加する
+        // グループ内に必要な要素
+        // 切り抜いて色を塗るためのマスク
+        // 実際に色を塗られるレクト
+        const AreaSelectGroup=document.createElementNS(SVGNameSpace,"g");
+        const AreaSelectMaskDef=document.createElementNS(SVGNameSpace,"defs");
+        const AreaSelectMask=document.createElementNS(SVGNameSpace,"mask");
+        const AreaSelectMaskID=`AreaSelectMask_${this.id.get("CanvasID")}`;
+        AreaSelectMask.setAttribute("id",AreaSelectMaskID);
+        this.AreaSelectMaskURL=`url(#${AreaSelectMaskID})`;//都度指定する
+        const OuterRect=document.createElementNS(SVGNameSpace,"rect");
+        OuterRect.setAttribute("x",0);
+        OuterRect.setAttribute("y",0);
+        OuterRect.setAttribute("width",this.CanvasWidth);
+        OuterRect.setAttribute("height",this.CanvasHeight);
+        OuterRect.setAttribute("fill","white");
+        AreaSelectMask.appendChild(OuterRect);
+
+        const InnerRect=document.createElementNS(SVGNameSpace,"rect");//ここが可変である。
+        InnerRect.setAttribute("x",0);
+        InnerRect.setAttribute("y",0);
+        InnerRect.setAttribute("width",this.CanvasWidth);
+        InnerRect.setAttribute("height",this.CanvasHeight);
+        InnerRect.setAttribute("fill","black");
+        this.InnerRect=InnerRect;//SelectedAreaRectでアクセスし、マスクの形状を変える
+        AreaSelectMask.appendChild(this.InnerRect);
+        AreaSelectMaskDef.appendChild(AreaSelectMask);
+
+        const FillRect=document.createElementNS(SVGNameSpace,"rect");//Outerとこれはサイズが不変である
+        FillRect.setAttribute("x",0);
+        FillRect.setAttribute("y",0);
+        FillRect.setAttribute("width",this.CanvasWidth);
+        FillRect.setAttribute("height",this.CanvasHeight);
+        FillRect.setAttribute("fill","rgba(255, 255, 255, 0.3)");
+        this.FillRect=FillRect;//塗りなおしのときに参照する
+
+        //選択範囲の境界線用のRect
+        const StrokeRect=document.createElementNS(SVGNameSpace,"rect");
+        StrokeRect.setAttribute("x",0);
+        StrokeRect.setAttribute("y",0);
+        StrokeRect.setAttribute("width",this.CanvasWidth);
+        StrokeRect.setAttribute("height",this.CanvasHeight);
+        StrokeRect.setAttribute("stroke","red");
+        StrokeRect.setAttribute("stroke-width",1);
+        this.StrokeRect=StrokeRect;
+        AreaSelectGroup.appendChild(AreaSelectMaskDef);
+        AreaSelectGroup.appendChild(this.FillRect);
+        AreaSelectGroup.appendChild(this.StrokeRect);
+        this.AreaSelectGroup=AreaSelectGroup;
+        this.MultiUseLayer.appendChild(this.AreaSelectGroup);
+        
         //AreaSelectモードアクティベーター
         const AreaSelectModeSwitchingFunction=(data)=>{
             const ReceivedDataBody=data.get("data");
@@ -4412,46 +4267,6 @@ class Canvas{
             this.CroppedSliceFill();
         };
         this.FromMainProcessToMainFunctions.set("ChangeSelectedArea",ChangeSelectedAreaFunction);
-        /*
-        CONTOURROIClickモード
-        輪郭内をクリックしたときに、そのピクセル位置が含まれているROIのSetをサブウィンドウに送る
-        */
-        //CONTOURROIClickモードアクティベーター
-        //MultiUseLayerは使わなくてもいいのでここでは操作しないかも
-        /*
-        const CONTOURROIClickModeSwitchingFunction=(data)=>{
-            const ReceivedDataBody=data.get("data");
-            const Activate=ReceivedDataBody.get("Activate");//True or False
-            const ModeFlagName="CONTOURROIClick";
-            if(Activate){
-                //this.MultiUseLayer.style.display="";
-                //console.log("CONTOURROIClick Activate");
-                this.MultiUseLayerModeFlagSet.add(ModeFlagName);
-            }else{
-                //this.MultiUseLayer.style.display="none";
-                //console.log("CONTOURROIClick Deactivate");
-                this.MultiUseLayerModeFlagSet.delete(ModeFlagName);
-            }
-            this.FlagUpdater();
-        }
-        this.FromMainProcessToMainFunctions.set("CONTOURROIClickModeSwitching",CONTOURROIClickModeSwitchingFunction);
-        this.setCONTOURROIClick();
-        */
-        /*
-        const MASKClickModeSwitchingFunction=(data)=>{
-            const ReceivedDataBody=data.get("data");
-            const Activate=ReceivedDataBody.get("Activate");
-            const ModeFlagName="MASKClick";
-            if(Activate){
-                this.MultiUseLayerModeFlagSet.add(ModeFlagName);
-            }else{
-                this.MultiUseLayerModeFlagSet.delete(ModeFlagName);
-            }
-            this.FlagManager();
-        }
-        this.FromMainProcessToMainFunctions.set("MASKClickModeSwitching",MASKClickModeSwitchingFunction);
-        this.setMASKClick();
-        */
     }
     setLocalSliceAndAlign(){
         const CanvasID=this.id.get("CanvasID");
@@ -4989,6 +4804,47 @@ class Canvas{
     }
     */
     SelectedAreaDraw(){
+        const dx=0,dy=0,dWidth=this.CanvasWidth,dHeight=this.CanvasHeight;
+        if(this.SelectedAreaStatus.get("drawed")){
+            //可視化
+            this.AreaSelectGroup.setAttribute("display","inline");
+            
+            //選択範囲の描画
+            const DrawStatus=this.DrawStatus;
+            const sx=DrawStatus.get("w0");
+            const sy=DrawStatus.get("h0");
+            //選択範囲の移動や拡縮はSVGの座標を変換する
+            const XScale=dWidth/DrawStatus.get("width"),YScale=dHeight/DrawStatus.get("height");
+            this.MultiUseLayer.setAttribute("transform",`scale(${XScale},${YScale}) translate(${-sx},${-sy})`);
+            const w0=this.SelectedAreaStatus.get("w0");
+            const h0=this.SelectedAreaStatus.get("h0");
+            const width=this.SelectedAreaStatus.get("width");
+            const height=this.SelectedAreaStatus.get("height");
+            const startslice=this.SelectedAreaStatus.get("startslice");
+            const endslice=this.SelectedAreaStatus.get("endslice");
+            const currentslice=parseInt(this.slider.value);
+            //選択範囲を描画
+            this.StrokeRect.setAttribute("x",w0-0.5);
+            this.StrokeRect.setAttribute("y",h0-0.5);
+            this.StrokeRect.setAttribute("width",width+1);
+            this.StrokeRect.setAttribute("height",height+1);
+            if(startslice<=currentslice&&currentslice<=endslice){
+                //FillRectにマスクを適用する
+                //StrokeRectを出現させる
+                this.InnerRect.setAttribute("x",w0);
+                this.InnerRect.setAttribute("y",h0);
+                this.InnerRect.setAttribute("width",width);
+                this.InnerRect.setAttribute("height",height);
+                this.FillRect.setAttribute("mask",this.AreaSelectMaskURL);
+            }else{
+                this.FillRect.setAttribute("mask","");
+            }
+        }else{
+            this.AreaSelectGroup.setAttribute("display","none");
+        }
+    }
+    /*
+    SelectedAreaDraw(){
         const ctx=this.MultiUseLayer.getContext("2d");
         const dx=0,dy=0,dWidth=ctx.canvas.width,dHeight=ctx.canvas.height;
         ctx.clearRect(0,0,dWidth,dHeight);//初期化する
@@ -5002,7 +4858,7 @@ class Canvas{
             ctx.translate(dx,dy);//基準点に一度戻る
             ctx.scale(dWidth/DrawStatus.get("width"),dHeight/DrawStatus.get("height"));//サイズを変更
             ctx.translate(-sx,-sy);//中心をずらす
-            /*Rectangleの描画*/
+            //Rectangleの描画
             ctx.imageSmoothingEnabled=false;
             ctx.imageSmoothingQuality='low'; // 'low' | 'medium' | 'high'
             
@@ -5013,16 +4869,12 @@ class Canvas{
             const startslice=this.SelectedAreaStatus.get("startslice");
             const endslice=this.SelectedAreaStatus.get("endslice");
             const currentslice=parseInt(this.slider.value);
-            /*現在のスライスが選択範囲内なら塗りつぶし*/
+            //現在のスライスが選択範囲内なら塗りつぶし
             //まずは全部黒めにつぶす→白めにつぶす＝CT画像を背景にしているときに、選択範囲外を黒くしてもCTと同じになってわかりづらいから
             ctx.fillStyle="rgba(255, 255, 255, 0.3)";
             ctx.beginPath();
             ctx.rect(dx,dy,dWidth,dHeight);
             if(startslice<=currentslice&&currentslice<=endslice){
-                /*
-                ctx.fillStyle="rgba(255, 137, 137, 0.36)";
-                ctx.fillRect(w0,h0,width,height);
-                */
                 ctx.rect(w0,h0,width,height);
             }
             ctx.fill("evenodd");//選択された部分だけしっかり見える
@@ -5032,6 +4884,7 @@ class Canvas{
             ctx.restore();
         }
     }
+    */
     /*CONTOURROIClickイベント登録*/
     //11/26時点ではCONTOUR専用機能
     //そのうち、クリックした座標を取得する機能を分離するかも
