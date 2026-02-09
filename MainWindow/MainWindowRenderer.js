@@ -4203,6 +4203,7 @@ class Canvas{
         StrokeRect.setAttribute("height",this.CanvasHeight);
         StrokeRect.setAttribute("stroke","red");
         StrokeRect.setAttribute("stroke-width",1);
+        StrokeRect.setAttribute("fill","none");
         this.StrokeRect=StrokeRect;
         AreaSelectGroup.appendChild(AreaSelectMaskDef);
         AreaSelectGroup.appendChild(this.FillRect);
