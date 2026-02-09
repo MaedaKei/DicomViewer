@@ -6202,7 +6202,7 @@ class Evaluate{
                         ["Activate",Activate],
                     ])]
                 ]);
-                CanvasClass.ReceiveChangesFromSubWindow(ModeSwitchingData);
+                Canvas.ReceiveChangesFromSubWindow(ModeSwitchingData);
             }
         }
         this.FromMainProcessToMainFunctions.set("ChangeTargetCanvas",ChangeTargetCanvasFunction);
