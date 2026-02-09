@@ -47,7 +47,7 @@ class MaskModifingClass{
         this.originalimagewidth=ReceivedDataBody.get("originalimagewidth");
         this.originalimageheight=ReceivedDataBody.get("originalimageheight");
         this.originalslidermax=ReceivedDataBody.get("originalslidermax");//スライダーの最小値は0、最大値はこれ
-        
+        console.log("最大値",this.originalimagewidth,this.originalimageheight,this.originalslidermax);
         /*MaskLegendButtonContainerにマスクボタンを配置*/
         /*送られてきたマスクの個数を基に画面のサイズを再計算する*/
         this.MaskInfoMap=new Map();//{maskvalue:{"MaskLabel":labelName,"ButtonElement":ButtonElement}}
@@ -730,6 +730,7 @@ class MaskModifingClass{
             ["startslice",parseInt(this.StartSliceInput.value)],
             ["endslice",parseInt(this.EndSliceInput.value)],
         ]);
+        console.log("SendSelectedArea",SelectedArea);
         const data=new Map([
             ["SelectedArea",SelectedArea],
             ["CanvasID",this.TargetCanvasID],

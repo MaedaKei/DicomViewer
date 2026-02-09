@@ -1120,6 +1120,7 @@ class MASKclass{
             ["startslice",SelectedAreaStatus.get("startslice")],
             ["endslice",SelectedAreaStatus.get("endslice")],
         ]);
+        console.log("SelectedArea:",SelectedAreaStatus);
         const data=new Map([
             //ユーザーが選択範囲を手入力で変更する際、範囲境界の判定に使う
             ["originalimagewidth",SelectedAreaStatus.get("originalimagewidth")],
@@ -4130,8 +4131,8 @@ class Canvas{
             ["drawed",true],
             ["w0",0],
             ["h0",0],
-            ["originalimagewidth",this.MultiUseLayer.width],//もともとの幅
-            ["originalimageheight",this.MultiUseLayer.height],//もともとの高さ
+            ["originalimagewidth",this.CanvasWidth],//もともとの幅
+            ["originalimageheight",this.CanvasHeight],//もともとの高さ
             ["originalslidermax",parseInt(this.slider.max)],//もともとのスライダーの最大値
             ["width",0],
             ["height",0],
@@ -4814,8 +4815,11 @@ class Canvas{
             const sx=DrawStatus.get("w0");
             const sy=DrawStatus.get("h0");
             //選択範囲の移動や拡縮はSVGの座標を変換する
-            const XScale=dWidth/DrawStatus.get("width"),YScale=dHeight/DrawStatus.get("height");
-            this.MultiUseLayer.setAttribute("transform",`scale(${XScale},${YScale}) translate(${-sx},${-sy})`);
+            //const XScale=dWidth/DrawStatus.get("width"),YScale=dHeight/DrawStatus.get("height");
+            //this.MultiUseLayer.setAttribute("transform",`scale(${XScale},${YScale}) translate(${-sx},${-sy})`);
+            
+            //viewBoxで対応するように変更.現在のcanvasの描画領域に合わせる処理だが、結果的にcanvasと同じような方法になっている。
+            this.MultiUseLayer.setAttribute("viewBox",`${sx} ${sy} ${DrawStatus.get("width")} ${DrawStatus.get("height")}`);
             const w0=this.SelectedAreaStatus.get("w0");
             const h0=this.SelectedAreaStatus.get("h0");
             const width=this.SelectedAreaStatus.get("width");
