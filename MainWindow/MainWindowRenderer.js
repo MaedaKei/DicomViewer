@@ -3712,8 +3712,8 @@ class Canvas{
 
         //多用途的なキャンバス
         //ユーザー操作の可視化など、補助的な表示に使う
-        this.MultiUseLayer=document.createElement("canvas");
-        this.MultiUseLayer.className="Canvas";
+        this.MultiUseLayer=document.createElementNS(SVGNameSpace,"svg");
+        this.MultiUseLayer.classList.add("Canvas");//svgはclassNameが使えないみたい
         this.MultiUseLayer.style.zIndex=-1;
         this.MultiUseLayer.style.display="none";//有効化する時は""で
         /*MultiUseLayerに関する機能*/
@@ -4352,8 +4352,49 @@ class Canvas{
         やっぱり、ここで定義する。コンテキストメニューもデータタイプ読み込まれてなくても設定だけしているし、ここでまとめたほうがみやすい
         */
         /*
-        AreaSelectモード
+        AreaSelectモードの諸設定
         */
+        //MultiUseLayerにエリアセレクトコンポーネントのグループを追加する
+        // グループ内に必要な要素
+        // 切り抜いて色を塗るためのマスク
+        // 実際に色を塗られるレクト
+        const AreaSelectGroup=document.createElementNS(SVGNameSpace,"g");
+        const AreaSelectMaskDef=document.createElementNS(SVGNameSpace,"defs");
+        const AreaSelectMask=document.createElementNS(SVGNameSpace,"mask");
+        const AreaSelectMaskID=`AreaSelectMask_${this.id.get("CanvasID")}`;
+        AreaSelectMask.setAttribute("id",AreaSelectMaskID);
+        this.AreaSelectMaskURL=`url(#${AreaSelectMaskID})`;//都度指定する
+        const OuterRect=document.createElementNS(SVGNameSpace,"rect");
+        OuterRect.setAttribute("x",0);
+        OuterRect.setAttribute("y",0);
+        OuterRect.setAttribute("width",this.CanvasWidth);
+        OuterRect.setAttribute("height",this.CanvasHeight);
+        OuterRect.setAttribute("fill","white");
+        AreaSelectMask.appendChild(OuterRect);
+
+        const InnerRect=document.createElementNS(SVGNameSpace,"rect");//ここが可変である。
+        InnerRect.setAttribute("x",0);
+        InnerRect.setAttribute("y",0);
+        InnerRect.setAttribute("width",this.CanvasWidth);
+        InnerRect.setAttribute("height",this.CanvasHeight);
+        InnerRect.setAttributeI("fill","black");
+        this.SelectedAreaRect=InnerRect;//SelectedAreaRectでアクセスし、マスクの形状を変える
+        AreaSelectMask.appendChild(this.SelectedAreaRect);
+        AreaSelectMaskDef.appendChild(AreaSelectMask);
+
+        const FillRect=document.createElementNS(SVGNameSpace,"rect");//Outerとこれはサイズが不変である
+        FillRect.setAttribute("x",0);
+        FillRect.setAttribute("y",0);
+        FillRect.setAttribute("width",this.CanvasWidth);
+        FillRect.setAttribute("height",this.CanvasHeight);
+        FillRect.setAttribute("fill","rgba(255, 255, 255, 0.3)");
+        this.FillRect=FillRect;//塗りなおしのときに参照する
+
+        AreaSelectGroup.appendChild(AreaSelectMaskDef);
+        AreaSelectGroup.appendChild(this.FillRect);
+        this.AreaSelectGroup=AreaSelectGroup;
+        this.MultiUseLayer.appendChild(this.AreaSelectGroup);
+        
         //AreaSelectモードアクティベーター
         const AreaSelectModeSwitchingFunction=(data)=>{
             const ReceivedDataBody=data.get("data");
@@ -4411,46 +4452,6 @@ class Canvas{
             this.CroppedSliceFill();
         };
         this.FromMainProcessToMainFunctions.set("ChangeSelectedArea",ChangeSelectedAreaFunction);
-        /*
-        CONTOURROIClickモード
-        輪郭内をクリックしたときに、そのピクセル位置が含まれているROIのSetをサブウィンドウに送る
-        */
-        //CONTOURROIClickモードアクティベーター
-        //MultiUseLayerは使わなくてもいいのでここでは操作しないかも
-        /*
-        const CONTOURROIClickModeSwitchingFunction=(data)=>{
-            const ReceivedDataBody=data.get("data");
-            const Activate=ReceivedDataBody.get("Activate");//True or False
-            const ModeFlagName="CONTOURROIClick";
-            if(Activate){
-                //this.MultiUseLayer.style.display="";
-                //console.log("CONTOURROIClick Activate");
-                this.MultiUseLayerModeFlagSet.add(ModeFlagName);
-            }else{
-                //this.MultiUseLayer.style.display="none";
-                //console.log("CONTOURROIClick Deactivate");
-                this.MultiUseLayerModeFlagSet.delete(ModeFlagName);
-            }
-            this.FlagUpdater();
-        }
-        this.FromMainProcessToMainFunctions.set("CONTOURROIClickModeSwitching",CONTOURROIClickModeSwitchingFunction);
-        this.setCONTOURROIClick();
-        */
-        /*
-        const MASKClickModeSwitchingFunction=(data)=>{
-            const ReceivedDataBody=data.get("data");
-            const Activate=ReceivedDataBody.get("Activate");
-            const ModeFlagName="MASKClick";
-            if(Activate){
-                this.MultiUseLayerModeFlagSet.add(ModeFlagName);
-            }else{
-                this.MultiUseLayerModeFlagSet.delete(ModeFlagName);
-            }
-            this.FlagManager();
-        }
-        this.FromMainProcessToMainFunctions.set("MASKClickModeSwitching",MASKClickModeSwitchingFunction);
-        this.setMASKClick();
-        */
     }
     setLocalSliceAndAlign(){
         const CanvasID=this.id.get("CanvasID");
