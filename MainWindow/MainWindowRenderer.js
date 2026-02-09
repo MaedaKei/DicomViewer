@@ -3788,8 +3788,8 @@ class Canvas{
             this.Height
             this.SliderLength
             */
-            this.MultiUseLayer.width=this.CanvasWidth;
-            this.MultiUseLayer.height=this.CanvasHeight;
+            this.MultiUseLayer.setAttribute("width",this.CanvasWidth);
+            this.MultiUseLayer.setAttribute("height",this.CanvasHeight);
             this.Width=this.CanvasWidth;
             this.Height=this.CanvasHeight+16;
             //すでにこのDataTypeのLayerが存在するかのフラグ
@@ -4182,7 +4182,7 @@ class Canvas{
         InnerRect.setAttribute("y",0);
         InnerRect.setAttribute("width",this.CanvasWidth);
         InnerRect.setAttribute("height",this.CanvasHeight);
-        InnerRect.setAttributeI("fill","black");
+        InnerRect.setAttribute("fill","black");
         this.InnerRect=InnerRect;//SelectedAreaRectでアクセスし、マスクの形状を変える
         AreaSelectMask.appendChild(this.InnerRect);
         AreaSelectMaskDef.appendChild(AreaSelectMask);
