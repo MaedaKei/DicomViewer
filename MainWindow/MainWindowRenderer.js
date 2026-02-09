@@ -3788,8 +3788,7 @@ class Canvas{
             this.Height
             this.SliderLength
             */
-            this.MultiUseLayer.setAttribute("width",this.CanvasWidth);
-            this.MultiUseLayer.setAttribute("height",this.CanvasHeight);
+            this.MultiUseLayer.setAttribute("viewBox",`0 0 ${this.CanvasWidth} ${this.CanvasHeight}`);
             this.Width=this.CanvasWidth;
             this.Height=this.CanvasHeight+16;
             //すでにこのDataTypeのLayerが存在するかのフラグ

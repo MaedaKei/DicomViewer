@@ -278,7 +278,6 @@ div.CanvasBlock>.Canvas{
     background-color:transparent;
     pointer-events: none;/*画像上の座標取得は完全に一致させたdivに任せることにする*/
 }
-
 div.Block input[type="range"] {
     /*変数*/
     --slider-height:16px;
