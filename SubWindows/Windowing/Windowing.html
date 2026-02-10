@@ -8,11 +8,13 @@
         <title>Windowing</title>
     </head>
     <body>
-        <div id="CanvasContainer">
-            <canvas id="histgramCanvas"></canvas>
-            <canvas id="lineCanvas"></canvas>
-        </div>
-        
+        <svg id="HistgramSVG">
+            <path id="HistgramPath"></path>
+            <line id="MinValueLine"></line>
+            <line id="MaxValueLine"></line>
+            <line id="CenterValueLine"></line>
+            <line id="RadiusValueLine"></line>
+        </svg>
         <div id="TextContainer">
             <div class="InputBlock">
                 <label for="MinValueInput" id="MinValueLabel">Min</label>

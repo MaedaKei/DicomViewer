@@ -5,25 +5,17 @@
 console.log("WindowingRenderer.js loaded");
 class WindowingClass{
     constructor(SendingData){
-        this.CanvasContainer=document.getElementById("CanvasContainer");//ここにイベントを紐づける
-        this.histgramCanvas=document.getElementById("histgramCanvas");
-        this.lineCanvas=document.getElementById("lineCanvas");
+        this.HistgramSVG=document.getElementById("HistgramSVG");//これにマウスイベントを設置する
+        const HistgramPath=document.getElementById("HistgramPath");
+        this.MinValueLine=document.getElementById("MinValueLine");
+        this.MaxValueLine=document.getElementById("MaxValueLine");
+        this.CenterValueLine=document.getElementById("CenterValueLine");
+        this.RadiusValueLine=document.getElementById("RadiusValueLine");
 
-        this.MinColor="#0000FF";
         this.MinValueInput=document.getElementById("MinValueInput");
-        document.getElementById("MinValueLabel").style.color=this.MinColor;
-
-        this.MaxColor="#FF0000";
         this.MaxValueInput=document.getElementById("MaxValueInput");
-        document.getElementById("MaxValueLabel").style.color=this.MaxColor;
-
-        this.CenterColor="#00FF00";
         this.CenterValueInput=document.getElementById("CenterValueInput");
-        document.getElementById("CenterValueLabel").style.color=this.CenterColor;
-
-        this.RadiusColor="#FFFF00";
         this.RadiusValueInput=document.getElementById("RadiusValueInput");
-        document.getElementById("RadiusValueLabel").style.color=this.RadiusColor;
         //this.textContainer=document.getElementById("TextContainer");
         //持っておきたい変数
         //現在の下限上限
@@ -42,50 +34,33 @@ class WindowingClass{
         this.currentradius=(this.currentvMax-this.currentvMin)/2;
         /*それぞれのキャンバスに描画*/
         /*ヒストグラム描画開始*/
-        const histgramctx=this.histgramCanvas.getContext("2d");
         const histgramArray=[];
         let ymin=Infinity,ymax=-Infinity;
-        for(const [key,value] of ReceivedDataBody.get("histgram")){
-            const newvalue=Math.pow(value,0.3);
-            if(newvalue<ymin){
-                ymin=newvalue;
+        for(const [X,y] of ReceivedDataBody.get("histgram")){
+            const Y=Math.pow(y,0.3);
+            if(Y<ymin){
+                ymin=Y;
             }
-            else if(newvalue>ymax){
-                ymax=newvalue;
+            else if(Y>ymax){
+                ymax=Y;
             }
-            histgramArray.push([key,newvalue]);
+            histgramArray.push([X,Y]);
         }
         this.xmin=histgramArray[0][0];
         this.xmax=histgramArray[histgramArray.length-1][0];
         this.ymin=ymin;
         this.ymax=ymax;
         //内部座標大きすぎると見にくくなるのである程度圧縮する
-        this.CanvasWidth=500;//(px)
-        this.CanvasHeight=500;//
-        //Canvasの座標系は上の4つにする
-        this.histgramCanvas.width=this.CanvasWidth;
-        this.histgramCanvas.height=this.CanvasHeight;
-        this.lineCanvas.width=this.CanvasWidth;
-        this.lineCanvas.height=this.CanvasHeight;
-        histgramctx.clearRect(0,0,this.histgramCanvas.width,this.histgramCanvas.height);
-        histgramctx.beginPath();
-        histgramctx.strokeStyle="#FFFFFF";
-        histgramctx.lineWidth=2;
-        const canvaswidth=this.histgramCanvas.width;
-        const canvasheight=this.histgramCanvas.height;
-        this.xscale=canvaswidth/(this.xmax-this.xmin);
-        this.yscale=canvasheight/(this.ymax-this.ymin);
-        histgramctx.moveTo(
-            (histgramArray[0][0]-this.xmin)*this.xscale,
-            canvasheight-(histgramArray[0][1]-this.ymin)*this.yscale
-        );
+        //viewBoxを設定
+        //SVGの座標系は上から下、右から左なので、数学的な座標系に合うようにする
+        this.HistgramSVG.setAttribute("viewBox",`${this.xmin} ${this.ymax} ${this.xmax} 0`);
+        const HisgramStartPoint=histgramArray[0];
+        let HistgramAttributeText=`M ${HisgramStartPoint[0]} ${HisgramStartPoint[1]} `;
         for(let i=1;i<histgramArray.length;i++){
-            histgramctx.lineTo(
-                (histgramArray[i][0]-this.xmin)*this.xscale,
-                canvasheight-(histgramArray[i][1]-this.ymin)*this.yscale
-            );
+            const HistgramPoint=histgramArray[i];
+            HistgramAttributeText+=`L ${HistgramPoint[0]} ${HistgramPoint[1]} `;
         }
-        histgramctx.stroke();
+        HistgramPath.setAttribute("d",HistgramAttributeText);
         //イベントとエレメントの紐づけを記録しておくMap
         this.ElementsWithEvents=new Map();
         this.setObserverEvents();
@@ -116,51 +91,13 @@ class WindowingClass{
             ])]
         ]);
         //描画処理は一番最後
-        this.Redraw();
+        //this.Redraw();
         //見切れないように調整
         window.SubWindowMoveAPI();
     }
+    /*
     Redraw(){
-        //現在の状態になるようにlineCanvasを書き換える
-        //上限値下限値の垂線を描画
-        const lineWidth=2;
-        //上限、下限、中央の描画用座標
-        const maxX=(this.currentvMax-this.xmin)*this.xscale;
-        const minX=(this.currentvMin-this.xmin)*this.xscale;
-        const centerX=(this.currentcenter-this.xmin)*this.xscale;
-        const linectx=this.lineCanvas.getContext("2d");
-        linectx.clearRect(0,0,this.lineCanvas.width,this.lineCanvas.height);
-        //上限の垂線
-        linectx.beginPath();
-        linectx.strokeStyle=this.MaxColor;
-        linectx.lineWidth=lineWidth;
-        linectx.moveTo(maxX,0);
-        linectx.lineTo(maxX,this.lineCanvas.height);
-        linectx.stroke();
-        //下限の垂線
-        linectx.beginPath();
-        linectx.strokeStyle=this.MinColor;
-        linectx.lineWidth=lineWidth;
-        linectx.moveTo(minX,0);
-        linectx.lineTo(minX,this.lineCanvas.height);
-        linectx.stroke();
-        //半径線の表示
-        const radiusY1=this.lineCanvas.height*0.6;
-        const radiusY2=this.lineCanvas.height*0.4;
-        linectx.beginPath();
-        linectx.strokeStyle=this.RadiusColor;
-        linectx.lineWidth=lineWidth;
-        linectx.moveTo(minX,radiusY1);
-        linectx.lineTo(centerX,radiusY1);
-        linectx.lineTo(centerX,radiusY2);
-        linectx.lineTo(maxX,radiusY2);
-        linectx.stroke();
-        //中央線
-        linectx.beginPath();
-        linectx.strokeStyle=this.CenterColor;
-        linectx.moveTo(centerX,0);
-        linectx.lineTo(centerX,this.lineCanvas.height);
-        linectx.stroke();
+        
 
         const vMin=Math.trunc(this.currentvMin*10)/10;
         const vMax=Math.trunc(this.currentvMax*10)/10;
@@ -178,6 +115,7 @@ class WindowingClass{
         data.set("vMax",vMax);
         window.SubWindowMainProcessAPI.FromSubToMainProcess(this.FromSubToMainProcessData);
     }
+    */
     FlagManager(){
         //マウスホイールによるRadiusの操作
         //Canvas内にマウスがあればよい
@@ -191,9 +129,7 @@ class WindowingClass{
         //マウスが右クリックされている間
         //押された瞬間に条件を満たしていれば話すまでは動作するものとする
         if(this.mouseClicked.get(0)){
-            const currentMouseX=this.MouseTrack.get("current").get("x");
-            const rect=this.CanvasContainer.getBoundingClientRect();//0~N
-            const currentX=this.xmin+((this.xmax-this.xmin)*currentMouseX/rect.width);//xmin~
+            const currentX=this.MouseTrack.get("current").get("x");
             //console.log(this.currentvMin,currentX,this.currentvMax);
             if(this.currentvMin<currentX&&currentX<this.currentvMax){
                 this.CenterFlag=true;
@@ -218,7 +154,7 @@ class WindowingClass{
         /*イベントマネージャーユーザーの監視*/
         /*Canvasとラップdivの大きさは常に同じにする。そして、画像のズームパン、ローカルスライスやアラインはdivに紐づける*/
         //マウスの位置はcanvas内=CanvasBlockに入っているかで考える
-        this.EventSetHelper(this.CanvasContainer,"mouseenter",(e)=>{
+        this.EventSetHelper(this.HistgramSVG,"mouseenter",(e)=>{
             this.mouseenter=true;
             //CanvasBlockにフォーカスさせる
             e.target.focus();
@@ -226,7 +162,7 @@ class WindowingClass{
             this.FlagManager();
         });
 
-        this.EventSetHelper(this.CanvasContainer,"mouseleave",(e)=>{
+        this.EventSetHelper(this.HistgramSVG,"mouseleave",(e)=>{
             //CanvasBlockからフォーカスを外す
             this.mouseenter=false;
             //その他の監視変数も初期状態に戻す
@@ -254,25 +190,35 @@ class WindowingClass{
         */
         //マウスの動き監視
         //マウスが押されたときにFlagManegerを読んでCenterイベントが動けるか確かめる。
-        this.EventSetHelper(this.CanvasContainer,"mousedown",(e)=>{
+        this.EventSetHelper(this.HistgramSVG,"mousedown",(e)=>{
             this.mouseClicked.set(e.button,true);
             //console.log(this.mouseClicked);
             this.FlagManager();
         });
-        this.EventSetHelper(this.CanvasContainer,"mouseup",(e)=>{
+        this.EventSetHelper(this.HistgramSVG,"mouseup",(e)=>{
             this.mouseClicked.delete(e.button);
             //console.log(this.mouseClicked);
             this.FlagManager();
         });
 
-        this.EventSetHelper(this.CanvasContainer,"mousemove",(e)=>{
+        this.EventSetHelper(this.HistgramSVG,"mousemove",(e)=>{
             //座標を更新
+            console.log(e.target);
             const oldpoints=this.MouseTrack.get("previous");
             const newpoints=this.MouseTrack.get("current");
             oldpoints.set("x",newpoints.get("x"));
             oldpoints.set("y",newpoints.get("y"));
-            newpoints.set("x",e.offsetX);
-            newpoints.set("y",e.offsetY);
+            const pt=this.HistgramSVG.createSVGPoint();
+            pt.x=e.clientX;
+            pt.y=e.clinetY;
+            //console.log(e.clientX,e.clientY);
+            //console.log(e.offsetX,e.offsetY);
+            console.log(this.HistgramSVG.getScreenCTM());
+            console.log(this.HistgramSVG.getScreenCTM().inverse());
+            const NewPoint=pt.matrixTransform(this.HistgramSVG.getScreenCTM().inverse());
+            console.log(NewPoint);
+            newpoints.set("x",NewPoint.x);
+            newpoints.set("y",NewPoint.y);
             //console.log(newpoints.get("x"));
         })
     }
@@ -280,7 +226,7 @@ class WindowingClass{
         //値の更新時に整数に丸め込むと全く更新されなくなる気がする。
         //Radiusイベント
         this.RadiusFlag=false;
-        this.EventSetHelper(this.CanvasContainer,"wheel",(e)=>{
+        this.EventSetHelper(this.HistgramSVG,"wheel",(e)=>{
             e.preventDefault();
             e.stopPropagation();
             if(this.RadiusFlag){
@@ -290,22 +236,20 @@ class WindowingClass{
                 const newvmin=this.currentcenter-newrange;
                 const newvmax=this.currentcenter+newrange;
                 this.CheckAndSetValues(newvmin,newvmax);
-                this.Redraw();
+                //this.Redraw();
             }
         });
         //Centerイベント
         this.CenterFlag=false;
-        this.EventSetHelper(this.CanvasContainer,"mousemove",(e)=>{
+        this.EventSetHelper(this.HistgramSVG,"mousemove",(e)=>{
             if(this.CenterFlag){
-                //CanvasContainerの実際の大きさを取得
-                const CanvasRect=this.CanvasContainer.getBoundingClientRect();
                 //console.log(CanvasRect.width);
-                const movement=(this.xmax-this.xmin)*(this.MouseTrack.get("current").get("x")-this.MouseTrack.get("previous").get("x"))/CanvasRect.width;
+                const movement=this.MouseTrack.get("current").get("x")-this.MouseTrack.get("previous").get("x");
                 //const newcenter=this.currentcenter+movement;
                 const newvmin=this.currentvMin+movement;
                 const newvmax=this.currentvMax+movement;
                 this.CheckAndSetValues(newvmin,newvmax);
-                this.Redraw();
+                //this.Redraw();
             }
         });
         //Inputにイベント設定
@@ -316,7 +260,7 @@ class WindowingClass{
             const newvmin=parseInt(this.MinValueInput.value);
             const newvmax=parseInt(this.MaxValueInput.value);
             this.CheckAndSetValues(newvmin,newvmax);
-            this.Redraw();
+            //this.Redraw();
         };
         this.EventSetHelper(this.MinValueInput,"keydown",(e)=>{
             if(e.code==="Enter"){
@@ -348,7 +292,7 @@ class WindowingClass{
             const newvmin=center-radius;
             const newvmax=center+radius;
             this.CheckAndSetValues(newvmin,newvmax);
-            this.Redraw();
+            //this.Redraw();
         };
         this.EventSetHelper(this.CenterValueInput,"keydown",(e)=>{
             if(e.code==="Enter"){
@@ -374,14 +318,33 @@ class WindowingClass{
         });
     }
     CheckAndSetValues(protvmin,protvmax){
+        /*
+        const vMin=Math.trunc(this.currentvMin*10)/10;
+        const vMax=Math.trunc(this.currentvMax*10)/10;
+        const center=Math.trunc(this.currentcenter*10)/10;
+        const radius=Math.trunc(this.currentradius*10)/10;
+        //this.textContainer.textContent=`${vMin} ~ ${vMax}`;
+        this.MinValueInput.value=vMin;
+        this.MaxValueInput.value=vMax;
+        this.CenterValueInput.value=center;
+        this.RadiusValueInput.value=radius;
+        */
         //新しい値を計算して境界チェック
-        const newvmin=Math.max(this.xmin,Math.min(protvmin,this.xmax));
-        const newvmax=Math.max(this.xmin,Math.min(protvmax,this.xmax));
+        const NewMin=Math.max(this.xmin,Math.min(protvmin,this.xmax));
+        const NewMax=Math.max(this.xmin,Math.min(protvmax,this.xmax));
+        const NewCenter=(NewMax+NewMin)/2;
+        const NewRadius=(NewMax-NewMin)/2;
+        console.log(NewMin,NewMax,NewCenter,NewRadius);
         //境界値を考慮した新しい値に更新
-        this.currentvMin=newvmin;
-        this.currentvMax=newvmax;
-        this.currentcenter=(newvmax+newvmin)/2;
-        this.currentradius=(newvmax-newvmin)/2;
+        this.currentvMin=NewMin;
+        this.currentvMax=NewMax;
+        this.currentcenter=NewCenter;
+        this.currentradius=NewRadius;
+        //入力欄には小数点１位まで表示する
+        this.MinValueInput.value=Math.trunc(NewMin*10)/10;
+        this.MaxValueInput.value=Math.trunc(NewMax*10)/10;
+        this.CenterValueInput.value=Math.trunc(NewCenter*10)/10;
+        this.RadiusValueInput.value=Math.trunc(NewRadius*10)/10;
     }
     setSubWindowCloseEvents(){
         //メインプロセスからサブウィンドウの終了連絡がきたときの処理

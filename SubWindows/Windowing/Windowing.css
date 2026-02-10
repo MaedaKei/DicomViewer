@@ -14,45 +14,66 @@ html, body {
   background-color: gray;
 }
 
-body #CanvasContainer{
+svg#HistgramSVG{
+  z-index: 0;
   --margin:5px;
   height:calc(100% - var(--margin) - var(--TextHeight));
   width:calc(100% - 2 * var(--margin));
-  position:relative;
   margin-left: var(--margin);
   margin-right: var(--margin);
-  margin-bottom: var(--margin);
+  /*margin-bottom: var(--margin);*/
+  background-color: rgb(53, 53, 53);
 }
-div#CanvasContainer canvas{
-  width:100%;
-  height:100%;
-  position:absolute;
-  top:0;
-  left:0;
-  z-index: 3;
+svg#HistgramSVG>path#HistgramPath{
+  z-index: 1;
+  stroke-width: 100px;
+  stroke:white;
+  fill:none;
+  display:inline;
+  pointer-events: none;
 }
-div#CanvasContainer canvas#histgramCanvas{
-  background:rgb(44, 44, 44);
-  z-index:1;
-}
-div#CanvasContainer canvas#lineCanvas{
-  background:transparent;
+svg#HistgramSVG>path#MinValueLine{
   z-index:2;
+  stroke-width: 1px;
+  stroke: blue;
+  fill:none;
+  pointer-events: none;
 }
-
-body div#TextContainer{
+svg#HistgramSVG>path#MaxValueLine{
+  z-index:2;
+  stroke-width: 1px;
+  stroke: red;
+  fill:none;
+  pointer-events: none;
+}
+svg#HistgramSVG>path#CenterValueLine{
+  z-index:2;
+  stroke-width: 1px;
+  stroke: green;
+  fill:none;
+  pointer-events: none;
+}
+svg#HistgramSVG>path#RadiusValueLine{
+  z-index:2;
+  stroke-width: 1px;
+  stroke: yellow;
+  fill:none;
+  pointer-events: none;
+}
+div#TextContainer{
   width:100%;
   height:var(--TextHeight);
   display: flex;
+  flex-direction: row;
 }
 
-body div#TextContainer div.InputBlock{
+div#TextContainer>div.InputBlock{
   width:25%;
   height:100%;
   display: flex;
   flex-direction: column;
 }
-body div#TextContainer div.InputBlock label{
+div#TextContainer>div.InputBlock>label{
   width:100%;
   flex:1;
   font-size:12px;
@@ -61,7 +82,19 @@ body div#TextContainer div.InputBlock label{
   border-left: 1px solid white;
   border-right: 1px solid white;
 }
-body div#TextContainer div.InputBlock input{
+div#TextContainer>div.InputBlock>label#MinValueLabel{
+  color:blue;
+}
+div#TextContainer>div.InputBlock>label#MaxValueLabel{
+  color:red;
+}
+div#TextContainer>div.InputBlock>label#CenterValueLabel{
+  color:green;
+}
+div#TextContainer>div.InputBlock>label#RadiusValueLabel{
+  color:yellow;
+}
+div#TextContainer>div.InputBlock>input{
   width:100%;
   flex:1;
   font-size:12px;
