@@ -2404,7 +2404,10 @@ class CONTOURclass{
         return NewPathArray;
         */
     }
-    /*適したレイヤーを生成する*/
+    /*
+    適したレイヤーを生成する
+    CONTOURはSVGに変更
+    */
     static LayerZindex=LayerPriorityMap.get(this.DataType);
     static GetNewLayer(NewLayerNeccessaryInfoMap){
         /*CONTOURはcanvasではなくSVGを使う*/

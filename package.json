@@ -1,6 +1,6 @@
 {
   "name": "dicomviewer",
-  "version": "2.5.11",
+  "version": "2.6.0",
   "description": "Image viewer for Dicom. built with Electron. presented by MaedaKei.",
   "main": "main.js",
   "scripts": {
