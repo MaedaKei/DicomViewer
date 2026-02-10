@@ -2582,7 +2582,7 @@ class CONTOURclass{
         const DicomDataInstance=DicomDataInfoMap.get("Data");
         const Mode=ReceivedDataBody.get("Mode");//"Select" or "Memory"
         const NewROIStatusSet=ReceivedDataBody.get("ROIStatusSet");
-        DicomDataInstance.ChangeROIStatusSet(data);//内部状態の変更
+        //DicomDataInstance.ChangeROIStatusSet(data);//内部状態の変更
         /*
         ChangeROIStatusSet(data){
             //this.ROISelectedStatusSetを更新する
