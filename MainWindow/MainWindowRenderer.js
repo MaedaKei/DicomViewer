@@ -3775,6 +3775,7 @@ class Canvas{
             const DicomDataWidth=DicomData.width;
             const DicomDataHeight=DicomData.height;
             const DicomDataDepth=DicomData.depth;
+            const DicomDataTypeClass=DicomData.constructor;
             /*未設定の場合に更新される*/
             /*基本的にCT,もしくはMASKのサイズに合わせる*/
             /*ただし、CTとMASKが同時に読み込まれたときはCT優先とする*/
@@ -3793,45 +3794,48 @@ class Canvas{
             this.Width=this.CanvasWidth;
             this.Height=this.CanvasHeight+16;
             //すでにこのDataTypeのLayerが存在するかのフラグ
-            if(this.LayerDataMap.has(DataType)){
-                //このDataTypeのレイヤーはすでに存在する
-                //データの差し替えを行う
+            const DataTypeLayerExistFlag=this.LayerDataMap.has(DataType);//すでにこのデータタイプのレイヤーが存在しているか
+            //SetLayerが呼ばれたとき、かならずレイヤーを新設する用に実装する
+            //既存レイヤーは削除してから新しいレイヤーを設置する
+            //しかし、コンテキストメニューの更新は新しいデータタイプが追加されたときのみ行う
+            if(DataTypeLayerExistFlag){
+                //すでにこのレイヤーが存在していた場合
+                //レイヤーの削除、参照数のデクリメント、LayerDataMapからの削除を行う
                 const OldDataID=this.LayerDataMap.get(DataType).get("DataID");
                 //参照数の更新
                 //古い参照をデクリメントして、新しい参照をインクリメントする
                 const OldDataMap=DicomDataClassDictionary.get(DataType).get(OldDataID);
                 OldDataMap.set("RefCount",OldDataMap.get("RefCount")-1);
-                DataMap.set("RefCount",DataMap.get("RefCount")+1);
-                //DataIDの更新
-                this.LayerDataMap.get(DataType).set("DataID",DataID);
                 //DicomDataDictionaryからデータを消すグローバル関数に、DataTypeとOldDataIDを渡して消去を試みる
                 //ここで消されても他のCanvasBlockで使われている可能性があるため、参照数が0の場合のみ消す
                 LoadAndLayout.TryDeleteDicomData(DataType,OldDataID);//関数名は仮決め
+                //LayerをDOMツリーから切り離して破棄する
+                const OldLayer=this.LayerDataMap.get(DataType).get("Layer");
+                OldLayer.remove();
+                //LayerDataMapからこのデータタイプの項を削除する
+                this.LayerDataMap.delete(DataType);
             }else{
-                //新しいDataTypeの場合はレイヤー生成へ
-                const DicomDataTypeClass=DicomData.constructor;
-                //const NewLayer=document.createElement("canvas");
-                //各データタイプクラスの方で自由にレイヤーを生成
-                const NewLayer=DicomDataTypeClass.GetNewLayer();
-                //各データタイプに固有の機能等を登録させる
+                //新しいデータタイプのレイヤーが追加された＝コンテキストメニューへの機能の追加が必要
                 DicomDataTypeClass.SetUniqueFunctions(CanvasID);
-                NewLayer.className="Canvas";
-                //NewLayer.style.zIndex=this.LayerZindexMap.get(DataType);
-                NewLayer.width=this.CanvasWidth;
-                NewLayer.height=this.CanvasHeight;
-                this.CanvasBlock.appendChild(NewLayer);
-                this.LayerDataMap.set(DataType,new Map([
-                    ["DataID",DataID],
-                    ["Layer",NewLayer]
-                ]));
-                //参照数の更新
-                DataMap.set("RefCount",DataMap.get("RefCount")+1);
-                //新しいレイヤーが追加された＝コンテキストメニューアクティブ化
-                //this.ActivateContextMenuButton(DataType);
-                //console.log(this.FromMainProcessToMainFunctions);
-                this.UpdateContextMenuSize();//新しくボタンが追加されるのでコンテキストメニューのサイズを変更する
             }
-            //this.Layerdraw(DataType);
+            //const NewLayer=document.createElement("canvas");
+            //各データタイプクラスの方で自由にレイヤーを生成
+            const NewLayer=DicomDataTypeClass.GetNewLayer();
+            NewLayer.className="Canvas";
+            //NewLayer.style.zIndex=this.LayerZindexMap.get(DataType);
+            NewLayer.width=this.CanvasWidth;
+            NewLayer.height=this.CanvasHeight;
+            this.CanvasBlock.appendChild(NewLayer);
+            this.LayerDataMap.set(DataType,new Map([
+                ["DataID",DataID],
+                ["Layer",NewLayer]
+            ]));
+            //参照数の更新
+            DataMap.set("RefCount",DataMap.get("RefCount")+1);
+            //新しいレイヤーが追加された＝コンテキストメニューアクティブ化
+            //this.ActivateContextMenuButton(DataType);
+            //console.log(this.FromMainProcessToMainFunctions);
+            this.UpdateContextMenuSize();//新しくボタンが追加されるのでコンテキストメニューのサイズを変更する
         }
     }
     Alldraw(){
