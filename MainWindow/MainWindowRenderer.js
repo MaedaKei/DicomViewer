@@ -426,9 +426,11 @@ class CTclass{
     }
     /*CT用のレイヤーを生成する*/
     static LayerZindex=LayerPriorityMap.get(this.DataType);
-    static GetNewLayer(){
+    static GetNewLayer(NewLayerNeccessaryInfoMap){
         const NewLayer=document.createElement("canvas");
         NewLayer.style.zIndex=this.LayerZindex;
+        NewLayer.width=NewLayerNeccessaryInfoMap.get("Width");
+        NewLayer.height=NewLayerNeccessaryInfoMap.get("Height");
         return NewLayer;
     }
     static SetUniqueFunctions(CanvasID){
@@ -1055,8 +1057,10 @@ class MASKclass{
     }
     /*適したレイヤーを生成する*/
     static LayerZindex=LayerPriorityMap.get(this.DataType);
-    static GetNewLayer(){
+    static GetNewLayer(NewLayerNeccessaryInfoMap){
         const NewLayer=document.createElement("canvas");
+        NewLayer.width=NewLayerNeccessaryInfoMap.get("Width");
+        NewLayer.height=NewLayerNeccessaryInfoMap.get("Height");
         NewLayer.style.zIndex=this.LayerZindex;
         return NewLayer;
     }
@@ -1863,8 +1867,10 @@ class MASKDIFFclass{
     }
     /*適したレイヤーを生成する*/
     static LayerZindex=LayerPriorityMap.get(this.DataType);
-    static GetNewLayer(){
+    static GetNewLayer(NewLayerNeccessaryInfoMap){
         const NewLayer=document.createElement("canvas");
+        NewLayer.width=NewLayerNeccessaryInfoMap.get("Width");
+        NewLayer.height=NewLayerNeccessaryInfoMap.get("Height");
         NewLayer.style.zIndex=this.LayerZindex;
         return NewLayer;
     }
@@ -2400,10 +2406,42 @@ class CONTOURclass{
     }
     /*適したレイヤーを生成する*/
     static LayerZindex=LayerPriorityMap.get(this.DataType);
-    static GetNewLayer(){
+    static GetNewLayer(NewLayerNeccessaryInfoMap){
         /*CONTOURはcanvasではなくSVGを使う*/
-        const NewLayer=document.createElement("canvas");
-        //const NewLayer=document.createElementNS(SVGNameSpace,"svg");
+        //const NewLayer=document.createElement("canvas");
+        const NewLayer=document.createElementNS(SVGNameSpace,"svg");
+        NewLayer.setAttribute("viewBox",`0 0 ${NewLayerNeccessaryInfoMap.get("Width")} ${NewLayerNeccessaryInfoMap.get("Height")}`);
+        const DataType=NewLayerNeccessaryInfoMap.get("DataType");
+        const DataID=NewLayerNeccessaryInfoMap.get("DataID");
+        const CONTOURDataInstance=DicomDataClassDictionary.get(DataType).get(DataID).get("Data");
+        /*
+        SVGなので、各輪郭ごとにpath要素を作成して追加していく
+        各Path要素にはclassNameとしてROINameを付与する
+        確認：輪郭データのデータ構造
+        this.ContourDataMap.set(ROIName,SortedROIContourDataMap);
+        ContourDataMap: Map {
+            ROIName: string => SortedROIContourDataMap: Map {
+                SliceIndex: int => SVGのd属性値文字列
+            }
+        }
+        */
+        const NewLayerFragment=document.createDocumentFragment();
+        for(const ROIName of CONTOURDataInstance.ContourDataMap.keys()){
+            //新しく作成したSVG要素にPath要素を追加しておく
+            const NewPathElement=document.createElementNS(SVGNameSpace,"path");
+            NewPathElement.setAttribute("class",ROIName);
+            //色の設定
+            const ROIHexColor=CONTOURDataInstance.ContourColorMap.get(ROIName);
+            const StrokeStyle=ROIHexColor+this.LineAlpha;
+            const FillStyle=ROIHexColor+this.FillAlpha;
+            NewPathElement.setAttribute("stroke",StrokeStyle);
+            NewPathElement.setAttribute("stroke-width",0.5);
+            NewPathElement.setAttribute("fill",FillStyle);
+            NewPathElement.setAttribute("fill-rule","evenodd");
+            NewPathElement.setAttribute("display","inline");
+            NewLayerFragment.appendChild(NewPathElement);
+        }
+        NewLayer.appendChild(NewLayerFragment);
         NewLayer.style.zIndex=this.LayerZindex;
         return NewLayer;
     }
@@ -2517,10 +2555,10 @@ class CONTOURclass{
             const ClickedPointY=Currentheight*(NewY/Rect.height)+Currenth0;
             //Maskclassに判定依頼、その場所のMaskValueが返ってくる
             const LayerData=CanvasInstance.LayerDataMap.get("CONTOUR");
-            const ctx=LayerData.get("Layer").getContext("2d");
+            const Layer=LayerData.get("Layer");
             const DataID=LayerData.get("DataID");
             const DicomDataInstance=DicomDataClassDictionary.get("CONTOUR").get(DataID).get("Data");
-            const ClickedROISet=DicomDataInstance.getClickedROISet(ctx,CurrentIndex,ClickedPointX,ClickedPointY);
+            const ClickedROISet=DicomDataInstance.getClickedROISet(Layer,CurrentIndex,ClickedPointX,ClickedPointY);
             const data=new Map([
                 ["action","CONTOURROIClicked"],
                 ["data",new Map([
@@ -2531,6 +2569,8 @@ class CONTOURclass{
             Canvas.PassChangesToSubWindow(data);
         }
     }
+    //可視化にしたいROIのSetを受け取って、表示状態を変更する
+    //すべてのPathを走査して、該当するROINameのPath要素の表示/非表示を切り替える
     static ChangeROIStatusSetFunction(data){
         const ReceivedDataBody=data.get("data");
         const CanvasID=ReceivedDataBody.get("CanvasID");
@@ -2541,13 +2581,62 @@ class CONTOURclass{
         const DicomDataInfoMap=DicomDataClassDictionary.get(DataType).get(DataID);
         const DicomDataInstance=DicomDataInfoMap.get("Data");
         const Mode=ReceivedDataBody.get("Mode");//"Select" or "Memory"
-        DicomDataInstance.ChangeROIStatusSet(data);
+        const NewROIStatusSet=ReceivedDataBody.get("ROIStatusSet");
+        DicomDataInstance.ChangeROIStatusSet(data);//内部状態の変更
+        /*
+        ChangeROIStatusSet(data){
+            //this.ROISelectedStatusSetを更新する
+            const ReceivedDataBody=data.get("data");
+            const Mode=ReceivedDataBody.get("Mode");//冗長かもしれないが、ほかのデータタイプなどの引数の形式に合わせたかったからここでもう一度Modeを取得する
+            const NewROIStatusSet=ReceivedDataBody.get("ROIStatusSet");
+            if(Mode==="Select"){
+                this.ROISelectStatusSet=NewROIStatusSet;
+            }else if(Mode==="Memory"){
+                this.ROIMemoryStatusSet=NewROIStatusSet;
+            }
+        }
+        */
+        if(Mode==="Select"){
+            DicomDataInstance.ROISelectStatusSet=NewROIStatusSet;
+            //レイヤーにアクセスしてdisplayの切り替え
+            const CONTOURSVGLayer=CanvasInstance.LayerDataMap.get(TargetLayer).get("Layer");//SVGのレイヤーにアクセス
+            const PathElements=CONTOURSVGLayer.children;//pathだけになってるはず
+            for(const Path of PathElements){
+                const ROIName=Path.getAttribute("class");
+                if(NewROIStatusSet.has(ROIName)){
+                    Path.setAttribute("display","inline");
+                }else{
+                    Path.setAttribute("display","none");
+                }
+            }
+        }else if(Mode==="Memory"){
+            DicomDataInstance.ROIMemoryStatusSet=NewROIStatusSet;
+        }
+        /*
         if(Mode==="Select"){
             //SelectStatusの変更だったら再描画必要
-            CanvasInstance.DrawStatus.set("regenerate",true);
+            CanvasInstance.DrawStatus.set("regenerate",true);//本来は必要ないが形式的な処理
             CanvasInstance.Layerdraw(TargetLayer);
         }
+        */
+        //Canvasクラスが保持するSVGにアクセスするのでdisplayの切り替えはこちらが担当する
+        /*
+        if(Mode==="Select"){
+            const CONTOURSVGLayer=CanvasInstance.LayerDataMap.get(TargetLayer).get("Layer");//SVGのレイヤーにアクセス
+            const PathElements=CONTOURSVGLayer.children;//pathだけになってるはず
+            const ROISelectStatusSet=DicomDataInstance.ROISelectStatusSet;
+            for(const Path of PathElements){
+                const ROIName=Path.getAttribute("class");
+                if(ROISelectStatusSet.has(ROIName)){
+                    Path.display="inline";
+                }else{
+                    Path.display="none";
+                }
+            }
+        }
+        */
     }
+    //ROIの選択状態を変更する関数
     static ChangeROISelectFunction(data){
         const ReceivedDataBody=data.get("data");
         const CanvasID=ReceivedDataBody.get("CanvasID");
@@ -2557,19 +2646,62 @@ class CONTOURclass{
         const DataID=CanvasInstance.LayerDataMap.get(TargetLayer).get("DataID");
         const DicomDataInfoMap=DicomDataClassDictionary.get(DataType).get(DataID);
         const DicomDataInstance=DicomDataInfoMap.get("Data");
+        const ROIName=ReceivedDataBody.get("ROIName");
+        const CONTOURSVGLayer=CanvasInstance.get(TargetLayer).get("Layer");
+        const ROIPathElement=CONTOURSVGLayer.getElementsByClassName(ROIName)[0];//HTMLCollection
+        const Selected=ReceivedDataBody.get("Selected");//trueなら追加、falseなら削除
+        if(Selected){
+            DicomDataInstance.ROISelectStatusSet.add(ROIName);
+            ROIPathElement.setAttribute("display","inline");
+            //出現スライスの最小値、最大値を取得する
+            const ROIContourDataMap=DicomDataInstance.ContourDataMap.get(ROIName);
+            const SliceIndexArray=Array.from(ROIContourDataMap.keys());
+            const MinIndex=SliceIndexArray[0];
+            const MaxIndex=SliceIndexArray[SliceIndexArray.length-1];
+            const CurrentIndex=CanvasInstance.DrawStatus.get("index");
+            const CenterIndex=[MinIndex,CurrentIndex,MaxIndex].sort((a,b)=>a-b)[1];
+            const JunpIndex=MinIndex;
+            if(CurrentIndex!==JunpIndex){
+                CanvasInstance.slider.dispatchEvent(new Event("input"));
+            }
+        }else{
+            DicomDataInstance.ROISelectStatusSet.delete(ROIName);
+            ROIPathElement.setAttribute("display","none");
+        }
         //指定されたROINameを選択状態集合に追加/削除する。その後、その組織の出現するスライスの最大値と最小値を返す
+        /*
+        ChangeROISelect(data){
+            const ReceivedDataBody=data.get("data");
+            const ROIName=ReceivedDataBody.get("ROIName");
+            const Selected=ReceivedDataBody.get("Selected");//trueなら追加、falseなら削除
+            if(Selected){
+                this.ROISelectStatusSet.add(ROIName);
+            }else{
+                this.ROISelectStatusSet.delete(ROIName);
+            }
+            //このROINameが存在するスライスの最小値、最大値を返す
+            const ROIContourDataMap=this.ContourDataMap.get(ROIName);
+            const SliceIndexArray=Array.from(ROIContourDataMap.keys());
+            //console.log("SliceIndexArray",SliceIndexArray);
+            //現時点ではKeyは昇順に並んでおらず、どうやら降順に並んでいるようだ
+            const MinIndex=SliceIndexArray[0];
+            const MaxIndex=SliceIndexArray[SliceIndexArray.length-1];
+            return [MinIndex,MaxIndex];
+        */
+
         const [MinIndex,MaxIndex]=DicomDataInstance.ChangeROISelect(data);
         const CurrentIndex=CanvasInstance.DrawStatus.get("index");//現在のスライスインデックスになっているはず
-        const Selected=ReceivedDataBody.get("Selected");//trueなら追加、falseなら削除
         const CenterIndex=[MinIndex,CurrentIndex,MaxIndex].sort((a,b)=>a-b)[1];
         const JunpIndex=MinIndex;//範囲外のとき、その組織の先頭スライスに移動する。最大知か最小値のどちらかに近いほうにジャンプする方法では、どちら側に輪郭が続くかわかりづらいので、常に最小値にジャンプする方法をとる。
         /*
+        canvas版
         再描画の方法は二つ
         1．CONTOURレイヤーのみの再描画⇒削除時、現在のスライスが範囲内にあるとき or 追加時、現在のスライスが範囲内にあるとき
         2．全レイヤーの再描画⇒追加時、現在のスライスが範囲外のとき、最大値と最小値の近いほうにジャンプする
         つまり、現在のスライスが範囲内にあるときかならず層のみの再描画を行う
         範囲外のとき、Select時のみジャンプを走らせる
         */
+        /*
         if(CurrentIndex===CenterIndex){
             //範囲内
             CanvasInstance.DrawStatus.set("regenerate",true);
@@ -2583,9 +2715,17 @@ class CONTOURclass{
                 Slider.dispatchEvent(new Event("input"));    
             }
         }
+        */
+        /*
+        svg版
+        displayの切り替え
+        */
+        
                 
     }
     //Contour専用のカラーマップ生成関数
+    static LineAlpha=Math.round(255*0.8).toString(16).padStart(2,"0");
+    static FillAlpha=Math.round(255*0.2).toString(16).padStart(2,"0");
     static hsv2rgb(h,s=1,v=1){
         // 引数処理
         h = (h < 0 ? h % 360 + 360 : h) % 360 / 60;
@@ -2700,13 +2840,15 @@ class CONTOURclass{
                 const StartPatientY=ContourData[1];
                 const StartX=(this.width-1)*(StartPatientX-this.xMin)/(this.xMax-this.xMin);
                 const StartY=(this.height-1)*(StartPatientY-this.yMin)/(this.yMax-this.yMin);
+                /*
+                canvas版用のPath2D生成方法
                 const ContourPath=new Path2D();
                 ContourPath.moveTo(StartX,StartY);
                 for(let BaseIndex=3;BaseIndex<ContourData.length;BaseIndex+=3){//始点の次の点から
                     const PatientX=ContourData[BaseIndex];
                     const PatientY=ContourData[BaseIndex+1];
                     //const PatientZ=ContourData[BaseIndex+2];
-                    /*画像座標系に変換*/
+                    //画像座標系に変換
                     const X=(this.width-1)*(PatientX-this.xMin)/(this.xMax-this.xMin);
                     const Y=(this.height-1)*(PatientY-this.yMin)/(this.yMax-this.yMin);
                     ContourPath.lineTo(X,Y);
@@ -2716,6 +2858,27 @@ class CONTOURclass{
                 if(ROIContourDataMap.has(Z)){
                     const ExistingZPath=ROIContourDataMap.get(Z);
                     ExistingZPath.addPath(ContourPath);//すでにこの組織のZの輪郭があるので、そこにまとめる
+                }else{//初めてのZ
+                    ROIContourDataMap.set(Z,ContourPath);
+                }
+                */
+                //SVG版のPathData文字列を生成する方法
+                //SVGでは、d属性に直接PathData文字列を与えることでPath要素の線を変更できる
+                let ContourPath=`M ${StartX} ${StartY} `;
+                for(let BaseIndex=3;BaseIndex<ContourData.length;BaseIndex+=3){//始点の次の点から
+                    const PatientX=ContourData[BaseIndex];
+                    const PatientY=ContourData[BaseIndex+1];
+                    //const PatientZ=ContourData[BaseIndex+2];
+                    //画像座標系に変換
+                    const X=(this.width-1)*(PatientX-this.xMin)/(this.xMax-this.xMin);
+                    const Y=(this.height-1)*(PatientY-this.yMin)/(this.yMax-this.yMin);
+                    ContourPath+=`L ${X} ${Y} `;
+                }
+                ContourPath+="Z ";
+                //このROIの輪郭をまとめるROIContourDataMapにZをkeyとして登録する
+                if(ROIContourDataMap.has(Z)){
+                    const ExistingZPath=ROIContourDataMap.get(Z);
+                    ROIContourDataMap.set(Z,ExistingZPath+ContourPath);//すでにこの組織のZの輪郭があるので、そこにまとめる
                 }else{//初めてのZ
                     ROIContourDataMap.set(Z,ContourPath);
                 }
@@ -2732,8 +2895,6 @@ class CONTOURclass{
         const ROINameList=Array.from(this.ContourDataMap.keys());
         const ROINum=ROINameList.length;
         this.ContourColorMap=new Map();//{ROIName:"#RRBBGGAA"}
-        this.LineAlpha=Math.round(255*0.8).toString(16).padStart(2,"0");
-        this.FillAlpha=Math.round(255*0.2).toString(16).padStart(2,"0");
         const TextWidthMesureCanvas=document.createElement("canvas");
         /*
         const TextWidthMesureCanvasWidthCTX=TextWidthMesureCanvas.getContext("2d");
@@ -2754,6 +2915,8 @@ class CONTOURclass{
         //console.log(this.ContourColorMap);
         //console.log(this.ContourDataMap);
     }
+    //canvas版の描画関数
+    
     async draw(canvas,DrawStatus){
         const ctx=canvas.getContext("2d");
         ctx.imageSmoothingEnabled=false;
@@ -2782,8 +2945,37 @@ class CONTOURclass{
         }
         ctx.restore();
     }
+    
+    //SVG版の描画関数
+    //拡大縮小・スライス移動時に呼ばれる
+    //各組織の可視化状態の切り替えはサブウィンドウ側から受信した関数で行う
+    //このメソッド内ではdisplay:noneなどのスタイル変更は行わない
+    async draw(svg,DrawStatus){
+        const index=DrawStatus.get("index");
+        const sx=DrawStatus.get("w0");
+        const sy=DrawStatus.get("h0");
+        const width=DrawStatus.get("width");
+        const height=DrawStatus.get("height");
+        //viewBoxを更新することで座標系の移動・拡縮を実現する
+        svg.setAttribute("viewBox",`${sx} ${sy} ${width} ${height}`);
+        //輪郭の描画
+        //全ての輪郭のd属性を更新する
+        //スライスが存在しない場合はd属性を空にする
+        const PathElements=svg.children;//全てPathのはず
+        for(const PathElement of PathElements){
+            const ROIName=PathElement.getAttribute("class");
+            const ROIContourDataMap=this.ContourDataMap.get(ROIName);
+            //このスライスに輪郭データが存在するか
+            let AttributeD="";
+            if(ROIContourDataMap.has(index)){
+                AttributeD=ROIContourDataMap.get(index);//d属性値文字列
+            }
+            PathElement.setAttribute("d",AttributeD);
+        }
+    }
+    /*
     ChangeROIStatusSet(data){
-        /*this.ROISelectedStatusSetを更新する*/
+        //this.ROISelectedStatusSetを更新する
         const ReceivedDataBody=data.get("data");
         const Mode=ReceivedDataBody.get("Mode");//冗長かもしれないが、ほかのデータタイプなどの引数の形式に合わせたかったからここでもう一度Modeを取得する
         const NewROIStatusSet=ReceivedDataBody.get("ROIStatusSet");
@@ -2793,6 +2985,8 @@ class CONTOURclass{
             this.ROIMemoryStatusSet=NewROIStatusSet;
         }
     }
+    */
+    /*
     ChangeROISelect(data){
         const ReceivedDataBody=data.get("data");
         const ROIName=ReceivedDataBody.get("ROIName");
@@ -2811,6 +3005,8 @@ class CONTOURclass{
         const MaxIndex=SliceIndexArray[SliceIndexArray.length-1];
         return [MinIndex,MaxIndex];
     }
+    */
+    /*canvas版のクリックヒットチェックメソッド
     getClickedROISet(ctx,Z,X,Y){
         //console.log("ClicekdXY",X,Y);
         //現在のthis.ROISelectStatusSet内にあるROIに対して判定を行う
@@ -2823,6 +3019,25 @@ class CONTOURclass{
                 if(ctx.isPointInPath(ContourPath,X,Y,"evenodd")){
                     //含まれる
                     ClickedROISet.add(ROIName);
+                }
+            }
+        }
+        return ClickedROISet;
+    }
+    */
+    getClickedROISet(svg,Z,X,Y){
+        const PathElementArray=svg.children;//pathだけのはず
+        const ClickedPoint=new DOMPoint(X,Y);
+        const ClickedROISet=new Set();
+        for(const Path of PathElementArray){
+            const ROIName=Path.getAttribute("class");
+            if(this.ROISelectStatusSet.has(ROIName)){
+                const ROIContourDataMap=this.ContourDataMap.get(ROIName);
+                if(ROIContourDataMap.has(Z)){
+                    //現在表示中のPathがこのZの輪郭である
+                    if(Path.isPointInFill(ClickedPoint)){
+                        ClickedROISet.add(ROIName);
+                    }
                 }
             }
         }
@@ -3820,11 +4035,22 @@ class Canvas{
             }
             //const NewLayer=document.createElement("canvas");
             //各データタイプクラスの方で自由にレイヤーを生成
-            const NewLayer=DicomDataTypeClass.GetNewLayer();
-            NewLayer.className="Canvas";
+            //width,heightは座標系のサイズ。canvas系統はこれらの二つだけ関数内で衣装する。
+            // SVG系統は輪郭のDOMを追加するためDataType,DataIDも必要。
+            // どのようなレイヤーを生成するかはDataTypeごとに異なるため、各クラスの静的メソッドで生成させる
+            // どの引数を使うかも各クラスの静的メソッドに委ねる
+            const NewLayerNeccessaryInfoMap=new Map([
+                ["Width",this.CanvasWidth],
+                ["Height",this.CanvasHeight],
+                ["DataType",DataType],
+                ["DataID",DataID],
+                ["CanvasID",CanvasID]
+            ]);
+            const NewLayer=DicomDataTypeClass.GetNewLayer(NewLayerNeccessaryInfoMap);
+            NewLayer.setAttribute("class","Canvas");
             //NewLayer.style.zIndex=this.LayerZindexMap.get(DataType);
-            NewLayer.width=this.CanvasWidth;
-            NewLayer.height=this.CanvasHeight;
+            //NewLayer.width=this.CanvasWidth;
+            //NewLayer.height=this.CanvasHeight;
             this.CanvasBlock.appendChild(NewLayer);
             this.LayerDataMap.set(DataType,new Map([
                 ["DataID",DataID],
