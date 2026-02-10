@@ -2647,9 +2647,10 @@ class CONTOURclass{
         const DicomDataInfoMap=DicomDataClassDictionary.get(DataType).get(DataID);
         const DicomDataInstance=DicomDataInfoMap.get("Data");
         const ROIName=ReceivedDataBody.get("ROIName");
-        const CONTOURSVGLayer=CanvasInstance.get(TargetLayer).get("Layer");
+        const CONTOURSVGLayer=CanvasInstance.LayerDataMap.get(TargetLayer).get("Layer");
         const ROIPathElement=CONTOURSVGLayer.getElementsByClassName(ROIName)[0];//HTMLCollection
         const Selected=ReceivedDataBody.get("Selected");//trueなら追加、falseなら削除
+        //console.log(ROIPathElement);
         if(Selected){
             DicomDataInstance.ROISelectStatusSet.add(ROIName);
             ROIPathElement.setAttribute("display","inline");
@@ -2661,7 +2662,8 @@ class CONTOURclass{
             const CurrentIndex=CanvasInstance.DrawStatus.get("index");
             const CenterIndex=[MinIndex,CurrentIndex,MaxIndex].sort((a,b)=>a-b)[1];
             const JunpIndex=MinIndex;
-            if(CurrentIndex!==JunpIndex){
+            if(CurrentIndex!==CenterIndex){
+                CanvasInstance.slider.value=JunpIndex;
                 CanvasInstance.slider.dispatchEvent(new Event("input"));
             }
         }else{
@@ -2688,11 +2690,6 @@ class CONTOURclass{
             const MaxIndex=SliceIndexArray[SliceIndexArray.length-1];
             return [MinIndex,MaxIndex];
         */
-
-        const [MinIndex,MaxIndex]=DicomDataInstance.ChangeROISelect(data);
-        const CurrentIndex=CanvasInstance.DrawStatus.get("index");//現在のスライスインデックスになっているはず
-        const CenterIndex=[MinIndex,CurrentIndex,MaxIndex].sort((a,b)=>a-b)[1];
-        const JunpIndex=MinIndex;//範囲外のとき、その組織の先頭スライスに移動する。最大知か最小値のどちらかに近いほうにジャンプする方法では、どちら側に輪郭が続くかわかりづらいので、常に最小値にジャンプする方法をとる。
         /*
         canvas版
         再描画の方法は二つ
