@@ -3515,12 +3515,12 @@ class DOSEclass{
     }
     //サブウィンドウから階調幅が送られてきたときの動き
     static ChangeDOSEWindowingFunction(data){
-        //console.log("関数の実態に到達");
+        console.log("関数の実態に到達");
         const ReceivedDataBody=data.get("data");
         const CanvasID=ReceivedDataBody.get("CanvasID");
         const CanvasInstance=CanvasClassDictionary.get(CanvasID);
-        /*
         const TargetLayer=ReceivedDataBody.get("Layer");
+        /*
         const DataType=TargetLayer;
         const DataID=CanvasInstance.LayerDataMap.get(TargetLayer).get("DataID");
         const DataInfoMap=DicomDataClassDictionary.get(DataType).get(DataID);
@@ -3528,7 +3528,6 @@ class DOSEclass{
         */
         this.ChangeDOSEWindowing(data);//全DOSEで共通にする予定なので静的メソッドとして実装している。CT画像の階調はあくまで見やすくするためのもので、各画像ごとに固有に設定する必要があるためインスタンスメソッドとしている
         CanvasInstance.DrawStatus.set("regenerate",true);
-        //console.log("あとは再描画だけ");
         CanvasInstance.Layerdraw(TargetLayer);
     }
     static ChangeDOSEWindowing(data){
@@ -3684,6 +3683,7 @@ class DOSEclass{
         //最大値と最小値も調べておく
         let vMin=Infinity;
         let vMax=(-Infinity);
+        const histgram=new Map();//MASKのカラーマップ生成時の情報にも使える
         for(let CTZindex=0;CTZindex<this.depth;CTZindex++){
             const CTZPosition=this.i2p.get(CTZindex);
             if(MinDOSEZPosition<=CTZPosition&&CTZPosition<=MaxDOSEZPosition){
@@ -3770,6 +3770,13 @@ class DOSEclass{
                                     vMax=DoseValue;
                                 }
                                 this.ImageVolume[(CTZindex*this.height+CTHindex)*this.width+CTWindex]=DoseValue;
+                                //ヒストグラムに追加。四捨五入した値で集計してデータ圧縮
+                                const Key=Math.round(DoseValue);
+                                if(histgram.has(Key)){
+                                    histgram.set(Key,histgram.get(Key)+1);
+                                }else{
+                                    histgram.set(Key,1);
+                                }
                             }
                         }
                     }
@@ -3780,6 +3787,9 @@ class DOSEclass{
         this.vMin=vMin;
         this.vMax=vMax;
         console.log(vMin,vMax);
+        this.histgram=new Map(
+            [...histgram.entries()].sort((a,b)=>a[0]-b[0])
+        );
     }
     async draw(canvas,DrawStatus){
         const ctx=canvas.getContext("2d");
@@ -3807,7 +3817,6 @@ class DOSEclass{
         }
     }
     CreateImageBitmap(index){
-        //console.log("CTクラスだよ");
         const rgbArray=new Uint8ClampedArray(this.imagesize*4);
         for(let i=0;i<this.imagesize;i++){
             const baseindex=i*4;

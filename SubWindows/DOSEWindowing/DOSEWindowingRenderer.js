@@ -1,0 +1,403 @@
+//CTWindowingRenderer.js
+//CTWindowingのサブウィンドウのレンダラー
+//ヒストグラムとCTWindowingの操作を行う
+//rangeは半径とする
+console.log("DOSEWindowingRenderer.js loaded");
+class DOSEWindowingClass{
+    constructor(SendingData){
+        this.HistgramSVG=document.getElementById("HistgramSVG");//これにマウスイベントを設置する
+        const HistgramPath=document.getElementById("HistgramPath");
+        this.LowerLimitDoseLine=document.getElementById("LowerLimitDoseLine");
+        this.TargetDoseLine=document.getElementById("TargetDoseLine");
+
+        this.TargetDoseGyInput=document.getElementById("TargetDoseGyInput");
+        this.LowerLimitDoseGyInput=document.getElementById("LowerLimitDoseGyInput");
+        this.LowerLimitDoseParcentageInput=document.getElementById("LowerLimitDoseParcentageInput");
+        //this.textContainer=document.getElementById("TextContainer");
+        //持っておきたい変数
+        //現在の下限上限
+        //現在の中央値と半径
+        //オリジナルの下限上限
+        //this.header=SendingData.get("header");//Mainのターゲットを特定するために使う。
+        const ReceivedDataBody=SendingData.get("data");
+        this.TargetCanvasID=ReceivedDataBody.get("CanvasID");
+        this.TargetLayer=ReceivedDataBody.get("Layer");
+        const TargetDose=ReceivedDataBody.get("TargetDose");
+        const LowerLimitDose=ReceivedDataBody.get("LowerLimitDose");
+        console.log(TargetDose,LowerLimitDose);
+        //マウスホイールやパンではあくまでパーセンテージを維持したまま移動することにする
+        this.CurrentTargetDoseGy=TargetDose;
+        this.CurrentLowerLimitDoseGy=LowerLimitDose;//元の数値
+        this.CurrentLowerLimitDoseParcentage=LowerLimitDose/TargetDose;//比率
+        console.log("Initalize",this.CurrentLowerLimitDoseParcentage);
+        this.TargetDoseGyInput.value=Math.trunc(TargetDose*100)/100;
+        this.LowerLimitDoseGyInput.value=Math.trunc(LowerLimitDose*100)/100;
+        this.LowerLimitDoseParcentageInput.value=Math.trunc(LowerLimitDose/TargetDose*10000)/100;//小数第二位まで％を表示する
+        console.log(this.LowerLimitDoseParcentageInput.value);
+        /*それぞれのキャンバスに描画*/
+        /*ヒストグラム描画開始*/
+        const OriginalHistgram=ReceivedDataBody.get("histgram");
+        //console.log(OriginalHistgram);
+        const XArray=Array.from(OriginalHistgram.keys());
+        this.xmin=XArray[0];
+        this.xmax=XArray[XArray.length-1];
+        //console.log(this.xmin,this.xmax);
+        let ymin=Infinity,ymax=-Infinity;
+        const YArray=Array.from(OriginalHistgram.values()).map((OriginalY)=>{
+            const ScaledY=Math.log(OriginalY+500);
+            if(ymin>ScaledY){
+                ymin=ScaledY;
+            }
+            if(ymax<ScaledY){
+                ymax=ScaledY;
+            }
+            return ScaledY;
+        });
+        this.ymin=ymin;
+        this.ymax=ymax;
+        //内部座標大きすぎると見にくくなるのである程度圧縮する
+        //viewBoxを設定
+        //SVGの座標系は上から下、右から左なので、数学的な座標系に合うようにする
+        //console.log(this.ymin,this.ymax);
+        this.HistgramSVG.setAttribute("viewBox",`${this.xmin} ${this.ymin} ${this.xmax-this.xmin} ${this.ymax-this.ymin}`);
+        //console.log(this.xmin,this.ymin,this.xmax-this.xmin,this.ymax-this.ymin);
+        //console.log(this.HistgramSVG.getAttribute("viewBox"));
+        const YmaxPlusYmin=this.ymax+this.ymin;
+        let HistgramAttributeText=`M ${XArray[0]} ${YmaxPlusYmin-YArray[0]} `;
+        for(let i=1;i<XArray.length;i++){
+            const X=XArray[i];
+            const Y=YmaxPlusYmin-YArray[i];
+            HistgramAttributeText+=`L ${X} ${Y} `;
+            ///console.log(i,HistgramPoint[1]);
+        }
+        HistgramPath.setAttribute("d",HistgramAttributeText);
+        //各線の初期化
+        this.TargetDoseLine.setAttribute("x1",this.CurrentTargetDoseGy);
+        this.TargetDoseLine.setAttribute("x2",this.CurrentTargetDoseGy);
+        this.TargetDoseLine.setAttribute("y1",this.ymin);
+        this.TargetDoseLine.setAttribute("y2",this.ymax);
+
+        this.LowerLimitDoseLine.setAttribute("x1",this.CurrentLowerLimitDoseGy);
+        this.LowerLimitDoseLine.setAttribute("x2",this.CurrentLowerLimitDoseGy);
+        this.LowerLimitDoseLine.setAttribute("y1",this.ymin);
+        this.LowerLimitDoseLine.setAttribute("y2",this.ymax);
+
+        //イベントとエレメントの紐づけを記録しておくMap
+        this.ElementsWithEvents=new Map();
+        this.setObserverEvents();
+        this.setUserEvents();
+        this.setSubWindowCloseEvents();
+        /*
+        const header=new Map([
+            ["CanvasID",this.id.get("CanvasID")],
+            ["Layer",targetLayer],
+            ["action",action],
+            ["MultiUseLayerMode",MultiUseLayerMode],
+        ]);
+        */
+       /*
+        this.FromSubToMainProcessData=new Map([
+            ["header",this.header],
+            ["body",new Map([["vMin",this.currentvMin],["vMax",this.currentvMax]])]
+        ]);
+        */
+        //描画処理は一番最後
+        //this.Redraw();
+        //見切れないように調整
+        window.SubWindowMoveAPI();
+    }
+
+    FlagManager(){
+        //マウスホイールによるRadiusの操作
+        //Canvas内にマウスがあればよい
+        if(this.mouseenter){
+            this.LowerLimitDoseParcentageChangeFlag=true;
+        }else{
+            this.LowerLimitDoseParcentageChangeFlag=false;
+        }
+        //ドラッグ＆ドロップによるCenterの操作
+        //curretnvminとcurrentvmaxの間にマウスがあればよい
+        //マウスが右クリックされている間
+        //押された瞬間に条件を満たしていれば話すまでは動作するものとする
+        if(this.mouseenter&&this.mouseClicked.get(0)){
+            const currentX=this.MouseTrack.get("current").get("x");
+            //console.log(this.currentvMin,currentX,this.currentvMax);
+            /*
+            if(this.currentvMin<currentX&&currentX<this.currentvMax){
+                this.CenterFlag=true;
+            }
+            */
+            this.TargetDoseGyChangeFlag=true;
+        }else{
+            this.TargetDoseGyChangeFlag=false;
+        }
+    }
+
+
+    setObserverEvents(){
+        /*イベント関連のフラグ*/
+        //マウスホイール、キーダウンを監視
+        this.mouseenter=false;
+        this.pressedkey=new Map();//押されたキーにTrueを入れる、押されなくなったらdelateする
+        this.mouseClicked=new Map();
+        this.MouseTrack=new Map([
+            ["previous",new Map()],
+            ["current",new Map()]
+        ]);
+
+        /*イベントマネージャーユーザーの監視*/
+        /*Canvasとラップdivの大きさは常に同じにする。そして、画像のズームパン、ローカルスライスやアラインはdivに紐づける*/
+        //マウスの位置はcanvas内=CanvasBlockに入っているかで考える
+        this.EventSetHelper(this.HistgramSVG,"mouseenter",(e)=>{
+            this.mouseenter=true;
+            //CanvasBlockにフォーカスさせる
+            e.target.focus();
+            //console.log("mouseenter",this.mouseenter);
+            this.FlagManager();
+        });
+
+        this.EventSetHelper(this.HistgramSVG,"mouseleave",(e)=>{
+            //CanvasBlockからフォーカスを外す
+            this.mouseenter=false;
+            //その他の監視変数も初期状態に戻す
+            this.pressedkey.clear();
+            this.mouseClicked.clear();
+            this.MouseTrack.get("previous").clear();
+            this.MouseTrack.get("current").clear();
+            //フォーカスを外す
+            e.target.blur();
+            this.FlagManager();
+        });
+        //キーボードが押されているかを監視
+        //キーボードが押されっぱなしのときは一定間隔で連続発火する。
+        /*
+        this.EventSetHelper(this.CanvasContainer,"keydown",(e)=>{
+            this.pressedkey.set(e.code,true);
+            //console.log(this.pressedkey);
+            this.FlagManager();
+        });
+        this.EventSetHelper(this.CanvasContainer,"keyup",(e)=>{
+            this.pressedkey.delete(e.code);
+            //console.log(this.pressedkey);
+            this.FlagManager();
+        });
+        */
+        //マウスの動き監視
+        //マウスが押されたときにFlagManegerを読んでCenterイベントが動けるか確かめる。
+        this.EventSetHelper(this.HistgramSVG,"mousedown",(e)=>{
+            this.mouseClicked.set(e.button,true);
+            //console.log(this.mouseClicked);
+            this.FlagManager();
+        });
+        this.EventSetHelper(this.HistgramSVG,"mouseup",(e)=>{
+            this.mouseClicked.delete(e.button);
+            //console.log(this.mouseClicked);
+            this.FlagManager();
+        });
+
+        this.EventSetHelper(this.HistgramSVG,"mousemove",(e)=>{
+            //座標を更新
+            //console.log(e.target);
+            const oldpoints=this.MouseTrack.get("previous");
+            const newpoints=this.MouseTrack.get("current");
+            oldpoints.set("x",newpoints.get("x"));
+            oldpoints.set("y",newpoints.get("y"));
+            const pt=this.HistgramSVG.createSVGPoint();
+            pt.x=e.clientX;
+            pt.y=e.clientY;
+            //console.log(e.clientX,e.clientY);
+            //console.log(e.offsetX,e.offsetY);
+            const NewPoint=pt.matrixTransform(this.HistgramSVG.getScreenCTM().inverse());
+            //console.log(NewPoint);
+            newpoints.set("x",NewPoint.x);
+            newpoints.set("y",NewPoint.y);
+            //console.log(newpoints.get("x"));
+        });
+    }
+    setUserEvents(){
+        //値の更新時に整数に丸め込むと全く更新されなくなる気がする。
+        //Radiusイベント
+        this.LowerLimitDoseParcentageChangeFlag=false;
+        this.EventSetHelper(this.HistgramSVG,"wheel",(e)=>{
+            e.preventDefault();
+            e.stopPropagation();
+            if(this.LowerLimitDoseParcentageChangeFlag){
+                //2%刻みの変動
+                const changevalue=Math.sign(e.deltaY)*0.02;//下に回すと正、下に回すと半径を絞りたいので逆転
+                const NewLowerLimitDoseParcentage=Math.max(0,Math.min(this.CurrentLowerLimitDoseParcentage+changevalue,1));//0~100%の間で変動
+                //新しい半径で計算する
+                //const newvmin=this.currentcenter-newrange;
+                //const newvmax=this.currentcenter+newrange;
+                const NewTargetDoseGy=this.CurrentTargetDoseGy;
+                const NewLowerLimitDoseGy=NewTargetDoseGy*NewLowerLimitDoseParcentage;
+                this.CheckAndSetValues(NewTargetDoseGy,NewLowerLimitDoseGy);
+                //this.Redraw();
+            }
+        });
+        //Centerイベント
+        this.TargetDoseGyChangeFlag=false;
+        this.EventSetHelper(this.HistgramSVG,"mousemove",(e)=>{
+            if(this.TargetDoseGyChangeFlag){
+                //console.log(CanvasRect.width);
+                const movement=this.MouseTrack.get("current").get("x")-this.MouseTrack.get("previous").get("x");
+                //const newcenter=this.currentcenter+movement;
+                const NewTargetDoseGy=this.CurrentTargetDoseGy+movement;
+                const NewLowerLimitDoseGy=NewTargetDoseGy*this.CurrentLowerLimitDoseParcentage;
+                this.CheckAndSetValues(NewTargetDoseGy,NewLowerLimitDoseGy);
+                //this.Redraw();
+            }
+        });
+        //Inputにイベント設定
+        //入力による値は、Enterが押された後に確定するものとする。
+        //フォーカスが外れても反映されるようにする
+        //スピンボタンは無効化されているのでよし
+        /*TargetDoseGyInput*/
+        const TargetDoseGyInputFunction=()=>{
+            //const newvmin=parseInt(this.MinValueInput.value);
+            //const newvmax=parseInt(this.MaxValueInput.value);
+            const NewTargetDoseGy=parseFloat(this.TargetDoseGyInput.value);
+            const NewLowerLimitDoseGy=NewTargetDoseGy*this.CurrentLowerLimitDoseParcentage;
+            this.CheckAndSetValues(NewTargetDoseGy,NewLowerLimitDoseGy);
+            //this.Redraw();
+        };
+        this.EventSetHelper(this.TargetDoseGyInput,"keydown",(e)=>{
+            if(e.code==="Enter"){
+                TargetDoseGyInputFunction();
+            }
+        });
+        this.EventSetHelper(this.TargetDoseGyInput,"blur",()=>{
+            TargetDoseGyInputFunction();
+        });
+        this.EventSetHelper(this.TargetDoseGyInput,"focus",()=>{
+            this.TargetDoseGyInput.select();
+        });
+        /*LowerLimitDoseGyInput*/
+        const LowerLimitDoseGyInputFunction=()=>{
+            const NewTargetDoseGy=this.CurrentTargetDoseGy;
+            const NewLowerLimitDoseGy=parseFloat(this.LowerLimitDoseGyInput.value);
+            this.CheckAndSetValues(NewTargetDoseGy,NewLowerLimitDoseGy);
+        }
+        this.EventSetHelper(this.LowerLimitDoseGyInput,"keydown",(e)=>{
+            if(e.code==="Enter"){
+                LowerLimitDoseGyInputFunction();
+            }
+        });
+        this.EventSetHelper(this.LowerLimitDoseGyInput,"blur",()=>{
+            LowerLimitDoseGyInputFunction();
+        });
+        this.EventSetHelper(this.LowerLimitDoseGyInput,"focus",()=>{
+            this.LowerLimitDoseGyInput.select();
+        });
+        /*LowerLimitDoseParcentageInput*/
+        const LowerLimitDoseGyParcentageFunction=()=>{
+            const NewTargetDoseGy=this.CurrentTargetDoseGy;
+            const NewLowerLimitDoseParcentage=parseFloat(this.LowerLimitDoseParcentageInput.value)/100;//%
+            const NewLowerLimitDoseGy=NewTargetDoseGy*NewLowerLimitDoseParcentage;
+            this.CheckAndSetValues(NewTargetDoseGy,NewLowerLimitDoseGy);
+        };
+        this.EventSetHelper(this.LowerLimitDoseParcentageInput,"keydown",(e)=>{
+            if(e.code==="Enter"){
+                LowerLimitDoseGyParcentageFunction();
+            }
+        });
+        this.EventSetHelper(this.LowerLimitDoseParcentageInput,"blur",()=>{
+            LowerLimitDoseGyParcentageFunction();
+        });
+        this.EventSetHelper(this.LowerLimitDoseParcentageInput,"focus",()=>{
+            this.LowerLimitDoseParcentageInput.select();
+        });
+    }
+    CheckAndSetValues(NewTargeDoseGy,NewLowerLimitDoseGy){
+        console.log(NewTargeDoseGy,NewLowerLimitDoseGy);
+        //TargetDoseGyのチェック
+        let TargetDoseGy;
+        if(Number.isFinite(NewTargeDoseGy)){
+            TargetDoseGy=Math.max(this.xmin,Math.min(NewTargeDoseGy,this.xmax));//最大値を超えていないか
+        }else{
+            TargetDoseGy=this.CurrentTargetDoseGy;
+        }
+        let LowerLimitDoseGy;
+        if(Number.isFinite(NewLowerLimitDoseGy)){
+            //xmin~TargetDoseGyにおさまっているか
+            LowerLimitDoseGy=Math.max(this.xmin,Math.min(NewLowerLimitDoseGy,TargetDoseGy));
+        }else{
+            //不正な値の場合、元の数値を使って新しい値を算出する
+            LowerLimitDoseGy=Math.max(this.xmin,Math.min(this.CurrentLowerLimitDoseGy,TargetDoseGy));
+        }
+        console.log(TargetDoseGy,LowerLimitDoseGy);
+        //%の算出について、TargetDoseGy＝0のときは、無条件で0％とする。
+        let LowerLimitDoseParcentage;//0~1
+        if(TargetDoseGy===0){
+            LowerLimitDoseParcentage=0;
+        }else{
+            LowerLimitDoseParcentage=LowerLimitDoseGy/TargetDoseGy;
+        }
+        //console.log(NewMin,NewMax,NewCenter,NewRadius);
+        //境界値を考慮した新しい値に更新
+        this.CurrentTargetDoseGy=TargetDoseGy;
+        this.CurrentLowerLimitDoseGy=LowerLimitDoseGy;
+        this.CurrentLowerLimitDoseParcentage=LowerLimitDoseParcentage;//0~1
+        //入力欄には小数点2位まで表示する
+        this.TargetDoseGyInput.value=Math.trunc(TargetDoseGy*100)/100;
+        this.LowerLimitDoseGyInput.value=Math.trunc(LowerLimitDoseGy*100)/100;
+        this.LowerLimitDoseParcentageInput.value=Math.trunc(LowerLimitDoseParcentage*10000)/100;
+        //各線の更新
+        this.TargetDoseLine.setAttribute("x1",TargetDoseGy);
+        this.TargetDoseLine.setAttribute("x2",TargetDoseGy);
+        this.LowerLimitDoseLine.setAttribute("x1",LowerLimitDoseGy);
+        this.LowerLimitDoseLine.setAttribute("x2",LowerLimitDoseGy);
+        //this.RadiusValueLine.setAttribute("y1",this.ymin/2);
+        //this.RadiusValueLine.setAttribute("y2",this.ymin/2);
+        const FromSubToMainProcessData=new Map([
+            ["action","ChangeDOSEWindowing"],
+            ["data",new Map([
+                ["TargetDose",TargetDoseGy],
+                ["LowerLimitDose",LowerLimitDoseGy],
+                /*送信先*/
+                ["CanvasID",this.TargetCanvasID],
+                ["Layer",this.TargetLayer]
+            ])]
+        ]);
+        this.PassChangesToMainWindow(FromSubToMainProcessData);
+    }
+    PassChangesToMainWindow(data){
+        window.SubWindowMainProcessAPI.FromSubToMainProcess(data);
+    }
+    setSubWindowCloseEvents(){
+        //メインプロセスからサブウィンドウの終了連絡がきたときの処理
+        window.SubWindowMainProcessAPI.CloseSubWindowFromMainProcessToSub((event,ReceiveData)=>{
+            //このサブウィンドウでは一つのキャンバスしか参照しないのでそれに対して一応OPモードの終了を要望する
+            const ClosingDataList=[];
+            //特にMultiUseLayerを使っていないので空リストを返す
+            window.SubWindowMainProcessAPI.CloseSubWindowFromSubToMainProcess(ClosingDataList);
+        });
+    }
+    EventSetHelper(element,event,callback){
+        try{
+            element.addEventListener(event,callback);
+            //ElementsWithEventsに登録
+            if(this.ElementsWithEvents.has(element)){
+                //すでにエレメントが一度登録されている
+                const elementMap=this.ElementsWithEvents.get(element);
+                if(elementMap.has(event)){
+                    //エレメントのeventが一度登録されている
+                    elementMap.get(event).push(callback);
+                }else{
+                    //このイベントは初めてなので新しい配列を作って登録
+                    elementMap.set(event,[callback]);
+                }
+            }else{
+                //この要素が初めてなのでエレメントのMapを登録⇒eventのMAPを登録⇒callbackをプッシュする
+                this.ElementsWithEvents.set(element,new Map([
+                    [event,[callback]]
+                ]));
+            }
+        }catch(error){
+            console.log(`EventSettingError\n${error}`);
+        }
+    }
+
+}
+window.SubWindowMainProcessAPI.initializeSubWindow((event,SendingData)=>{
+    const DOSEWindowingobj=new DOSEWindowingClass(SendingData);
+});

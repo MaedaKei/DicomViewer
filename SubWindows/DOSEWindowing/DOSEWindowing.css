@@ -1,0 +1,124 @@
+*{
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+    border: 0;
+}
+html, body {
+    height: 100%;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    /*--TextHeight:50px;*/
+    background-color: gray;
+}
+body{
+    --ColorMapSVGWidth:100px;
+    --HistgramControlContainerWidth:400px;
+    display: flex;
+    flex-direction: row;
+}
+/*カラーマップ部*/
+svg#ColorMapSVG{
+    width:var(--ColorMapSVGWidth);
+    height: 100%;
+    background-color: black;
+}
+svg#ColorMapSVG>rect#ColorMapRect{
+    width:100%;
+}
+/*ヒストグラムコントロール部*/
+div#HistgramControlContainer{
+    width:var(--HistgramControlContainerWidth);
+    height: 100%;
+    padding:0;
+    margin:0;
+    --TextHeight:50px;
+    background-color: gray;
+    display: flex;
+    flex-direction: column;
+}
+/*ヒストグラムの部分*/
+div#HistgramControlContainer>svg#HistgramSVG{
+    z-index: 0;
+    --margin:5px;
+    height:calc(100% - var(--margin) - var(--TextHeight));
+    width:calc(100% - 2 * var(--margin));
+    margin-left: var(--margin);
+    margin-right: var(--margin);
+    margin-bottom: var(--margin);
+    background-color: rgb(53, 53, 53);
+}
+svg#HistgramSVG>path#HistgramPath{
+    z-index: 1;
+    stroke-width: 2px;
+    vector-effect: non-scaling-stroke;
+    stroke:white;
+    fill:none;
+    display:inline;
+    pointer-events: none;
+}
+svg#HistgramSVG>line#TargetDoseLine{
+    z-index:3;
+    stroke-width: 2px;
+    vector-effect: non-scaling-stroke;
+    stroke: rgba(255,0,0,0.8);
+    fill:none;
+    pointer-events: none;
+}
+svg#HistgramSVG>line#LowerLimitDoseLine{
+    z-index:3;
+    stroke-width: 2px;
+    vector-effect: non-scaling-stroke;
+    stroke: rgba(0, 0, 255, 0.8);
+    fill:none;
+    pointer-events: none;
+}
+/*ユーザー入力の部分*/
+div#HistgramControlContainer>div#TextContainer{
+    width:100%;
+    height:var(--TextHeight);
+    display: flex;
+    flex-direction: row;
+}
+div#TextContainer>div.InputBlock{
+  width:calc(100% / 3);
+  height:100%;
+  display: flex;
+  flex-direction: column;
+}
+div#TextContainer>div.InputBlock>label{
+  width:100%;
+  flex:1;
+  font-size:12px;
+  background-color: black;
+  text-align: center;
+  border-left: 1px solid white;
+  border-right: 1px solid white;
+}
+div#TextContainer>div.InputBlock>label#TargetDoseGyLabel{
+  color:red;
+}
+div#TextContainer>div.InputBlock>label#LowerLimitDoseGyLabel{
+  color:blue;
+}
+div#TextContainer>div.InputBlock>label#LowerLimitDoseParcentageLabel{
+  color:blue;
+}
+div#TextContainer>div.InputBlock>input{
+  width:100%;
+  flex:1;
+  font-size:12px;
+  background-color:white;
+  color:black;
+  text-align: center;
+  font-weight: bold;
+  border-left: 1px solid black;
+  border-right: 1px solid black;
+}
+/*スピンボタン無効化*/
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}

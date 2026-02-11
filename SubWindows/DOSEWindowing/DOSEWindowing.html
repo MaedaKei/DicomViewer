@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self'">
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="stylesheet" href="DOSEWindowing.css" type="text/css">
+        <title>CTWindowing</title>
+    </head>
+    <body>
+        <!--カラーマップ-->
+        <svg id="ColorMapSVG">
+            <rect id="ColorMapRect"></rect>
+        </svg>
+        <!--CTの階調と同様のヒストグラムUI-->
+        <div id="HistgramControlContainer">
+            <svg id="HistgramSVG" preserveAspectRatio="none">
+                <path id="HistgramPath"></path>
+                <line id="LowerLimitDoseLine"></line>
+                <line id="TargetDoseLine"></line>
+            </svg>
+            <div id="TextContainer">
+                <div class="InputBlock">
+                    <label for="TargetDoseGyInput" id="TargetDoseGyLabel">Target Dose ( Gy )</label>
+                    <input type="number" id="TargetDoseGyInput">
+                </div>
+                <div class="InputBlock">
+                    <label for="LowerLimitDoseGyInput" id="LowerLimitDoseGyLabel">Lower Limit Dose ( Gy )</label>
+                    <input type="number" id="LowerLimitDoseGyInput">
+                </div>
+                <div class="InputBlock">
+                    <label for="LowerLimitDoseParcentageInput" id="LowerLimitDoseParcentageLabel">Lower Limit Dose ( % )</label>
+                    <input type="number" id="LowerLimitDoseParcentageInput">
+                </div>
+            </div>
+        </div>
+        <script src="DOSEWindowingRenderer.js"></script>
+    </body>
+</html>
