@@ -3066,8 +3066,8 @@ class DOSEclass{
     static PathTarget="openFile";
     static DefaultMultiSelections="";
     static FilePathCanvasIDDelimita=`<|${this.DataType}|>`;//このデータクラスでは (読み込むファイルパス)|(元となるCT画像のCanvasID) という形でパスを持つ
-    static TargetDose=70;//Gy
-    static LowerLimitDose=21//Gy
+    static TargetDose=72.2;//Gy
+    static LowerLimitDose=22.8//Gy
     static {
         this.InitializePathSelectDOMTree();
     }
@@ -3538,13 +3538,10 @@ class DOSEclass{
     }
     static JetColorMap(t){//0 <= t <= 1
         //0~1となっているtを受け取り、RGBAの配列を返す。この時、値は0～255となる
-        let R=0,G=0,B=0,A=0;
-        if(t!==0){
-            R=255*Math.max(0,Math.min(1.5-Math.abs(4*t-3),1));
-            G=255*Math.max(0,Math.min(1.5-Math.abs(4*t-2),1));
-            B=255*Math.max(0,Math.min(1.5-Math.abs(4*t-1),1));
-            A=255*0.3;
-        }
+        const R=255*Math.max(0,Math.min(1.5-Math.abs(4*t-3),1));
+        const G=255*Math.max(0,Math.min(1.5-Math.abs(4*t-2),1));
+        const B=255*Math.max(0,Math.min(1.5-Math.abs(4*t-1),1));
+        const A=255*0.3;
         return [R,G,B,A];
     }
     constructor(loadPath,loadedData){
@@ -3814,8 +3811,14 @@ class DOSEclass{
         const rgbArray=new Uint8ClampedArray(this.imagesize*4);
         for(let i=0;i<this.imagesize;i++){
             const baseindex=i*4;
-            const DoseValue=(this.ImageVolume[index*this.imagesize+i]-this.vMin)/(this.vMax-this.vMin);
-            const [R,G,B,A]=this.constructor.JetColorMap(DoseValue);
+            const DoseValue=this.ImageVolume[index*this.imagesize+i];
+            //まずはLowerLimitDose以上であるか調べる
+            let [R,G,B,A]=[0,0,0,0];
+            if(DoseValue>=DOSEclass.LowerLimitDose){
+                //可視化できるので、0～1にスケーリングする。このとき1を超えるものは1に丸める
+                const ScaledValue=Math.min(1,(DoseValue-DOSEclass.LowerLimitDose)/(DOSEclass.TargetDose-DOSEclass.LowerLimitDose));
+                [R,G,B,A]=DOSEclass.JetColorMap(ScaledValue);
+            }
             rgbArray[baseindex]=R;//R
             rgbArray[baseindex+1]=G;//G
             rgbArray[baseindex+2]=B;//B
