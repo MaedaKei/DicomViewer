@@ -32,35 +32,68 @@ class WindowingClass{
         this.currentvMax=Math.max(vMin,vMax);
         this.currentcenter=(this.currentvMax+this.currentvMin)/2;
         this.currentradius=(this.currentvMax-this.currentvMin)/2;
+        this.MinValueInput.value=this.currentvMin;
+        this.MaxValueInput.value=this.currentvMax;
+        this.CenterValueInput.value=this.currentcenter;
+        this.RadiusValueInput.value=this.currentradius;
         /*それぞれのキャンバスに描画*/
         /*ヒストグラム描画開始*/
-        const histgramArray=[];
+        const OriginalHistgram=ReceivedDataBody.get("histgram");
+        //console.log(OriginalHistgram);
+        const XArray=Array.from(OriginalHistgram.keys());
+        this.xmin=XArray[0];
+        this.xmax=XArray[XArray.length-1];
+        //console.log(this.xmin,this.xmax);
         let ymin=Infinity,ymax=-Infinity;
-        for(const [X,y] of ReceivedDataBody.get("histgram")){
-            const Y=Math.pow(y,0.3);
-            if(Y<ymin){
-                ymin=Y;
+        const YArray=Array.from(OriginalHistgram.values()).map((OriginalY)=>{
+            const ScaledY=Math.log(OriginalY+500);
+            if(ymin>ScaledY){
+                ymin=ScaledY;
             }
-            else if(Y>ymax){
-                ymax=Y;
+            if(ymax<ScaledY){
+                ymax=ScaledY;
             }
-            histgramArray.push([X,Y]);
-        }
-        this.xmin=histgramArray[0][0];
-        this.xmax=histgramArray[histgramArray.length-1][0];
+            return ScaledY;
+        });
         this.ymin=ymin;
         this.ymax=ymax;
         //内部座標大きすぎると見にくくなるのである程度圧縮する
         //viewBoxを設定
         //SVGの座標系は上から下、右から左なので、数学的な座標系に合うようにする
-        this.HistgramSVG.setAttribute("viewBox",`${this.xmin} ${this.ymax} ${this.xmax} 0`);
-        const HisgramStartPoint=histgramArray[0];
-        let HistgramAttributeText=`M ${HisgramStartPoint[0]} ${HisgramStartPoint[1]} `;
-        for(let i=1;i<histgramArray.length;i++){
-            const HistgramPoint=histgramArray[i];
-            HistgramAttributeText+=`L ${HistgramPoint[0]} ${HistgramPoint[1]} `;
+        //console.log(this.ymin,this.ymax);
+        this.HistgramSVG.setAttribute("viewBox",`${this.xmin} ${this.ymin} ${this.xmax-this.xmin} ${this.ymax-this.ymin}`);
+        //console.log(this.xmin,this.ymin,this.xmax-this.xmin,this.ymax-this.ymin);
+        //console.log(this.HistgramSVG.getAttribute("viewBox"));
+        const YmaxPlusYmin=this.ymax+this.ymin;
+        let HistgramAttributeText=`M ${XArray[0]} ${YmaxPlusYmin-YArray[0]} `;
+        for(let i=1;i<XArray.length;i++){
+            const X=XArray[i];
+            const Y=YmaxPlusYmin-YArray[i];
+            HistgramAttributeText+=`L ${X} ${Y} `;
+            ///console.log(i,HistgramPoint[1]);
         }
         HistgramPath.setAttribute("d",HistgramAttributeText);
+        //各線の初期化
+        this.MinValueLine.setAttribute("x1",this.currentvMin);
+        this.MinValueLine.setAttribute("x2",this.currentvMin);
+        this.MinValueLine.setAttribute("y1",this.ymin);
+        this.MinValueLine.setAttribute("y2",this.ymax);
+
+        this.MaxValueLine.setAttribute("x1",this.currentvMax);
+        this.MaxValueLine.setAttribute("x2",this.currentvMax);
+        this.MaxValueLine.setAttribute("y1",this.ymin);
+        this.MaxValueLine.setAttribute("y2",this.ymax);
+
+        this.CenterValueLine.setAttribute("x1",this.currentcenter);
+        this.CenterValueLine.setAttribute("x2",this.currentcenter);
+        this.CenterValueLine.setAttribute("y1",this.ymin);
+        this.CenterValueLine.setAttribute("y2",this.ymax);
+
+        this.RadiusValueLine.setAttribute("x1",this.currentvMin);
+        this.RadiusValueLine.setAttribute("x2",this.currentvMax);
+        this.RadiusValueLine.setAttribute("y1",(this.ymax+this.ymin)/2);
+        this.RadiusValueLine.setAttribute("y2",(this.ymax+this.ymin)/2);
+
         //イベントとエレメントの紐づけを記録しておくMap
         this.ElementsWithEvents=new Map();
         this.setObserverEvents();
@@ -80,42 +113,12 @@ class WindowingClass{
             ["body",new Map([["vMin",this.currentvMin],["vMax",this.currentvMax]])]
         ]);
         */
-        this.FromSubToMainProcessData=new Map([
-            ["action","ChangeWindowing"],
-            ["data",new Map([
-                ["vMin",this.currentvMin],
-                ["vMax",this.currentvMax],
-                /*送信先*/
-                ["CanvasID",this.TargetCanvasID],
-                ["Layer",this.TargetLayer]
-            ])]
-        ]);
         //描画処理は一番最後
         //this.Redraw();
         //見切れないように調整
         window.SubWindowMoveAPI();
     }
-    /*
-    Redraw(){
-        
 
-        const vMin=Math.trunc(this.currentvMin*10)/10;
-        const vMax=Math.trunc(this.currentvMax*10)/10;
-        const center=Math.trunc(this.currentcenter*10)/10;
-        const radius=Math.trunc(this.currentradius*10)/10;
-        //this.textContainer.textContent=`${vMin} ~ ${vMax}`;
-        this.MinValueInput.value=vMin;
-        this.MaxValueInput.value=vMax;
-        this.CenterValueInput.value=center;
-        this.RadiusValueInput.value=radius;
-        //MainWindowにデータを送信する
-        
-        const data=this.FromSubToMainProcessData.get("data");
-        data.set("vMin",vMin);
-        data.set("vMax",vMax);
-        window.SubWindowMainProcessAPI.FromSubToMainProcess(this.FromSubToMainProcessData);
-    }
-    */
     FlagManager(){
         //マウスホイールによるRadiusの操作
         //Canvas内にマウスがあればよい
@@ -203,20 +206,18 @@ class WindowingClass{
 
         this.EventSetHelper(this.HistgramSVG,"mousemove",(e)=>{
             //座標を更新
-            console.log(e.target);
+            //console.log(e.target);
             const oldpoints=this.MouseTrack.get("previous");
             const newpoints=this.MouseTrack.get("current");
             oldpoints.set("x",newpoints.get("x"));
             oldpoints.set("y",newpoints.get("y"));
             const pt=this.HistgramSVG.createSVGPoint();
             pt.x=e.clientX;
-            pt.y=e.clinetY;
+            pt.y=e.clientY;
             //console.log(e.clientX,e.clientY);
             //console.log(e.offsetX,e.offsetY);
-            console.log(this.HistgramSVG.getScreenCTM());
-            console.log(this.HistgramSVG.getScreenCTM().inverse());
             const NewPoint=pt.matrixTransform(this.HistgramSVG.getScreenCTM().inverse());
-            console.log(NewPoint);
+            //console.log(NewPoint);
             newpoints.set("x",NewPoint.x);
             newpoints.set("y",NewPoint.y);
             //console.log(newpoints.get("x"));
@@ -334,7 +335,7 @@ class WindowingClass{
         const NewMax=Math.max(this.xmin,Math.min(protvmax,this.xmax));
         const NewCenter=(NewMax+NewMin)/2;
         const NewRadius=(NewMax-NewMin)/2;
-        console.log(NewMin,NewMax,NewCenter,NewRadius);
+        //console.log(NewMin,NewMax,NewCenter,NewRadius);
         //境界値を考慮した新しい値に更新
         this.currentvMin=NewMin;
         this.currentvMax=NewMax;
@@ -345,6 +346,40 @@ class WindowingClass{
         this.MaxValueInput.value=Math.trunc(NewMax*10)/10;
         this.CenterValueInput.value=Math.trunc(NewCenter*10)/10;
         this.RadiusValueInput.value=Math.trunc(NewRadius*10)/10;
+        //各線の更新
+        this.MinValueLine.setAttribute("x1",this.currentvMin);
+        this.MinValueLine.setAttribute("x2",this.currentvMin);
+        //this.MinValueLine.setAttribute("y1",this.ymin);
+        //this.MinValueLine.setAttribute("y2",this.ymax);
+
+        this.MaxValueLine.setAttribute("x1",this.currentvMax);
+        this.MaxValueLine.setAttribute("x2",this.currentvMax);
+        //this.MaxValueLine.setAttribute("y1",this.ymin);
+        //this.MaxValueLine.setAttribute("y2",this.ymax);
+
+        this.CenterValueLine.setAttribute("x1",this.currentcenter);
+        this.CenterValueLine.setAttribute("x2",this.currentcenter);
+        //this.CenterValueLine.setAttribute("y1",this.ymin);
+        //this.CenterValueLine.setAttribute("y2",this.ymax);
+
+        this.RadiusValueLine.setAttribute("x1",this.currentvMin);
+        this.RadiusValueLine.setAttribute("x2",this.currentvMax);
+        //this.RadiusValueLine.setAttribute("y1",this.ymin/2);
+        //this.RadiusValueLine.setAttribute("y2",this.ymin/2);
+        const FromSubToMainProcessData=new Map([
+            ["action","ChangeWindowing"],
+            ["data",new Map([
+                ["vMin",this.currentvMin],
+                ["vMax",this.currentvMax],
+                /*送信先*/
+                ["CanvasID",this.TargetCanvasID],
+                ["Layer",this.TargetLayer]
+            ])]
+        ]);
+        this.PassChangesToMainWindow(FromSubToMainProcessData);
+    }
+    PassChangesToMainWindow(data){
+        window.SubWindowMainProcessAPI.FromSubToMainProcess(data);
     }
     setSubWindowCloseEvents(){
         //メインプロセスからサブウィンドウの終了連絡がきたときの処理

@@ -26,36 +26,41 @@ svg#HistgramSVG{
 }
 svg#HistgramSVG>path#HistgramPath{
   z-index: 1;
-  stroke-width: 100px;
+  stroke-width: 2px;
+  vector-effect: non-scaling-stroke;
   stroke:white;
   fill:none;
   display:inline;
   pointer-events: none;
 }
-svg#HistgramSVG>path#MinValueLine{
-  z-index:2;
+svg#HistgramSVG>line#MinValueLine{
+  z-index:3;
   stroke-width: 1px;
+  vector-effect: non-scaling-stroke;
   stroke: blue;
   fill:none;
   pointer-events: none;
 }
-svg#HistgramSVG>path#MaxValueLine{
-  z-index:2;
+svg#HistgramSVG>line#MaxValueLine{
+  z-index:3;
   stroke-width: 1px;
+  vector-effect: non-scaling-stroke;
   stroke: red;
   fill:none;
   pointer-events: none;
 }
-svg#HistgramSVG>path#CenterValueLine{
-  z-index:2;
+svg#HistgramSVG>line#CenterValueLine{
+  z-index:3;
   stroke-width: 1px;
+  vector-effect: non-scaling-stroke;
   stroke: green;
   fill:none;
   pointer-events: none;
 }
-svg#HistgramSVG>path#RadiusValueLine{
+svg#HistgramSVG>line#RadiusValueLine{
   z-index:2;
   stroke-width: 1px;
+  vector-effect: non-scaling-stroke;
   stroke: yellow;
   fill:none;
   pointer-events: none;
