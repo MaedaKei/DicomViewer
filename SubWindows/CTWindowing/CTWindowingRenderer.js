@@ -1,9 +1,9 @@
-//WindowingRenderer.js
-//Windowingのサブウィンドウのレンダラー
-//ヒストグラムとWindowingの操作を行う
+//CTWindowingRenderer.js
+//CTWindowingのサブウィンドウのレンダラー
+//ヒストグラムとCTWindowingの操作を行う
 //rangeは半径とする
-console.log("WindowingRenderer.js loaded");
-class WindowingClass{
+console.log("CTWindowingRenderer.js loaded");
+class CTWindowingClass{
     constructor(SendingData){
         this.HistgramSVG=document.getElementById("HistgramSVG");//これにマウスイベントを設置する
         const HistgramPath=document.getElementById("HistgramPath");
@@ -367,7 +367,7 @@ class WindowingClass{
         //this.RadiusValueLine.setAttribute("y1",this.ymin/2);
         //this.RadiusValueLine.setAttribute("y2",this.ymin/2);
         const FromSubToMainProcessData=new Map([
-            ["action","ChangeWindowing"],
+            ["action","ChangeCTWindowing"],
             ["data",new Map([
                 ["vMin",this.currentvMin],
                 ["vMax",this.currentvMax],
@@ -417,5 +417,5 @@ class WindowingClass{
 
 }
 window.SubWindowMainProcessAPI.initializeSubWindow((event,SendingData)=>{
-    const windowingobj=new WindowingClass(SendingData);
+    const CTWindowingobj=new CTWindowingClass(SendingData);
 });

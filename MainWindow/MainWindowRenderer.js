@@ -440,23 +440,23 @@ class CTclass{
         const ContextMenuButtonContainer=CanvasInstance.ContextMenuButtonContainer;
         const FromMainProcessToMainFunctions=CanvasInstance.FromMainProcessToMainFunctions;
 
-        const WindowingButton=document.createElement("button");
-        WindowingButton.className="CT";//DataTypeをクラス名に持つ要素で絞り込みをして、それを表示するためのクラス名
-        WindowingButton.textContent="CT 階調";
-        WindowingButton.value=CanvasID;
-        ContextMenuButtonContainer.appendChild(WindowingButton);
+        const CTWindowingButton=document.createElement("button");
+        CTWindowingButton.className="CT";//DataTypeをクラス名に持つ要素で絞り込みをして、それを表示するためのクラス名
+        CTWindowingButton.textContent="CT 階調";
+        CTWindowingButton.value=CanvasID;
+        ContextMenuButtonContainer.appendChild(CTWindowingButton);
         //ボタンを押すとサブウィンドウが開く
-        Canvas.EventSetHelper(CanvasID,WindowingButton,"mouseup",(e)=>{
+        Canvas.EventSetHelper(CanvasID,CTWindowingButton,"mouseup",(e)=>{
             if(e.button===0){
                 const CanvasID=parseInt(e.target.value);
-                this.OpenWindowingSubWindow(CanvasID);
+                this.OpenCTWindowingSubWindow(CanvasID);
             }
         });
-        FromMainProcessToMainFunctions.set("ChangeWindowing",(data)=>{
-            this.ChangeWindowingFunction(data);
+        FromMainProcessToMainFunctions.set("ChangeCTWindowing",(data)=>{
+            this.ChangeCTWindowingFunction(data);
         });
     }
-    static OpenWindowingSubWindow(CanvasID){
+    static OpenCTWindowingSubWindow(CanvasID){
         const CanvasInstance=CanvasClassDictionary.get(CanvasID);
         const Layer="CT";
         const DataID=CanvasInstance.LayerDataMap.get(Layer).get("DataID");
@@ -475,13 +475,13 @@ class CTclass{
             ["CanvasID",CanvasID]
         ]);
         const InitializeData=new Map([
-            ["action","Windowing"],
+            ["action","CTWindowing"],
             ["data",data],
         ]);
         Canvas.openSubWindow(InitializeData);
     }
     //サブウィンドウから階調幅が送られてきたときの動き
-    static ChangeWindowingFunction(data){
+    static ChangeCTWindowingFunction(data){
         //console.log("関数の実態に到達");
         const ReceivedDataBody=data.get("data");
         const CanvasID=ReceivedDataBody.get("CanvasID");
@@ -495,7 +495,7 @@ class CTclass{
         DicomDataInstance.vMin=ReceivedDataBody.get("vMin");
         DicomDataInstance.vMax=ReceivedDataBody.get("vMax");
         */
-        DicomDataInstance.ChangeWindowing(data);
+        DicomDataInstance.ChangeCTWindowing(data);
         CanvasInstance.DrawStatus.set("regenerate",true);
         //console.log("あとは再描画だけ");
         CanvasInstance.Layerdraw(TargetLayer);
@@ -657,7 +657,7 @@ class CTclass{
         //console.log("imageData",imageData);
         return createImageBitmap(imageData);
     }
-    ChangeWindowing(data){
+    ChangeCTWindowing(data){
         const ReceivedDataBody=data.get("data");
         this.vMin=ReceivedDataBody.get("vMin");
         this.vMax=ReceivedDataBody.get("vMax");
@@ -3797,7 +3797,7 @@ class Canvas{
     // サブウィンドウからメインウィンドウへの通信は入力欄で範囲選択が変わったときや、ヒストグラムで諧調をしたとき、ROIを選択したときなど
     static ReceiveChangesFromSubWindow(data){
         //dataの形式
-        //header:action(Windowing, MaskModifyなどを含む)
+        //header:action(CTWindowing, MaskModifyなどを含む)
         //body:action(changeRectangleなど)
         //get(body_actioin)で取得できるように関数を管理する
         //console.log(data);
@@ -6312,7 +6312,7 @@ const LoadAndLayoutFunctions=new LoadAndLayout();
 //MainProcessにSubWindowを開くように命令する関数
 //SubWindowを開くときに、どのキャンバスのどのレイヤーに対してどのような操作を行うかを伝える必要がある。
 //CanvasID,Layer,actionをMapでまとめて渡す
-//actionはWindowing,MaskModifing,RoiSelectなど
+//actionはCTWindowing,MaskModifing,RoiSelectなど
 function OrderSubWindowOpen(SendingData){
     //const currentheader=SendingData.get("header");
     //console.log("MainWindowRendererからMainProcessへ",SendingData);
@@ -6539,7 +6539,7 @@ class Evaluate{
     }
     ReceiveChangesFromSubWindow(data){
         //dataの形式
-        //header:action(Windowing, MaskModifyなどを含む)
+        //header:action(CTWindowing, MaskModifyなどを含む)
         //body:action(changeRectangleなど)
         //get(body_actioin)で取得できるように関数を管理する
         //console.log(data);
