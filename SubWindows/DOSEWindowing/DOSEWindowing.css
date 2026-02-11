@@ -24,9 +24,6 @@ svg#ColorMapSVG{
     height: 100%;
     background-color: black;
 }
-svg#ColorMapSVG>rect#ColorMapRect{
-    width:100%;
-}
 /*ヒストグラムコントロール部*/
 div#HistgramControlContainer{
     width:var(--HistgramControlContainerWidth);

@@ -9,8 +9,13 @@
     </head>
     <body>
         <!--カラーマップ-->
-        <svg id="ColorMapSVG">
-            <rect id="ColorMapRect"></rect>
+        <svg id="ColorMapSVG" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="JetColorMap" x1="0%" y1="0%" x2="0%" y2="100%"></linearGradient>
+            </defs>
+            <rect id="ColorMapRect" fill="url(#JetColorMap)"></rect>
+            <text id="TargetDoseGyText" text-anchor="start" dominant-baseline="hanging" font-size="8" fill="white"></text>
+            <text id="LowerLimitDoseGyText" text-anchor="start" dominant-baseline="hanging" font-size="8" fill="white"></text>
         </svg>
         <!--CTの階調と同様のヒストグラムUI-->
         <div id="HistgramControlContainer">

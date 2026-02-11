@@ -4,6 +4,14 @@
 //rangeは半径とする
 console.log("DOSEWindowingRenderer.js loaded");
 class DOSEWindowingClass{
+    static JetColorMap(t){//0 <= t <= 1
+        //0~1となっているtを受け取り、RGBAの配列を返す。この時、値は0～255となる
+        const R=255*Math.max(0,Math.min(1.5-Math.abs(4*t-3),1));
+        const G=255*Math.max(0,Math.min(1.5-Math.abs(4*t-2),1));
+        const B=255*Math.max(0,Math.min(1.5-Math.abs(4*t-1),1));
+        const A=255*0.3;
+        return [R,G,B];
+    }
     constructor(SendingData){
         this.HistgramSVG=document.getElementById("HistgramSVG");//これにマウスイベントを設置する
         const HistgramPath=document.getElementById("HistgramPath");
@@ -105,6 +113,54 @@ class DOSEWindowingClass{
         //this.Redraw();
         //見切れないように調整
         window.SubWindowMoveAPI();
+        /*カラーマップの色を作成*/
+        const LinearGradient=document.getElementById("JetColorMap");
+        const LinearGradientFragment=document.createDocumentFragment();
+        const Step=128;
+        for(let i=0;i<Step;i++){
+            const t=i/(Step-1);
+            const [R,G,B]=DOSEWindowingClass.JetColorMap(1-t);//上に赤が来るように
+            const stop=document.createElementNS("http://www.w3.org/2000/svg","stop");
+            stop.setAttribute("offset",`${t*100}%`);
+            stop.setAttribute("stop-color",`rgb(${R},${G},${B})`);
+            LinearGradientFragment.appendChild(stop);
+        }
+        LinearGradient.appendChild(LinearGradientFragment);
+        //SVGに座標系を設定
+        const ViewBoxWidth=100;
+        const ColorMapWidth=60;
+        const ColorMapSVG=document.getElementById("ColorMapSVG");
+        ColorMapSVG.setAttribute("viewBox",`0 0 ${ViewBoxWidth} ${Step}`);//Stepと同じだけの座標系を持たせる
+        const ColorMapRect=document.getElementById("ColorMapRect");
+        ColorMapRect.setAttribute("x",0);
+        ColorMapRect.setAttribute("y",0);
+        ColorMapRect.setAttribute("width",ColorMapWidth);
+        ColorMapRect.setAttribute("height",Step);
+        //TargetDoseとLowerLimitDoseの線量のテキストを配置
+        const TextHeight=10;//座標系上の高さ
+        const TargetDoseGyText=document.getElementById("TargetDoseGyText");
+        TargetDoseGyText.setAttribute("x",ColorMapWidth);//左上
+        TargetDoseGyText.setAttribute("y",0);//左上
+        TargetDoseGyText.setAttribute("width",ViewBoxWidth-ColorMapWidth);
+        TargetDoseGyText.setAttribute("height",TextHeight);
+        this.TargetDoseGyText=TargetDoseGyText
+        this.TargetDoseGyText.textContent=`${this.TargetDoseGyInput.value}`
+        const LowerLimitDoseGyText=document.getElementById("LowerLimitDoseGyText");
+        LowerLimitDoseGyText.setAttribute("x",ColorMapWidth);//左上
+        LowerLimitDoseGyText.setAttribute("y",Step-TextHeight);//左上
+        LowerLimitDoseGyText.setAttribute("width",ViewBoxWidth-ColorMapWidth);
+        LowerLimitDoseGyText.setAttribute("height",TextHeight);
+        /*
+        const Rect=document.createElementNS("http://www.w3.org/2000/svg","rect");
+        Rect.setAttribute("x",60);//左上
+        Rect.setAttribute("y",Step-TextHeight);//左上
+        Rect.setAttribute("width",40);
+        Rect.setAttribute("height",TextHeight);
+        Rect.setAttribute("fill","red");
+        ColorMapSVG.appendChild(Rect);
+        */
+        this.LowerLimitDoseGyText=LowerLimitDoseGyText;
+        this.LowerLimitDoseGyText.textContent=`${this.LowerLimitDoseGyInput.value}`
     }
 
     FlagManager(){
@@ -338,9 +394,13 @@ class DOSEWindowingClass{
         this.CurrentLowerLimitDoseGy=LowerLimitDoseGy;
         this.CurrentLowerLimitDoseParcentage=LowerLimitDoseParcentage;//0~1
         //入力欄には小数点2位まで表示する
-        this.TargetDoseGyInput.value=Math.trunc(TargetDoseGy*100)/100;
-        this.LowerLimitDoseGyInput.value=Math.trunc(LowerLimitDoseGy*100)/100;
+        const TargetDoseGyforText=Math.trunc(TargetDoseGy*100)/100;
+        const LowerLimitDoseGyforText=Math.trunc(LowerLimitDoseGy*100)/100;
+        this.TargetDoseGyInput.value=TargetDoseGyforText;
+        this.LowerLimitDoseGyInput.value=LowerLimitDoseGyforText;
         this.LowerLimitDoseParcentageInput.value=Math.trunc(LowerLimitDoseParcentage*10000)/100;
+        this.TargetDoseGyText.textContent=TargetDoseGyforText;
+        this.LowerLimitDoseGyText.textContent=LowerLimitDoseGyforText;
         //各線の更新
         this.TargetDoseLine.setAttribute("x1",TargetDoseGy);
         this.TargetDoseLine.setAttribute("x2",TargetDoseGy);
