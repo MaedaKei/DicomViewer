@@ -35,33 +35,33 @@ svg#HistgramSVG>path#HistgramPath{
 }
 svg#HistgramSVG>line#MinValueLine{
   z-index:3;
-  stroke-width: 1px;
+  stroke-width: 2px;
   vector-effect: non-scaling-stroke;
-  stroke: blue;
+  stroke: rgba(0, 0, 255, 0.8);
   fill:none;
   pointer-events: none;
 }
 svg#HistgramSVG>line#MaxValueLine{
   z-index:3;
-  stroke-width: 1px;
+  stroke-width: 2px;
   vector-effect: non-scaling-stroke;
-  stroke: red;
+  stroke: rgba(255,0,0,0.8);
   fill:none;
   pointer-events: none;
 }
 svg#HistgramSVG>line#CenterValueLine{
   z-index:3;
-  stroke-width: 1px;
+  stroke-width: 2px;
   vector-effect: non-scaling-stroke;
-  stroke: green;
+  stroke: rgba(0,255,0,0.8);
   fill:none;
   pointer-events: none;
 }
 svg#HistgramSVG>line#RadiusValueLine{
   z-index:2;
-  stroke-width: 1px;
+  stroke-width: 2px;
   vector-effect: non-scaling-stroke;
-  stroke: yellow;
+  stroke: rgba(255,255,0,0.8);
   fill:none;
   pointer-events: none;
 }
