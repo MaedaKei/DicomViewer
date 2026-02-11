@@ -3066,6 +3066,8 @@ class DOSEclass{
     static PathTarget="openFile";
     static DefaultMultiSelections="";
     static FilePathCanvasIDDelimita=`<|${this.DataType}|>`;//このデータクラスでは (読み込むファイルパス)|(元となるCT画像のCanvasID) という形でパスを持つ
+    static TargetDose=70;//Gy
+    static LowerLimitDose=21//Gy
     static {
         this.InitializePathSelectDOMTree();
     }
@@ -3457,15 +3459,84 @@ class DOSEclass{
     }
     /*適したレイヤーを生成する*/
     static LayerZindex=LayerPriorityMap.get(this.DataType);
-    static GetNewLayer(){
+    static GetNewLayer(NewLayerNeccessaryInfoMap){
         const NewLayer=document.createElement("canvas");
+        NewLayer.width=NewLayerNeccessaryInfoMap.get("Width");
+        NewLayer.height=NewLayerNeccessaryInfoMap.get("Height");
         NewLayer.style.zIndex=this.LayerZindex;
         return NewLayer;
     }
     static SetUniqueFunctions(CanvasID){
-        console.log("DOSEclassには固有関数はありません");
+        /*ここで変更を加えるオブジェクトにアクセス*/
+        const CanvasInstance=CanvasClassDictionary.get(CanvasID);
+        const FlagMap=CanvasInstance.FlagMap;
+        const ContextMenuButtonContainer=CanvasInstance.ContextMenuButtonContainer;
+        const FromMainProcessToMainFunctions=CanvasInstance.FromMainProcessToMainFunctions;
+
+        const CTWindowingButton=document.createElement("button");
+        CTWindowingButton.className=this.DataType;//DataTypeをクラス名に持つ要素で絞り込みをして、それを表示するためのクラス名
+        CTWindowingButton.textContent="DOSE 階調";
+        CTWindowingButton.value=CanvasID;
+        ContextMenuButtonContainer.appendChild(CTWindowingButton);
+        //ボタンを押すとサブウィンドウが開く
+        Canvas.EventSetHelper(CanvasID,CTWindowingButton,"mouseup",(e)=>{
+            if(e.button===0){
+                const CanvasID=parseInt(e.target.value);
+                this.OpenDOSEWindowingSubWindow(CanvasID);
+            }
+        });
+        FromMainProcessToMainFunctions.set("ChangeDOSEWindowing",(data)=>{
+            this.ChangeDOSEWindowingFunction(data);
+        });
     }
-    static JetColorMap(t){
+    static OpenDOSEWindowingSubWindow(CanvasID){
+        const CanvasInstance=CanvasClassDictionary.get(CanvasID);
+        const Layer=this.DataType;
+        const DataID=CanvasInstance.LayerDataMap.get(Layer).get("DataID");
+        const DicomDataInfoMap=DicomDataClassDictionary.get(Layer).get(DataID);
+        const DicomDataInstance=DicomDataInfoMap.get("Data");
+        const WindowSize=[500,300];//CTWindowingの左側にヒートマップを表示するため400+100=500としている
+        const AllowAddOrDeleteFlag=false;
+        const data=new Map([
+            ["TargetDose",this.TargetDose],//現在のターゲット線量。これは静的メソッドとして保持する。理由はMaskColorMapと同じ
+            ["LowerLimitDose",this.LowerLimitDose],//足切りする下限の線量。これに満たない線量は色を付けない。サブウィンドウでは％に変換して表示する。こちらに通知する時に線量に変換する
+            ["histgram",DicomDataInstance.histgram],//ヒストグラム表示用。ターゲット線量のラインと下限のラインをGUIで操作させる
+
+            ["windowsize",WindowSize],
+            ["AllowAddOrDeleteFlag",AllowAddOrDeleteFlag],
+            ["Layer",Layer],
+            ["CanvasID",CanvasID]
+        ]);
+        const InitializeData=new Map([
+            ["action","DOSEWindowing"],
+            ["data",data],
+        ]);
+        Canvas.openSubWindow(InitializeData);
+    }
+    //サブウィンドウから階調幅が送られてきたときの動き
+    static ChangeDOSEWindowingFunction(data){
+        //console.log("関数の実態に到達");
+        const ReceivedDataBody=data.get("data");
+        const CanvasID=ReceivedDataBody.get("CanvasID");
+        const CanvasInstance=CanvasClassDictionary.get(CanvasID);
+        /*
+        const TargetLayer=ReceivedDataBody.get("Layer");
+        const DataType=TargetLayer;
+        const DataID=CanvasInstance.LayerDataMap.get(TargetLayer).get("DataID");
+        const DataInfoMap=DicomDataClassDictionary.get(DataType).get(DataID);
+        const DicomDataInstance=DataInfoMap.get("Data");
+        */
+        this.ChangeDOSEWindowing(data);//全DOSEで共通にする予定なので静的メソッドとして実装している。CT画像の階調はあくまで見やすくするためのもので、各画像ごとに固有に設定する必要があるためインスタンスメソッドとしている
+        CanvasInstance.DrawStatus.set("regenerate",true);
+        //console.log("あとは再描画だけ");
+        CanvasInstance.Layerdraw(TargetLayer);
+    }
+    static ChangeDOSEWindowing(data){
+        const ReceivedDataBody=data.get("data");
+        this.TargetDose=ReceivedDataBody.get("TargetDose");
+        this.LowerLimitDose=ReceivedDataBody.get("LowerLimitDose");
+    }
+    static JetColorMap(t){//0 <= t <= 1
         //0~1となっているtを受け取り、RGBAの配列を返す。この時、値は0～255となる
         let R=0,G=0,B=0,A=0;
         if(t!==0){
