@@ -3497,10 +3497,20 @@ class DOSEclass{
         const DicomDataInstance=DicomDataInfoMap.get("Data");
         const WindowSize=[500,300];//CTWindowingの左側にヒートマップを表示するため400+100=500としている
         const AllowAddOrDeleteFlag=false;
+        //凡例用のカラーマップを作成する。連続的なカラーマップはこちらの色に合わせてもらう
+        const Step=64;//連続カラーマップを何分割して渡すか
+        const ColorMapArray=[];
+        for(let i=0;i<Step;i++){
+            const t=i/(Step-1);
+            const [R,G,B,A]=this.JetColorMap(t);
+            const ColorText=`rgb(${R},${G},${B})`;
+            ColorMapArray.push(ColorText);
+        }
         const data=new Map([
             ["TargetDose",this.TargetDose],//現在のターゲット線量。これは静的メソッドとして保持する。理由はMaskColorMapと同じ
             ["LowerLimitDose",this.LowerLimitDose],//足切りする下限の線量。これに満たない線量は色を付けない。サブウィンドウでは％に変換して表示する。こちらに通知する時に線量に変換する
             ["histgram",DicomDataInstance.histgram],//ヒストグラム表示用。ターゲット線量のラインと下限のラインをGUIで操作させる
+            ["ColorMapArray",ColorMapArray],
 
             ["windowsize",WindowSize],
             ["AllowAddOrDeleteFlag",AllowAddOrDeleteFlag],
@@ -3515,7 +3525,7 @@ class DOSEclass{
     }
     //サブウィンドウから階調幅が送られてきたときの動き
     static ChangeDOSEWindowingFunction(data){
-        console.log("関数の実態に到達");
+        //console.log("関数の実態に到達");
         const ReceivedDataBody=data.get("data");
         const CanvasID=ReceivedDataBody.get("CanvasID");
         const CanvasInstance=CanvasClassDictionary.get(CanvasID);

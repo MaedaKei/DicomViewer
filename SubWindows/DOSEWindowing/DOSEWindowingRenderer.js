@@ -4,14 +4,6 @@
 //rangeは半径とする
 console.log("DOSEWindowingRenderer.js loaded");
 class DOSEWindowingClass{
-    static JetColorMap(t){//0 <= t <= 1
-        //0~1となっているtを受け取り、RGBAの配列を返す。この時、値は0～255となる
-        const R=255*Math.max(0,Math.min(1.5-Math.abs(4*t-3),1));
-        const G=255*Math.max(0,Math.min(1.5-Math.abs(4*t-2),1));
-        const B=255*Math.max(0,Math.min(1.5-Math.abs(4*t-1),1));
-        const A=255*0.3;
-        return [R,G,B];
-    }
     constructor(SendingData){
         this.HistgramSVG=document.getElementById("HistgramSVG");//これにマウスイベントを設置する
         const HistgramPath=document.getElementById("HistgramPath");
@@ -116,14 +108,18 @@ class DOSEWindowingClass{
         /*カラーマップの色を作成*/
         const LinearGradient=document.getElementById("JetColorMap");
         const LinearGradientFragment=document.createDocumentFragment();
-        const Step=128;
+        const SVGNameSpace="http://www.w3.org/2000/svg";
+        const ColorMapArray=ReceivedDataBody.get("ColorMapArray");//N分割した連続的カラーマップのrgb(r,g,b)テキストが入っている
+        const Step=ColorMapArray.length;
+        //設定するときは0％～100％に向かって設定しないといけない。つまり、赤から青に向かうのでColorMapArrayには末尾からアクセスする
+        //カラーマップは下から上に大きい線量となる。ColorMapArrayも小さいほうから入っている
         for(let i=0;i<Step;i++){
             const t=i/(Step-1);
-            const [R,G,B]=DOSEWindowingClass.JetColorMap(1-t);//上に赤が来るように
-            const stop=document.createElementNS("http://www.w3.org/2000/svg","stop");
-            stop.setAttribute("offset",`${t*100}%`);
-            stop.setAttribute("stop-color",`rgb(${R},${G},${B})`);
-            LinearGradientFragment.appendChild(stop);
+            const Stop=document.createElementNS(SVGNameSpace,"stop");
+            const ColorText=ColorMapArray[(Step-1)-i];
+            Stop.setAttribute("offset",`${t*100}%`);
+            Stop.setAttribute("stop-color",ColorText);
+            LinearGradientFragment.appendChild(Stop);
         }
         LinearGradient.appendChild(LinearGradientFragment);
         //SVGに座標系を設定
@@ -364,7 +360,6 @@ class DOSEWindowingClass{
         });
     }
     CheckAndSetValues(NewTargeDoseGy,NewLowerLimitDoseGy){
-        console.log(NewTargeDoseGy,NewLowerLimitDoseGy);
         //TargetDoseGyのチェック
         let TargetDoseGy;
         if(Number.isFinite(NewTargeDoseGy)){
@@ -380,7 +375,6 @@ class DOSEWindowingClass{
             //不正な値の場合、元の数値を使って新しい値を算出する
             LowerLimitDoseGy=Math.max(this.xmin,Math.min(this.CurrentLowerLimitDoseGy,TargetDoseGy));
         }
-        console.log(TargetDoseGy,LowerLimitDoseGy);
         //%の算出について、TargetDoseGy＝0のときは、無条件で0％とする。
         let LowerLimitDoseParcentage;//0~1
         if(TargetDoseGy===0){
