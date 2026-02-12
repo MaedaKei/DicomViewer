@@ -172,18 +172,17 @@ class DOSEWindowingClass{
         //マウスが右クリックされている間
         //押された瞬間に条件を満たしていれば離すまでは動作するものとする
         const CtrlPressedFlag=this.pressedkey.has("ControlLeft")||this.pressedkey.has("ControlRight");
-        if(this.mouseenter&&this.mouseClicked.has(0)&&!CtrlPressedFlag){
+        if(this.mouseenter&&this.mouseClicked.has(0)&&CtrlPressedFlag){
             this.TargetDoseGyChangeGyModeFlag=true;
         }else{
             this.TargetDoseGyChangeGyModeFlag=false;
         }
-        if(this.mouseenter&&this.mouseClicked.has(0)&&CtrlPressedFlag){
+        if(this.mouseenter&&this.mouseClicked.has(0)&&!CtrlPressedFlag){
             this.TargetDoseGyChangeParcentageModeFlag=true;
         }else{
             this.TargetDoseGyChangeParcentageModeFlag=false;
         }
     }
-
 
     setObserverEvents(){
         /*イベント関連のフラグ*/
