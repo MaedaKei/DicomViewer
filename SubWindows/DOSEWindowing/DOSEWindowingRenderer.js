@@ -163,25 +163,24 @@ class DOSEWindowingClass{
         //マウスホイールによるRadiusの操作
         //Canvas内にマウスがあればよい
         if(this.mouseenter){
-            this.LowerLimitDoseParcentageChangeFlag=true;
+            this.LowerLimitDoseGyChangeFlag=true;
         }else{
-            this.LowerLimitDoseParcentageChangeFlag=false;
+            this.LowerLimitDoseGyChangeFlag=false;
         }
         //ドラッグ＆ドロップによるCenterの操作
         //curretnvminとcurrentvmaxの間にマウスがあればよい
         //マウスが右クリックされている間
-        //押された瞬間に条件を満たしていれば話すまでは動作するものとする
-        if(this.mouseenter&&this.mouseClicked.get(0)){
-            const currentX=this.MouseTrack.get("current").get("x");
-            //console.log(this.currentvMin,currentX,this.currentvMax);
-            /*
-            if(this.currentvMin<currentX&&currentX<this.currentvMax){
-                this.CenterFlag=true;
-            }
-            */
-            this.TargetDoseGyChangeFlag=true;
+        //押された瞬間に条件を満たしていれば離すまでは動作するものとする
+        const CtrlPressedFlag=this.pressedkey.has("ControlLeft")||this.pressedkey.has("ControlRight");
+        if(this.mouseenter&&this.mouseClicked.has(0)&&!CtrlPressedFlag){
+            this.TargetDoseGyChangeGyModeFlag=true;
         }else{
-            this.TargetDoseGyChangeFlag=false;
+            this.TargetDoseGyChangeGyModeFlag=false;
+        }
+        if(this.mouseenter&&this.mouseClicked.has(0)&&CtrlPressedFlag){
+            this.TargetDoseGyChangeParcentageModeFlag=true;
+        }else{
+            this.TargetDoseGyChangeParcentageModeFlag=false;
         }
     }
 
@@ -190,8 +189,8 @@ class DOSEWindowingClass{
         /*イベント関連のフラグ*/
         //マウスホイール、キーダウンを監視
         this.mouseenter=false;
-        this.pressedkey=new Map();//押されたキーにTrueを入れる、押されなくなったらdelateする
-        this.mouseClicked=new Map();
+        this.pressedkey=new Set();//押されたキーにTrueを入れる、押されなくなったらdelateする
+        this.mouseClicked=new Set();
         this.MouseTrack=new Map([
             ["previous",new Map()],
             ["current",new Map()]
@@ -222,22 +221,20 @@ class DOSEWindowingClass{
         });
         //キーボードが押されているかを監視
         //キーボードが押されっぱなしのときは一定間隔で連続発火する。
-        /*
-        this.EventSetHelper(this.CanvasContainer,"keydown",(e)=>{
-            this.pressedkey.set(e.code,true);
+        this.EventSetHelper(this.HistgramSVG,"keydown",(e)=>{
+            this.pressedkey.add(e.code);
             //console.log(this.pressedkey);
             this.FlagManager();
         });
-        this.EventSetHelper(this.CanvasContainer,"keyup",(e)=>{
+        this.EventSetHelper(this.HistgramSVG,"keyup",(e)=>{
             this.pressedkey.delete(e.code);
             //console.log(this.pressedkey);
             this.FlagManager();
         });
-        */
         //マウスの動き監視
         //マウスが押されたときにFlagManegerを読んでCenterイベントが動けるか確かめる。
         this.EventSetHelper(this.HistgramSVG,"mousedown",(e)=>{
-            this.mouseClicked.set(e.button,true);
+            this.mouseClicked.add(e.button);
             //console.log(this.mouseClicked);
             this.FlagManager();
         });
@@ -269,27 +266,39 @@ class DOSEWindowingClass{
     setUserEvents(){
         //値の更新時に整数に丸め込むと全く更新されなくなる気がする。
         //Radiusイベント
-        this.LowerLimitDoseParcentageChangeFlag=false;
+        this.LowerLimitDoseGyChangeFlag=false;
         this.EventSetHelper(this.HistgramSVG,"wheel",(e)=>{
             e.preventDefault();
             e.stopPropagation();
-            if(this.LowerLimitDoseParcentageChangeFlag){
-                //2%刻みの変動
-                const changevalue=Math.sign(e.deltaY)*0.02;//下に回すと正、下に回すと半径を絞りたいので逆転
-                const NewLowerLimitDoseParcentage=Math.max(0,Math.min(this.CurrentLowerLimitDoseParcentage+changevalue,1));//0~100%の間で変動
+            if(this.LowerLimitDoseGyChangeFlag){
+                //LowerLimitの変更
+                const changevalue=Math.sign(e.deltaY)*1;//下に回すと正、下に回すと半径を絞りたいので逆転
+                const NewLowerLimitDoseGy=Math.max(this.xmin,Math.min(this.CurrentLowerLimitDoseGy+changevalue,this.CurrentTargetDoseGy));//0~100%の間で変動
                 //新しい半径で計算する
                 //const newvmin=this.currentcenter-newrange;
                 //const newvmax=this.currentcenter+newrange;
                 const NewTargetDoseGy=this.CurrentTargetDoseGy;
-                const NewLowerLimitDoseGy=NewTargetDoseGy*NewLowerLimitDoseParcentage;
                 this.CheckAndSetValues(NewTargetDoseGy,NewLowerLimitDoseGy);
                 //this.Redraw();
             }
         });
-        //Centerイベント
-        this.TargetDoseGyChangeFlag=false;
+        //TargetとLowerLimitの幅を保ったままの移動
+        this.TargetDoseGyChangeGyModeFlag=false;
         this.EventSetHelper(this.HistgramSVG,"mousemove",(e)=>{
-            if(this.TargetDoseGyChangeFlag){
+            if(this.TargetDoseGyChangeGyModeFlag){
+                //console.log(CanvasRect.width);
+                const movement=this.MouseTrack.get("current").get("x")-this.MouseTrack.get("previous").get("x");
+                //const newcenter=this.currentcenter+movement;
+                const NewTargetDoseGy=this.CurrentTargetDoseGy+movement;
+                const NewLowerLimitDoseGy=this.CurrentLowerLimitDoseGy+movement;
+                this.CheckAndSetValues(NewTargetDoseGy,NewLowerLimitDoseGy);
+                //this.Redraw();
+            }
+        });
+        //Targetとパーセンテージを保ったままの移動
+        this.TargetDoseGyChangeParcentageModeFlag=false;
+        this.EventSetHelper(this.HistgramSVG,"mousemove",(e)=>{
+            if(this.TargetDoseGyChangeParcentageModeFlag){
                 //console.log(CanvasRect.width);
                 const movement=this.MouseTrack.get("current").get("x")-this.MouseTrack.get("previous").get("x");
                 //const newcenter=this.currentcenter+movement;
@@ -308,7 +317,7 @@ class DOSEWindowingClass{
             //const newvmin=parseInt(this.MinValueInput.value);
             //const newvmax=parseInt(this.MaxValueInput.value);
             const NewTargetDoseGy=parseFloat(this.TargetDoseGyInput.value);
-            const NewLowerLimitDoseGy=NewTargetDoseGy*this.CurrentLowerLimitDoseParcentage;
+            const NewLowerLimitDoseGy=this.CurrentLowerLimitDoseGy;
             this.CheckAndSetValues(NewTargetDoseGy,NewLowerLimitDoseGy);
             //this.Redraw();
         };
@@ -343,7 +352,7 @@ class DOSEWindowingClass{
         /*LowerLimitDoseParcentageInput*/
         const LowerLimitDoseGyParcentageFunction=()=>{
             const NewTargetDoseGy=this.CurrentTargetDoseGy;
-            const NewLowerLimitDoseParcentage=parseFloat(this.LowerLimitDoseParcentageInput.value)/100;//%
+            const NewLowerLimitDoseParcentage=parseFloat(this.LowerLimitDoseParcentageInput.value)/100;//%⇒小数
             const NewLowerLimitDoseGy=NewTargetDoseGy*NewLowerLimitDoseParcentage;
             this.CheckAndSetValues(NewTargetDoseGy,NewLowerLimitDoseGy);
         };
@@ -447,7 +456,7 @@ class DOSEWindowingClass{
                 ]));
             }
         }catch(error){
-            console.log(`EventSettingError\n${error}`);
+            console.log(`EventSettingError\n${element}\n${callback}\n${error}`);
         }
     }
 
