@@ -22,12 +22,21 @@ class DOSEWindowingClass{
         //マウスホイールやパンではあくまでパーセンテージを維持したまま移動することにする
         this.CurrentTargetDoseGy=TargetDose;
         this.CurrentLowerLimitDoseGy=LowerLimitDose;//元の数値
-        this.CurrentLowerLimitDoseParcentage=LowerLimitDose/TargetDose;//比率
+        const LowerLimitDoseParcentage=LowerLimitDose/TargetDose
+        this.CurrentLowerLimitDoseParcentage=LowerLimitDoseParcentage;//比率
         console.log("Initalize",this.CurrentLowerLimitDoseParcentage);
-        this.TargetDoseGyInput.value=Math.trunc(TargetDose*100)/100;
-        this.LowerLimitDoseGyInput.value=Math.trunc(LowerLimitDose*100)/100;
-        this.LowerLimitDoseParcentageInput.value=Math.trunc(LowerLimitDose/TargetDose*10000)/100;//小数第二位まで％を表示する
-        console.log(this.LowerLimitDoseParcentageInput.value);
+
+        const TargetDoseGyforText=Math.trunc(TargetDose*100)/100;
+        const LowerLimitDoseGyforText=Math.trunc(LowerLimitDose*100)/100;
+        const LowerLimitDoseParcentageforText=Math.trunc(LowerLimitDoseParcentage*100)/100
+        
+        this.TargetDoseGyInput.value=TargetDoseGyforText;
+        this.TargetDoseGyInput.setAttribute("data-PreviousValue",TargetDoseGyforText);
+        this.LowerLimitDoseGyInput.value=LowerLimitDoseGyforText;
+        this.LowerLimitDoseGyInput.setAttribute("data-PreviousValue",LowerLimitDoseGyforText);
+        this.LowerLimitDoseParcentageInput.value=LowerLimitDoseParcentageforText;
+        this.LowerLimitDoseParcentageInput.setAttribute("data-PreviousValue",LowerLimitDoseParcentageforText);
+
         /*それぞれのキャンバスに描画*/
         /*ヒストグラム描画開始*/
         const OriginalHistgram=ReceivedDataBody.get("histgram");
@@ -315,9 +324,13 @@ class DOSEWindowingClass{
         const TargetDoseGyInputFunction=()=>{
             //const newvmin=parseInt(this.MinValueInput.value);
             //const newvmax=parseInt(this.MaxValueInput.value);
-            const NewTargetDoseGy=parseFloat(this.TargetDoseGyInput.value);
-            const NewLowerLimitDoseGy=this.CurrentLowerLimitDoseGy;
-            this.CheckAndSetValues(NewTargetDoseGy,NewLowerLimitDoseGy);
+            const CurrentInputValue=parseFloat(this.TargetDoseGyInput.value);
+            const PreviousInputValue=parseFloat(this.TargetDoseGyInput.getAttribute("data-PreviousValue"));
+            if(CurrentInputValue!==PreviousInputValue){
+                const NewTargetDoseGy=CurrentInputValue;
+                const NewLowerLimitDoseGy=this.CurrentLowerLimitDoseGy;
+                this.CheckAndSetValues(NewTargetDoseGy,NewLowerLimitDoseGy);
+            }
             //this.Redraw();
         };
         this.EventSetHelper(this.TargetDoseGyInput,"keydown",(e)=>{
@@ -333,9 +346,13 @@ class DOSEWindowingClass{
         });
         /*LowerLimitDoseGyInput*/
         const LowerLimitDoseGyInputFunction=()=>{
-            const NewTargetDoseGy=this.CurrentTargetDoseGy;
-            const NewLowerLimitDoseGy=parseFloat(this.LowerLimitDoseGyInput.value);
-            this.CheckAndSetValues(NewTargetDoseGy,NewLowerLimitDoseGy);
+            const CurrentInputValue=parseFloat(this.LowerLimitDoseGyInput.value);
+            const PreviousInputValue=parseFloat(this.LowerLimitDoseGyInput.getAttribute("data-PreviousValue"));
+            if(CurrentInputValue!==PreviousInputValue){
+                const NewTargetDoseGy=this.CurrentTargetDoseGy;
+                const NewLowerLimitDoseGy=CurrentInputValue;
+                this.CheckAndSetValues(NewTargetDoseGy,NewLowerLimitDoseGy);
+            }
         }
         this.EventSetHelper(this.LowerLimitDoseGyInput,"keydown",(e)=>{
             if(e.code==="Enter"){
@@ -350,10 +367,14 @@ class DOSEWindowingClass{
         });
         /*LowerLimitDoseParcentageInput*/
         const LowerLimitDoseGyParcentageFunction=()=>{
-            const NewTargetDoseGy=this.CurrentTargetDoseGy;
-            const NewLowerLimitDoseParcentage=parseFloat(this.LowerLimitDoseParcentageInput.value)/100;//%⇒小数
-            const NewLowerLimitDoseGy=NewTargetDoseGy*NewLowerLimitDoseParcentage;
-            this.CheckAndSetValues(NewTargetDoseGy,NewLowerLimitDoseGy);
+            const CurrentInputValue=parseFloat(this.LowerLimitDoseParcentageInput.value);
+            const PreviousInputValue=parseFloat(this.LowerLimitDoseParcentageInput.getAttribute("data-PreviousValue"));
+            if(CurrentInputValue!==PreviousInputValue){//入力欄の値が変わっていれば処理を走らせる
+                const NewTargetDoseGy=this.CurrentTargetDoseGy;
+                const NewLowerLimitDoseParcentage=parseFloat(CurrentInputValue)/100;//%⇒小数
+                const NewLowerLimitDoseGy=NewTargetDoseGy*NewLowerLimitDoseParcentage;
+                this.CheckAndSetValues(NewTargetDoseGy,NewLowerLimitDoseGy);
+            }
         };
         this.EventSetHelper(this.LowerLimitDoseParcentageInput,"keydown",(e)=>{
             if(e.code==="Enter"){
@@ -400,7 +421,9 @@ class DOSEWindowingClass{
         const LowerLimitDoseGyforText=Math.trunc(LowerLimitDoseGy*100)/100;
         this.TargetDoseGyInput.value=TargetDoseGyforText;
         this.LowerLimitDoseGyInput.value=LowerLimitDoseGyforText;
-        this.LowerLimitDoseParcentageInput.value=Math.trunc(LowerLimitDoseParcentage*10000)/100;
+        const LowerLimitDoseParcentageforText=Math.trunc(LowerLimitDoseParcentage*100*100)/100
+        this.LowerLimitDoseParcentageInput.value=LowerLimitDoseParcentageforText;
+        this.LowerLimitDoseParcentageInput.setAttribute("data-PreviousValue",LowerLimitDoseParcentageforText);
         this.TargetDoseGyLabel.textContent=TargetDoseGyforText;
         this.LowerLimitDoseGyLabel.textContent=LowerLimitDoseGyforText;
         //各線の更新
