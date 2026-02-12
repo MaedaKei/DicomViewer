@@ -28,7 +28,7 @@ class DOSEWindowingClass{
 
         const TargetDoseGyforText=Math.trunc(TargetDose*100)/100;
         const LowerLimitDoseGyforText=Math.trunc(LowerLimitDose*100)/100;
-        const LowerLimitDoseParcentageforText=Math.trunc(LowerLimitDoseParcentage*100)/100
+        const LowerLimitDoseParcentageforText=Math.trunc(LowerLimitDoseParcentage*10000)/100
         
         this.TargetDoseGyInput.value=TargetDoseGyforText;
         this.TargetDoseGyInput.setAttribute("data-PreviousValue",TargetDoseGyforText);
