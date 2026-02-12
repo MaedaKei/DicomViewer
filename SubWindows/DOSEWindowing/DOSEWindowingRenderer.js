@@ -13,12 +13,6 @@ class DOSEWindowingClass{
         this.TargetDoseGyInput=document.getElementById("TargetDoseGyInput");
         this.LowerLimitDoseGyInput=document.getElementById("LowerLimitDoseGyInput");
         this.LowerLimitDoseParcentageInput=document.getElementById("LowerLimitDoseParcentageInput");
-        //this.textContainer=document.getElementById("TextContainer");
-        //持っておきたい変数
-        //現在の下限上限
-        //現在の中央値と半径
-        //オリジナルの下限上限
-        //this.header=SendingData.get("header");//Mainのターゲットを特定するために使う。
         const ReceivedDataBody=SendingData.get("data");
         this.TargetCanvasID=ReceivedDataBody.get("CanvasID");
         this.TargetLayer=ReceivedDataBody.get("Layer");
@@ -124,7 +118,7 @@ class DOSEWindowingClass{
         LinearGradient.appendChild(LinearGradientFragment);
         //SVGに座標系を設定
         const ViewBoxWidth=100;
-        const ColorMapWidth=60;
+        const ColorMapWidth=100;
         const ColorMapSVG=document.getElementById("ColorMapSVG");
         ColorMapSVG.setAttribute("viewBox",`0 0 ${ViewBoxWidth} ${Step}`);//Stepと同じだけの座標系を持たせる
         const ColorMapRect=document.getElementById("ColorMapRect");
@@ -133,6 +127,7 @@ class DOSEWindowingClass{
         ColorMapRect.setAttribute("width",ColorMapWidth);
         ColorMapRect.setAttribute("height",Step);
         //TargetDoseとLowerLimitDoseの線量のテキストを配置
+        /*
         const TextHeight=10;//座標系上の高さ
         const TargetDoseGyText=document.getElementById("TargetDoseGyText");
         TargetDoseGyText.setAttribute("x",ColorMapWidth);//左上
@@ -146,6 +141,7 @@ class DOSEWindowingClass{
         LowerLimitDoseGyText.setAttribute("y",Step-TextHeight);//左上
         LowerLimitDoseGyText.setAttribute("width",ViewBoxWidth-ColorMapWidth);
         LowerLimitDoseGyText.setAttribute("height",TextHeight);
+        */
         /*
         const Rect=document.createElementNS("http://www.w3.org/2000/svg","rect");
         Rect.setAttribute("x",60);//左上
@@ -154,9 +150,13 @@ class DOSEWindowingClass{
         Rect.setAttribute("height",TextHeight);
         Rect.setAttribute("fill","red");
         ColorMapSVG.appendChild(Rect);
-        */
         this.LowerLimitDoseGyText=LowerLimitDoseGyText;
         this.LowerLimitDoseGyText.textContent=`${this.LowerLimitDoseGyInput.value}`
+        */
+        this.TargetDoseGyLabel=document.getElementById("TargetDoseGyLabel");
+        this.TargetDoseGyLabel.textContent=`${this.TargetDoseGyInput.value}`;
+        this.LowerLimitDoseGyLabel=document.getElementById("LowerLimitDoseGyLabel");
+        this.LowerLimitDoseGyLabel.textContent=`${this.LowerLimitDoseGyInput.value}`;
     }
 
     FlagManager(){
@@ -401,8 +401,8 @@ class DOSEWindowingClass{
         this.TargetDoseGyInput.value=TargetDoseGyforText;
         this.LowerLimitDoseGyInput.value=LowerLimitDoseGyforText;
         this.LowerLimitDoseParcentageInput.value=Math.trunc(LowerLimitDoseParcentage*10000)/100;
-        this.TargetDoseGyText.textContent=TargetDoseGyforText;
-        this.LowerLimitDoseGyText.textContent=LowerLimitDoseGyforText;
+        this.TargetDoseGyLabel.textContent=TargetDoseGyforText;
+        this.LowerLimitDoseGyLabel.textContent=LowerLimitDoseGyforText;
         //各線の更新
         this.TargetDoseLine.setAttribute("x1",TargetDoseGy);
         this.TargetDoseLine.setAttribute("x2",TargetDoseGy);

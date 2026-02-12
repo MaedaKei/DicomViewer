@@ -13,17 +13,56 @@ html, body {
     background-color: gray;
 }
 body{
-    --ColorMapSVGWidth:100px;
+    --ColorMapContainerWidth:100px;
     --HistgramControlContainerWidth:400px;
     display: flex;
     flex-direction: row;
 }
-/*カラーマップ部*/
-svg#ColorMapSVG{
-    width:var(--ColorMapSVGWidth);
+div#ColorMapContainer{
+    width:var(--ColorMapContainerWidth);
+    height:100%;
+    --LabelHeight:20px;
+    --ColorMapSVGHeight:calc(100% - 2 * var(--LabelHeight));
+    display: flex;
+    flex-direction: column;
+    /*border: 2px solid black;*/
+}
+div#ColorMapContainer>div.DoseGyLabelContainer{
+    width:100%;
+    height:var(--LabelHeight);
+    display: flex;
+    flex-direction: row;
+    /*配下のラベルに共通のCSS*/
+    background-color: black;
+    font:bold 10px sans-serif;
+    text-align: center;
+    color:white;
+}
+div.DoseGyLabelContainer>h3.LabelPart1{
+    width:30%;
     height: 100%;
+}
+div.DoseGyLabelContainer>h3.DoseGyLabel{
+    width:40%;
+    height:100%;
+    /*
+    font:bold 10px sans-serif;
+    text-align: center;
+    color:white;
+    background-color: black;
+    */
+}
+div.DoseGyLabelContainer>h3.LabelPart2{
+    width:30%;
+    height: 100%;
+}
+/*カラーマップ部*/
+div#ColorMapContainer>svg#ColorMapSVG{
+    width:100%;
+    height: var(--ColorMapSVGHeight);
     background-color: black;
 }
+
 /*ヒストグラムコントロール部*/
 div#HistgramControlContainer{
     width:var(--HistgramControlContainerWidth);

@@ -8,15 +8,25 @@
         <title>CTWindowing</title>
     </head>
     <body>
-        <!--カラーマップ-->
-        <svg id="ColorMapSVG" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-                <linearGradient id="JetColorMap" x1="0%" y1="0%" x2="0%" y2="100%"></linearGradient>
-            </defs>
-            <rect id="ColorMapRect" fill="url(#JetColorMap)"></rect>
-            <text id="TargetDoseGyText" text-anchor="start" dominant-baseline="hanging" font-size="8" fill="white"></text>
-            <text id="LowerLimitDoseGyText" text-anchor="start" dominant-baseline="hanging" font-size="8" fill="white"></text>
-        </svg>
+        <div id="ColorMapContainer">
+            <div class="DoseGyLabelContainer">
+                <h3 class="LabelPart1">▼</h3>
+                <h3 id="TargetDoseGyLabel" class="DoseGyLabel"></h3>
+                <h3 class="LabelPart2">Gy</h3>
+            </div>
+            <!--カラーマップ-->
+            <svg id="ColorMapSVG" preserveAspectRatio="none">
+                <defs>
+                    <linearGradient id="JetColorMap" x1="0%" y1="0%" x2="0%" y2="100%"></linearGradient>
+                </defs>
+                <rect id="ColorMapRect" fill="url(#JetColorMap)"></rect>
+            </svg>
+            <div class="DoseGyLabelContainer">
+                <h3 class="LabelPart1">▲</h3>
+                <h3 id="LowerLimitDoseGyLabel" class="DoseGyLabel"></h3>
+                <h3 class="LabelPart2">Gy</h3>
+            </div>
+        </div>
         <!--CTの階調と同様のヒストグラムUI-->
         <div id="HistgramControlContainer">
             <svg id="HistgramSVG" preserveAspectRatio="none">
