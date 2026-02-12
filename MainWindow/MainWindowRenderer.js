@@ -585,7 +585,14 @@ class CTclass{
                 const value=pixel*slope+intercept;
                 this.ImageVolume[z*sizePerSlice+i]=value;
                 //valueの回数を取得、なければ0を取得。その後、インクリメントして再セット
-                histgram.set(value,(histgram.get(value)||0)+1);
+                //histgram.set(value,(histgram.get(value)||0)+1);
+                const Key=Math.round(value);//ヒストグラムは四捨五入したもので集計。データ量圧縮のため
+                //const Key=value;
+                if(histgram.has(Key)){
+                    histgram.set(Key,histgram.get(Key)+1);
+                }else{
+                    histgram.set(Key,1);
+                }
                 if(value<vMin)vMin=value;
                 if(value>vMax)vMax=value;
             }
@@ -1321,7 +1328,14 @@ class MASKclass{
                 const value=pixel*slope+intercept;
                 this.ImageVolume[z*sizePerSlice+i]=value;
                 //valueの回数を取得、なければ0を取得。その後、インクリメントして再セット
-                histgram.set(value,(histgram.get(value)||0)+1);
+                //histgram.set(value,(histgram.get(value)||0)+1);
+                const Key=Math.round(value);//ヒストグラムは四捨五入したもので集計。データ量圧縮のため
+                //const Key=value;
+                if(histgram.has(Key)){
+                    histgram.set(Key,histgram.get(Key)+1);
+                }else{
+                    histgram.set(Key,1);
+                }
                 if(value<vMin)vMin=value;
                 if(value>vMax)vMax=value;
             }
