@@ -326,7 +326,7 @@ class DOSEWindowingClass{
             //const newvmax=parseInt(this.MaxValueInput.value);
             const CurrentInputValue=parseFloat(this.TargetDoseGyInput.value);
             const PreviousInputValue=parseFloat(this.TargetDoseGyInput.getAttribute("data-PreviousValue"));
-            if(CurrentInputValue!==PreviousInputValue){
+            if(CurrentInputValue!==PreviousInputValue||true){
                 const NewTargetDoseGy=CurrentInputValue;
                 const NewLowerLimitDoseGy=this.CurrentLowerLimitDoseGy;
                 this.CheckAndSetValues(NewTargetDoseGy,NewLowerLimitDoseGy);
@@ -348,7 +348,7 @@ class DOSEWindowingClass{
         const LowerLimitDoseGyInputFunction=()=>{
             const CurrentInputValue=parseFloat(this.LowerLimitDoseGyInput.value);
             const PreviousInputValue=parseFloat(this.LowerLimitDoseGyInput.getAttribute("data-PreviousValue"));
-            if(CurrentInputValue!==PreviousInputValue){
+            if(CurrentInputValue!==PreviousInputValue||true){
                 const NewTargetDoseGy=this.CurrentTargetDoseGy;
                 const NewLowerLimitDoseGy=CurrentInputValue;
                 this.CheckAndSetValues(NewTargetDoseGy,NewLowerLimitDoseGy);
@@ -369,7 +369,7 @@ class DOSEWindowingClass{
         const LowerLimitDoseGyParcentageFunction=()=>{
             const CurrentInputValue=parseFloat(this.LowerLimitDoseParcentageInput.value);
             const PreviousInputValue=parseFloat(this.LowerLimitDoseParcentageInput.getAttribute("data-PreviousValue"));
-            if(CurrentInputValue!==PreviousInputValue){//入力欄の値が変わっていれば処理を走らせる
+            if(CurrentInputValue!==PreviousInputValue||true){//入力欄の値が変わっていれば処理を走らせる
                 const NewTargetDoseGy=this.CurrentTargetDoseGy;
                 const NewLowerLimitDoseParcentage=parseFloat(CurrentInputValue)/100;//%⇒小数
                 const NewLowerLimitDoseGy=NewTargetDoseGy*NewLowerLimitDoseParcentage;
