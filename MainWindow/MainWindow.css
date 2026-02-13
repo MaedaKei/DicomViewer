@@ -261,13 +261,14 @@ div.Block{
     height:100%;
     font-size: 0;
     line-height: 0;
+    --SliderContainerHeight:16px;
 }
 /*inputとCanvasBlockの高さの合計でdivBlockに指定すればよい*/
 /*widthは画像サイズそのままでよい*/
-div.CanvasBlock{
+div.Block>div.CanvasBlock{
     position:relative;
     width:100%;
-    height:calc(100% - 16px);
+    height:calc(100% - var(--SliderContainerHeight));
 }
 div.CanvasBlock>.Canvas{
     position:absolute;
@@ -278,9 +279,17 @@ div.CanvasBlock>.Canvas{
     background-color:transparent;
     pointer-events: none;/*画像上の座標取得は完全に一致させたdivに任せることにする*/
 }
-div.Block input[type="range"] {
+div.Block>div.SliderContainer{
+    width:100%;
+    height:var(--SliderContainerHeight);
+    display: flex;
+    flex-direction: row;
+    --SliceCounterWidth:50px;
+    --SliderWidth:calc(100% - var(--SliceCounterWidth));
+}
+div.SliderContainer>input[type="range"].localSlider{
     /*変数*/
-    --slider-height:16px;
+    /*--slider-height:100%;*/
     --track-hilight-start:0%;
     --track-hilight-end:0%;
     --track-normal-color:#ccc;
@@ -295,31 +304,50 @@ div.Block input[type="range"] {
     --thumb-color:#3d3d3dcf;
     -webkit-appearance: none;
     appearance: none;
-    width: 100%;
-    height: var(--slider-height); /* 全体の高さを指定 */
+    width: var(--SliderWidth);
+    height: 100%; /* 全体の高さを指定 */
     border: none;
     background: transparent;
 }
-
 /* トラック（走行部分） */
-div.Block input[type="range"]::-webkit-slider-runnable-track {
-    height: var(--slider-height);
+div.SliderContainer>input[type="range"]::-webkit-slider-runnable-track {
+    height: 100%;
+    width:100%;
     background: var(--track-color);
     /*border-radius: calc(var(--slider-height)/2);*/
 }
 
 /* サム（つまみ） */
-div.Block input[type="range"]::-webkit-slider-thumb {
+div.SliderContainer>input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
-    width: var(--slider-height);
-    height: var(--slider-height);
+    width: var(--SliderContainerHeight);
+    height: 100%;
     background: var(--thumb-color);
     /* 円形にする */
     /*border-radius: 50%;*/
     margin-top: 0px; /* トラックと同じ高さなのでズレなし */
     cursor: pointer;
 }
-
+div.SliderContainer>input[type="number"].SliceCounter{
+    width:var(--SliceCounterWidth);
+    height:100%;
+    font:bold 10px sans-serif;
+    padding:1px;
+    text-align: center;
+    border:1px solid rgb(0, 0, 0);
+    background-color: rgb(79, 79, 79);
+    color:white;
+}
+input[type="number"].SliceCounter:focus{
+    outline-width: 1px;
+    outline-color:blue;
+}
+/*スピンボタン無効化*/
+input[type=number].SliceCounter::-webkit-inner-spin-button,
+input[type=number].SliceCounter::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
 /*コンテキストメニューに関する設定*/
 div.CanvasBlock div.ContextMenuContainer{
     position:absolute;

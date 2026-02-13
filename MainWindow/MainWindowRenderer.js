@@ -4042,15 +4042,26 @@ class Canvas{
         /*MultiUseLayerに関する機能*/
         this.MultiUseLayerModeFlagSet=new Set();
 
-        //スライダー
+        //スライダー関連
+        const SliderContainer=document.createElement("div");
+        SliderContainer.className="SliderContainer";
+        const SliderContainerFragment=document.createDocumentFragment();
         this.slider=document.createElement("input");
         this.slider.type="range";
         this.slider.className="localSlider";
+        this.slider.tabIndex="-1";
+        this.SliceCounter=document.createElement("input");
+        this.SliceCounter.type="number";
+        this.SliceCounter.className="SliceCounter";
+        this.SliceCounter.tabIndex="-1";
+        SliderContainerFragment.appendChild(this.slider);
+        SliderContainerFragment.appendChild(this.SliceCounter);
+        SliderContainer.appendChild(SliderContainerFragment);
         //コンテキストメニューはCanvasBlockに設定する
         this.Block.appendChild(this.CanvasBlock);
         //this.CanvasBlock.appendChild(MainCanvas);
         this.CanvasBlock.appendChild(this.MultiUseLayer);
-        this.Block.appendChild(this.slider);
+        this.Block.appendChild(SliderContainer);
         //OPCanvasのサイズも同様に決めておく
         //this.MultiUseLayer.width=this.CanvasWidth;
         //this.MultiUseLayer.height=this.CanvasHeight;
@@ -4287,6 +4298,10 @@ class Canvas{
         this.slider.value=0;
         this.slider.step=1;
         this.slider.style.zIndex=1;
+
+        this.SliceCounter.min=0;
+        this.SliceCounter.max=this.SliderLength-1;
+        this.SliceCounter.value=0;
     }
     /*
     ここまで、MultiUseLayerModeの切り替え用関数群
@@ -4611,7 +4626,10 @@ class Canvas{
         //this.LocalSliceAndAlignFlag=false;
         this.LocalSliceAndAlignKeydownEventFlag=true;//keydownするとfalseに、keyupするとtrueになる。falseのときは長押し状態=GlobalSliceモード
         Canvas.EventSetHelper(CanvasID,this.slider,"input",(e)=>{
-            this.DrawStatus.set("index",parseInt(e.target.value));
+            //SliceCounterの値を変更
+            const NewSliceIndex=parseInt(e.target.value);
+            this.SliceCounter.value=NewSliceIndex;
+            this.DrawStatus.set("index",NewSliceIndex);
             this.DrawStatus.set("regenerate",true);
             this.Alldraw();
         });
@@ -4666,6 +4684,30 @@ class Canvas{
                 //Flagの更新
                 this.LocalSliceAndAlignKeydownEventFlag=true;
             }
+        });
+
+        /*Counterのジャンピング機能*/
+        const SliceJunpFunction=()=>{
+            const NewSliceIndex=parseInt(this.SliceCounter.value);
+            const CurrentSliceIndex=parseInt(this.slider.value);
+            if(Number.isFinite(NewSliceIndex)&&NewSliceIndex!==CurrentSliceIndex){
+                //無効な値ではない、かつ現在のスライスと違うスライスへのジャンプである
+                this.slider.value=NewSliceIndex;
+                this.slider.dispatchEvent(new Event("input"));
+            }else{
+                this.slider.value=CurrentSliceIndex;
+            }
+        }
+        Canvas.EventSetHelper(CanvasID,this.SliceCounter,"keydown",(e)=>{
+            if(e.code==="Enter"){
+                SliceJunpFunction();
+            }
+        });
+        Canvas.EventSetHelper(CanvasID,this.SliceCounter,"blur",(e)=>{
+            SliceJunpFunction();
+        });
+        Canvas.EventSetHelper(CanvasID,this.SliceCounter,"focus",()=>{
+            this.SliceCounter.select();
         });
     }
     setZoomPan(){
