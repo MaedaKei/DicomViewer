@@ -5442,8 +5442,9 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
         //Resize用
         //console.log("PixelRatio",window.devicePixelRatio);
         this.gridgap=5;
-        this.menuheight=22;
+        this.menuheight=22;//marginも込み
         this.sliderheight=16;
+        this.OuterPadding=2;//完全に外側のパディング
         this.ElementsWithEvents=new Map();//element:Map(event:[func1,func2...])という風にする
         this.setUserEvents();
     }
@@ -6324,9 +6325,8 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
                 if(width>basewidth)basewidth=width;
                 if(height>baseheight)baseheight=height;
             }
-
-            const CellWidth=(width-(this.CurrentColumnsNum-1)*this.gridgap)/this.CurrentColumnsNum;
-            const CellHeight=(height-(this.CurrentRowsNum-1)*this.gridgap-this.menuheight)/this.CurrentRowsNum;
+            const CellWidth=(width-(this.CurrentColumnsNum-1)*this.gridgap-2*this.OuterPadding)/this.CurrentColumnsNum;
+            const CellHeight=(height-(this.CurrentRowsNum-1)*this.gridgap-this.menuheight-2*this.OuterPadding)/this.CurrentRowsNum;
             //console.log("DisplaySize",this.DisplayWidth,this.DisplayHeight);
             //console.log("CellSize",CellWidth,CellHeight);
             const BaseCanvasWidth=basewidth;
@@ -6359,8 +6359,8 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
             const CanvasHeight=BaseCanvasHeight*scale;
            
             //Windowのコンテンツサイズを変更する
-            const WindowContentWidth=CanvasWidth*this.CurrentColumnsNum+this.gridgap*(this.CurrentColumnsNum-1);
-            const WindowContentHeight=this.menuheight+(CanvasHeight+this.sliderheight)*this.CurrentRowsNum+this.gridgap*(this.CurrentRowsNum-1);
+            const WindowContentWidth=2*this.OuterPadding+CanvasWidth*this.CurrentColumnsNum+this.gridgap*(this.CurrentColumnsNum-1);
+            const WindowContentHeight=2*this.OuterPadding+this.menuheight+(CanvasHeight+this.sliderheight)*this.CurrentRowsNum+this.gridgap*(this.CurrentRowsNum-1);
             this.previousBodyOrderWidth=WindowContentWidth;
             this.previousBodyOrderHeight=WindowContentHeight;
         }

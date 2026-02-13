@@ -247,13 +247,15 @@ dialog#ChangeCanvasLayoutDialog[open]>div#CanvasMoveSelecterContainer>div#Canvas
     background-color: #bb95d6;
 }
 /*キャンバスコンテナ*/
-#CanvasContainer{
+div#CanvasContainer{
     width:100%;
     height:calc(100% - 22px);
     display:grid;
     grid-template-columns: 1fr;
     grid-template-rows:1fr;
     gap:2px;
+    padding:2px;
+    /*background-color: gray;*/
 }
 /*キャンバスブロックに対するスタイルの設定*/
 div.Block{
