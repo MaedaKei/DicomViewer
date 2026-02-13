@@ -1,23 +1,9 @@
 # DicomViewer
+<img width="1869" height="533" alt="DicomViewerイメージ画像2" src="https://github.com/user-attachments/assets/88f93dc2-66b9-4dc6-ac6f-e14c17690d83" />
+
 ## 概要
 DICOM画像の表示・解析ができるビューワです。
 リポジトリ内のzipファイルはアプリのビルドが完了しているものです。任意のディレクトリにて解凍すると使用可能となります。
-
-## 機能一覧
-### メイン機能
-- **画像読み込み**:
-  - 対応データ: CT, MASK, MASKDIFF, CONTOUR (RT Structure Set)
-  - 読み込み方式: ディレクトリ指定、複数ファイル選択
-  - **パス一括置換 (Change & Load)**: 読み込み済みデータのファイルパスを一括置換して再読み込み（症例切り替えなどに利用）
-- **表示・レイアウト**:
-  - グリッド表示（行・列数の任意変更）
-  - キャンバスの配置入れ替え（CanvasMove）
-
-### 解析・評価機能 (サブウィンドウ)
-- **ROI管理 (ROISelect)**: ROIの選択、全選択/解除、選択状態の保存（メモリ機能）
-- **評価指標 (Evaluate)**: Volumetric DSCの算出、計算結果の履歴保存
-- **マスク操作 (MaskModifing)**: マスクカラーの変更、ラベル名の編集、凡例表示
-- **画質調整 (CTWindowing)**: ヒストグラムを確認しながらのウィンドウレベル・幅の調整
 
 ## セットアップ(機能の追加を行う方向け)
 ### 前提条件
@@ -66,19 +52,6 @@ npm run build
   - cornerstone-core v2.6.1
   - cornerstone-wado-image-loader v4.13.2
   - dicom-parser v1.8.21
-
-## ディレクトリ構成
-- `main.js`: アプリケーションのエントリーポイント（ウィンドウ管理、ライフサイクル）
-- `MainWindow/`: メインビューワのロジック
-  - `MainWindowRenderer.js`: 描画、データ管理、イベントハンドリングの中枢
-- `SubWindows/`: 各機能の独立したウィンドウ
-  - `ROISelect/`: ROI（関心領域）の選択・管理、メモリ機能
-  - `Evaluate/`: 評価指標（Volumetric DSCなど）の計算、計算履歴の管理
-  - `MaskModifing/`: マスクの色・ラベル名の変更、凡例表示
-  - `CTWindowing/`: ヒストグラム表示、ウィンドウレベル/幅の調整
-
-## デモ動画集
-
 
 ## トラブルシューティング
 
