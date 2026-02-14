@@ -439,7 +439,7 @@ class MaskModifingClass{
                 MaskButtonの移動⇒MaskButtonMouseDowned=true,　MauseMove=true,　mouseup時にButtonContainerにいた場合、mouseup時のButtonContainer内のButtonの上で発生したか否かでかわる
                 */  
                 if(this.MaskButtonMoved){
-                    let TargetButtonContainer=false;
+                    let TargetButtonContainer=this.ButtonContainerMap.get("MaskLegendButtonContainer");
                     if(this.ButtonContainerWhenMouseClicked.get("mouseup")){//どこかのButtonContainerにボタンが落とされた
                         const TargetButtonContainerKey=this.ButtonContainerWhenMouseClicked.get("mouseup");
                         TargetButtonContainer=this.ButtonContainerMap.get(TargetButtonContainerKey);
@@ -451,26 +451,21 @@ class MaskModifingClass{
                         }
                         TargetButtonContainer.replaceChild(TargetButtonContainerFragment,this.dammyButton);
                         */
-                    }else{
-                        TargetButtonContainer=this.ButtonContainerMap.get("MaskLegendButtonContainer");
-                        /*
-                        const TargetButtonContainerFragment=document.createDocumentFragment();
-                        for(const Button of this.MovingButtonArray){
-                            Button.classList.remove("Selected","MouseDowned");
-                            TargetButtonContainerFragment.appendChild(Button);
-                        }
-                        TargetButtonContainer.appendChild(TargetButtonContainerFragment);
-                        */
                     }
                     //TargetContainerがLegendButtonContainerならば、入っているButtonの順番が変わらないようにする。
-                    if(TargetButtonContainer===this.ButtonContainerMap.get("MaskLegendButtonContainer")){
+                    const MoveToMaskLegendFlag=(TargetButtonContainer===this.ButtonContainerMap.get("MaskLegendButtonContainer"));
+                    let InsertPositionButton=this.dammyButton;
+                    if(MoveToMaskLegendFlag){
                         //this.MovingButtonArrayにMaskLegendButtonContainer内のボタンを追加する。
                         const MaskLegendButtonArray=TargetButtonContainer.querySelectorAll(":scope>button.MaskButton");
+                        //順番を整理してMovingButtonArrayに凡例内のラベルもすべて入れる
                         this.MovingButtonArray=[...this.MovingButtonArray,...MaskLegendButtonArray].sort((Button1,Button2)=>{
                             const MaskValue1=parseInt(Button1.value);
                             const MaskValue2=parseInt(Button2.value);
                             return MaskValue1-MaskValue2;
                         });
+                        //MASKLegendなのでnullでもよい。移動先がここのときは、ボタンコンテナ外でマウスを離したときも含まれるのでnullにしてしまう
+                        InsertPositionButton=null;
                     }
                     const TargetButtonContainerFragment=document.createDocumentFragment();
                     for(const Button of this.MovingButtonArray){
@@ -478,7 +473,8 @@ class MaskModifingClass{
                         TargetButtonContainerFragment.appendChild(Button);
                     }
                     //dammyButtonがある位置から挿入するようにしたい
-                    TargetButtonContainer.insertBefore(TargetButtonContainerFragment,this.dammyButton);
+                    //しかし、ButtonContainerエリア系以外にマウスがあるとdammyButtonが消える
+                    TargetButtonContainer.insertBefore(TargetButtonContainerFragment,InsertPositionButton);
                     this.dammyButton.remove();//挿入位置を示すダミーボタンをDOMツリーから削除する
                 }else{
                     /*
