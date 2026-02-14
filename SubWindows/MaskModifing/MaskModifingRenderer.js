@@ -212,6 +212,7 @@ class MaskModifingClass{
         //this.SendMultiUseLayerSwitching(this.TargetCanvasID,"MASKClickModeSwitching",true);
         //イベントの登録
         this.ElementsWithEvents=new Map();
+        this.FromMainProcessToSubFunctions=new Map();
         this.setObserverEvents();
         this.setUserEvents();
         this.setSubWindowCloseEvents();
@@ -549,7 +550,6 @@ class MaskModifingClass{
                 this.SelectedAreaChange();
             });
         }
-        this.FromMainProcessToSubFunctions=new Map();
         /*
         const ChangeSelectedAreaFunction=(data)=>{
             const ReceivedDataBody=data.get("data");
@@ -733,7 +733,7 @@ class MaskModifingClass{
         //スライスをチェック
         startslice=Math.max(0,Math.min(startslice,this.originalslidermax));
         endslice=Math.max(0,Math.min(endslice,this.originalslidermax));
-        console.log("Check",startslice,endslice);
+        //console.log("Check",startslice,endslice);
         if(startslice>endslice){
             const temp=startslice;
             startslice=endslice;

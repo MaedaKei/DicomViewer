@@ -115,12 +115,12 @@ class Evaluate{
         console.log("評価関数の初期設定完了");
         //イベントの登録
         this.ElementsWithEvents=new Map();
+        this.FromMainProcessToSubFunctions=new Map();
         this.setUserEvents();
         console.log("ユーザー用イベント設定完了");
         this.setSubWindowCloseEvents();
     }
     setUserEvents(){
-        this.FromMainProcessToSubFunctions=new Map();
         //評価指標選択
         this.EventSetHelper(this.EvaluationFunctionSelecter,"change",(e)=>{
             //const SelectedFunctionName=e.target.value;
@@ -184,6 +184,7 @@ class Evaluate{
         }
         this.FromMainProcessToSubFunctions.set("FromMainToSubCanvasSize",FromMainToSubCanvasSizeFunction);
         //範囲選択
+        /*
         for(const element of [this.LeftTopXInput,this.LeftTopYInput,this.RectangleWidthInput,this.RectangleHeightInput,this.StartSliceInput,this.EndSliceInput]){
             this.EventSetHelper(element,"keydown",(e)=>{
                 if(e.code==="Enter"){
@@ -198,20 +199,62 @@ class Evaluate{
                 this.SelectedAreaChange();
             });
         }
+        */
+        for(const element of [this.LeftTopXInput,this.LeftTopYInput,this.RectangleWidthInput,this.RectangleHeightInput,this.StartSliceInput,this.EndSliceInput]){
+            const CurrentValue=parseInt(element.value);
+            element.setAttribute("data-CurrentValue",CurrentValue);
+            this.EventSetHelper(element,"keydown",(e)=>{
+                if(e.code==="Enter"){
+                    const TargetElement=e.target;
+                    const NewValue=parseInt(TargetElement.value);
+                    const CurrentValue=parseInt(TargetElement.getAttribute("data-CurrentValue"));
+                    if(Number.isFinite(NewValue)&&NewValue!==CurrentValue){
+                        //CurrentValueを更新
+                        TargetElement.setAttribute("data-CurrentValue",NewValue);
+                        //有効な値であるので値の精査にはいる
+                        this.SelectedAreaChange();
+                    }else{
+                        //有効な値ではないので変更はされない
+                        TargetElement.value=CurrentValue;
+                    }
+                    //セレクトエリアの変更を通知
+                }
+            });
+            this.EventSetHelper(element,"focus",()=>{
+                element.select();
+            });
+            this.EventSetHelper(element,"blur",()=>{
+                this.SelectedAreaChange();
+            });
+        }
+        /*
         const ChangeSelectedAreaFunction=(data)=>{
-            console.log("ChangeSelectedArea");
             const ReceivedDataBody=data.get("data");
             const SelectedAreaData=ReceivedDataBody.get("SelectedArea");
-            this.LeftTopXInput.value=SelectedAreaData.get("w0");
-            this.LeftTopYInput.value=SelectedAreaData.get("h0");
-            this.RectangleWidthInput.value=SelectedAreaData.get("width");
-            this.RectangleHeightInput.value=SelectedAreaData.get("height");
-            this.StartSliceInput.value=SelectedAreaData.get("startslice");
-            this.EndSliceInput.value=SelectedAreaData.get("endslice");
-            //MainWindowから変更を受け取ったら、現在選択中のCanvasにも伝える
-            this.SendSelectedArea();
+            const w0=SelectedAreaData.get("w0");
+            //this.LeftTopXInput.value=w0;
+            //this.LeftTopXInput.setAttribute("data-CurrentValue",w0);
+            const h0=SelectedAreaData.get("h0");
+            //this.LeftTopYInput.value=h0;
+            //this.LeftTopYInput.setAttribute("data-CurrentValue",h0);
+            const width=SelectedAreaData.get("width");
+            
+            //this.RectangleWidthInput.value=width;
+            //this.RectangleWidthInput.setAttribute("data-CurrentValue",width);
+            const height=SelectedAreaData.get("height");
+            //this.RectangleHeightInput.value=height;
+            //this.RectangleHeightInput.setAttribute("data-CurrentValue",height);
+            const startslice=SelectedAreaData.get("startslice");
+            //this.StartSliceInput.value=startslice;
+            //this.StartSliceInput.setAttribute("data-CurrentValue",startslice);
+            const endslice=SelectedAreaData.get("endslice");
+            //this.EndSliceInput.value=SelectedAreaData.get("endslice");
+            //this.EndSliceInput.setAttribute("data-CurrentValue",endslice);
+            this.SetNewValue(w0,h0,width,height,startslice,endslice);
         }
-        this.FromMainProcessToSubFunctions.set("ChangeSelectedArea",ChangeSelectedAreaFunction);
+        */
+        //this.FromMainProcessToSubFunctions.set("ChangeSelectedArea",ChangeSelectedAreaFunction);
+        this.FromMainProcessToSubFunctions.set("ChangeSelectedArea",(data)=>this.ReceiveSelectedAreaFunction(data));
         /*評価指標計算*/
         //1.計算開始ボタン→データ要求
         this.CalculateID=0;
@@ -799,6 +842,7 @@ class Evaluate{
             endslice=temp;
         }
         //値を更新
+        /*
         this.LeftTopXInput.value=w0;
         this.LeftTopYInput.value=h0;
         this.RectangleWidthInput.value=width;
@@ -806,8 +850,36 @@ class Evaluate{
         //console.log("Check",startslice,endslice);
         this.StartSliceInput.value=startslice;
         this.EndSliceInput.value=endslice;
+        */
+        this.SetNewValue(w0,h0,width,height,startslice,endslice);
         //値を確定後、メインウィンドウに通知
-        this.SendSelectedArea();//ラッパー。ここでは、選択されたCIDそれぞれにデータを送る
+        this.SendSelectedArea();
+    }
+    ReceiveSelectedAreaFunction(data){
+        console.log("インスタンスメソッドも行けるんだね");
+        const ReceivedDataBody=data.get("data");
+        const SelectedAreaData=ReceivedDataBody.get("SelectedArea");
+        const w0=SelectedAreaData.get("w0");
+        const h0=SelectedAreaData.get("h0");
+        const width=SelectedAreaData.get("width");
+        const height=SelectedAreaData.get("height");
+        const startslice=SelectedAreaData.get("startslice");
+        const endslice=SelectedAreaData.get("endslice");
+        this.SetNewValue(w0,h0,width,height,startslice,endslice);
+    }
+    SetNewValue(w0,h0,width,height,startslice,endslice){
+        this.LeftTopXInput.value=w0;
+        this.LeftTopXInput.setAttribute("data-CurrentValue",w0);
+        this.LeftTopYInput.value=h0;
+        this.LeftTopYInput.setAttribute("data-CurrentValue",h0);
+        this.RectangleWidthInput.value=width;
+        this.RectangleWidthInput.setAttribute("data-CurrentValue",width);
+        this.RectangleHeightInput.value=height;
+        this.RectangleHeightInput.setAttribute("data-CurrentValue",height);
+        this.StartSliceInput.value=startslice;
+        this.StartSliceInput.setAttribute("data-CurrentValue",startslice);
+        this.EndSliceInput.value=endslice;
+        this.EndSliceInput.setAttribute("data-CurrentValue",endslice);
     }
     //現在選択状態にあるCanvasをメインウィンドウに通知し、それらだけをAreaSelectModeに変更する処理を行わせる
     SendTargetCanvasChange(){
