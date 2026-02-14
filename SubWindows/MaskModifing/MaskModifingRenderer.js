@@ -523,9 +523,22 @@ class MaskModifingClass{
         */
         //各入力欄にイベントを登録する
         for(const element of [this.LeftTopXInput,this.LeftTopYInput,this.RectangleWidthInput,this.RectangleHeightInput,this.StartSliceInput,this.EndSliceInput]){
+            const CurrentValue=parseInt(element.value);
+            element.setAttribute("data-CurrentValue",CurrentValue);
             this.EventSetHelper(element,"keydown",(e)=>{
                 if(e.code==="Enter"){
-                    this.SelectedAreaChange();
+                    const TargetElement=e.target;
+                    const NewValue=parseInt(TargetElement.value);
+                    const CurrentValue=parseInt(TargetElement.getAttribute("data-CurrentValue"));
+                    if(Number.isFinite(NewValue)&&NewValue!==CurrentValue){
+                        //CurrentValueを更新
+                        TargetElement.setAttribute("data-CurrentValue",NewValue);
+                        //有効な値であるので値の精査にはいる
+                        this.SelectedAreaChange();
+                    }else{
+                        //有効な値ではないので変更はされない
+                        TargetElement.value=CurrentValue;
+                    }
                     //セレクトエリアの変更を通知
                 }
             });
@@ -537,17 +550,34 @@ class MaskModifingClass{
             });
         }
         this.FromMainProcessToSubFunctions=new Map();
+        /*
         const ChangeSelectedAreaFunction=(data)=>{
             const ReceivedDataBody=data.get("data");
             const SelectedAreaData=ReceivedDataBody.get("SelectedArea");
-            this.LeftTopXInput.value=SelectedAreaData.get("w0");
-            this.LeftTopYInput.value=SelectedAreaData.get("h0");
-            this.RectangleWidthInput.value=SelectedAreaData.get("width");
-            this.RectangleHeightInput.value=SelectedAreaData.get("height");
-            this.StartSliceInput.value=SelectedAreaData.get("startslice");
-            this.EndSliceInput.value=SelectedAreaData.get("endslice");
+            const w0=SelectedAreaData.get("w0");
+            //this.LeftTopXInput.value=w0;
+            //this.LeftTopXInput.setAttribute("data-CurrentValue",w0);
+            const h0=SelectedAreaData.get("h0");
+            //this.LeftTopYInput.value=h0;
+            //this.LeftTopYInput.setAttribute("data-CurrentValue",h0);
+            const width=SelectedAreaData.get("width");
+            
+            //this.RectangleWidthInput.value=width;
+            //this.RectangleWidthInput.setAttribute("data-CurrentValue",width);
+            const height=SelectedAreaData.get("height");
+            //this.RectangleHeightInput.value=height;
+            //this.RectangleHeightInput.setAttribute("data-CurrentValue",height);
+            const startslice=SelectedAreaData.get("startslice");
+            //this.StartSliceInput.value=startslice;
+            //this.StartSliceInput.setAttribute("data-CurrentValue",startslice);
+            const endslice=SelectedAreaData.get("endslice");
+            //this.EndSliceInput.value=SelectedAreaData.get("endslice");
+            //this.EndSliceInput.setAttribute("data-CurrentValue",endslice);
+            this.SetNewValue(w0,h0,width,height,startslice,endslice);
         }
-        this.FromMainProcessToSubFunctions.set("ChangeSelectedArea",ChangeSelectedAreaFunction);
+        */
+        //this.FromMainProcessToSubFunctions.set("ChangeSelectedArea",ChangeSelectedAreaFunction);
+        this.FromMainProcessToSubFunctions.set("ChangeSelectedArea",(data)=>this.ReceiveSelectedAreaFunction(data));
         //各ボタンにイベントを登録する
         this.LabelNameModifyFlag=true;
         this.EventSetHelper(this.LabelNameChangeDialogOpenButton,"mouseup",(e)=>{
@@ -710,6 +740,7 @@ class MaskModifingClass{
             endslice=temp;
         }
         //値を更新
+        /*
         this.LeftTopXInput.value=w0;
         this.LeftTopYInput.value=h0;
         this.RectangleWidthInput.value=width;
@@ -717,8 +748,36 @@ class MaskModifingClass{
         //console.log("Check",startslice,endslice);
         this.StartSliceInput.value=startslice;
         this.EndSliceInput.value=endslice;
+        */
+        this.SetNewValue(w0,h0,width,height,startslice,endslice);
         //値を確定後、メインウィンドウに通知
         this.SendSelectedArea();
+    }
+    ReceiveSelectedAreaFunction(data){
+        console.log("インスタンスメソッドも行けるんだね");
+        const ReceivedDataBody=data.get("data");
+        const SelectedAreaData=ReceivedDataBody.get("SelectedArea");
+        const w0=SelectedAreaData.get("w0");
+        const h0=SelectedAreaData.get("h0");
+        const width=SelectedAreaData.get("width");
+        const height=SelectedAreaData.get("height");
+        const startslice=SelectedAreaData.get("startslice");
+        const endslice=SelectedAreaData.get("endslice");
+        this.SetNewValue(w0,h0,width,height,startslice,endslice);
+    }
+    SetNewValue(w0,h0,width,height,startslice,endslice){
+        this.LeftTopXInput.value=w0;
+        this.LeftTopXInput.setAttribute("data-CurrentValue",w0);
+        this.LeftTopYInput.value=h0;
+        this.LeftTopYInput.setAttribute("data-CurrentValue",h0);
+        this.RectangleWidthInput.value=width;
+        this.RectangleWidthInput.setAttribute("data-CurrentValue",width);
+        this.RectangleHeightInput.value=height;
+        this.RectangleHeightInput.setAttribute("data-CurrentValue",height);
+        this.StartSliceInput.value=startslice;
+        this.StartSliceInput.setAttribute("data-CurrentValue",startslice);
+        this.EndSliceInput.value=endslice;
+        this.EndSliceInput.setAttribute("data-CurrentValue",endslice);
     }
     SendSelectedArea(){//ラッパー
         //範囲選択の変更をメインウィンドウに通知する
