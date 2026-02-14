@@ -258,9 +258,18 @@ class CTWindowingClass{
         //フォーカスが外れても反映されるようにする
         //スピンボタンは無効化されているのでよし
         const minmaxinputevent=()=>{
-            const newvmin=parseInt(this.MinValueInput.value);
-            const newvmax=parseInt(this.MaxValueInput.value);
-            this.CheckAndSetValues(newvmin,newvmax);
+            const newvMin=parseFloat(this.MinValueInput.value);
+            const currentvMin=this.currentvMin;
+            const newvMax=parseFloat(this.MaxValueInput.value);
+            const currentvMax=this.currentvMax;
+            const ValidvMinFlag=Number.isFinite(newvMin);
+            const ValidvMaxFlag=Number.isFinite(newvMax);
+            if((ValidvMinFlag&&newvMin!==currentvMin)||(ValidvMaxFlag&&newvMax!==currentvMax)){
+                this.CheckAndSetValues(newvMin,newvMax);
+            }else{
+                this.MinValueInput.value=currentvMin;
+                this.MaxValueInput.value=currentvMax;
+            }
             //this.Redraw();
         };
         this.EventSetHelper(this.MinValueInput,"keydown",(e)=>{
@@ -288,11 +297,20 @@ class CTWindowingClass{
         });
 
         const centerradiusevent=()=>{
-            const center=parseInt(this.CenterValueInput.value);
-            const radius=parseInt(this.RadiusValueInput.value);
-            const newvmin=center-radius;
-            const newvmax=center+radius;
-            this.CheckAndSetValues(newvmin,newvmax);
+            const NewCenter=parseFloat(this.CenterValueInput.value);
+            const CurrentCenter=this.currentcenter;
+            const NewRadius=parseFloat(this.RadiusValueInput.value);
+            const CurrentRadius=this.currentradius;
+            const ValidCenterFlag=Number.isFinite(NewCenter);
+            const ValidRadiusFlag=Number.isFinite(NewRadius);
+            if((ValidCenterFlag&&NewCenter!==CurrentCenter)||(ValidRadiusFlag&&NewRadius!==CurrentRadius)){
+                const newvMin=NewCenter-NewRadius;
+                const newvMax=NewCenter+NewRadius;
+                this.CheckAndSetValues(newvMin,newvMax);
+            }else{
+                this.CenterValueInput.value=CurrentCenter;
+                this.RadiusValueInput.value=CurrentRadius;
+            }
             //this.Redraw();
         };
         this.EventSetHelper(this.CenterValueInput,"keydown",(e)=>{
