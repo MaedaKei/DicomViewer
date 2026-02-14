@@ -22,6 +22,13 @@ const LayerPriorityMap=new Map(Array.from(DicomDataClassDictionary.keys()).rever
 const DicomNextID = new Map(DicomDataClassDictionary.keys().map(key => [key, 0]));
 //キャンバスに関する情報を管理するクラスをまとめた辞書型オブジェクト
 const CanvasClassDictionary = new Map();
+const ConfigMap=new Map();
+/*
+設定ファイルを読み込む
+設定ファイルはMainWindow用とEvaluateWindowの評価結果一時保存用で用意する
+MainWindow用はMainConfig.json
+*/
+
 let CanvasNextID = 0;
 const SVGNameSpace="http://www.w3.org/2000/svg";//普通にcreateElementでsvg要素を作るとHTMLの要素として作られてしまうため、名前空間を指定して作成する必要がある
 
