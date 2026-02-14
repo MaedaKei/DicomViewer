@@ -4695,7 +4695,9 @@ class Canvas{
                 this.slider.value=NewSliceIndex;
                 this.slider.dispatchEvent(new Event("input"));
             }else{
+                console.log("無効な値",NewSliceIndex);
                 this.slider.value=CurrentSliceIndex;
+                this.SliceCounter.value=CurrentSliceIndex;
             }
         }
         Canvas.EventSetHelper(CanvasID,this.SliceCounter,"keydown",(e)=>{
