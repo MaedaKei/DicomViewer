@@ -477,7 +477,8 @@ class MaskModifingClass{
                         Button.classList.remove("Selected","MouseDowned");
                         TargetButtonContainerFragment.appendChild(Button);
                     }
-                    TargetButtonContainer.appendChild(TargetButtonContainerFragment);
+                    //dammyButtonがある位置から挿入するようにしたい
+                    TargetButtonContainer.insertBefore(TargetButtonContainerFragment,this.dammyButton);
                     this.dammyButton.remove();//挿入位置を示すダミーボタンをDOMツリーから削除する
                 }else{
                     /*
