@@ -328,3 +328,30 @@ ipcMain.handle("CheckAllowAddOrDelete",()=>{
     }
     return AllowAddOrDeleteFlag;
 });
+
+/*
+ConfigFileの読み込み
+プロジェクトフォルダ/data/ConfigFIleName(.json)を読み込む
+*/
+const exeDir=path.dirname(app.getPath("exe"));
+ipcMain.handle("ConfigRead",(event,ConfigFileName)=>{
+    console.log(ConfigFileName,"Reading...");
+    const ReadConfigFilePath=path.join(exeDir,"data",ConfigFileName);
+    //読み込み対象ファイルが存在するかチェック
+    if(fs.existsSync(ReadConfigFilePath)){
+        const raw=fs.readFileSync(ReadConfigFilePath,"utf-8");
+        const JsonObject=JSON.parse(raw);//{a:1,b:1}のようなプレーンなオブジェクト
+        const ConfigMap=new Map(Object.entries(JsonObject));//{a:1,b:2}=>[[a,1],[b,2]]=>Map化
+        return ConfigMap;
+    }else{
+        return new Map();//からマップを返す。
+    }
+});
+ipcMain.on("ConfigWrite",(event,ConfigFileName,ConfigMap)=>{
+    console.log(ConfigFileName,"Writing...");
+    console.log(ConfigMap);
+    const WriteConfigFilePath=path.join(exeDir,"data",ConfigFileName);
+    const PlaneObject=Object.fromEntries(ConfigMap);//Mapから{A:1,B:2}のようなプレーンなオブジェクトに変換
+    const JSONObject=JSON.stringify(PlaneObject,null,2);//Node.jsは自動でutf-8で書き込む
+    fs.writeFileSync(WriteConfigFilePath,JSONObject);
+});

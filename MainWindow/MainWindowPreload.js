@@ -3,6 +3,12 @@ const {contextBridge, ipcRenderer} = require('electron');
 contextBridge.exposeInMainWorld("GetDisplaySize",
     ()=>ipcRenderer.invoke("GetDisplaySize")
 );
+contextBridge.exposeInMainWorld("ConfigAPI",
+    {
+        Read:(ConfigFileName)=>invoke("ConfigRead",ConfigFileName),//設定ファイルがあれば読み込み、なければ空のMapを返す
+        Write:(ConfigFileName,ConfigMap)=>send("ConfigWrite",ConfigFileName,ConfigMap)//設定ファイルを書き込む
+    }
+);
 /*ファイル読み込み用APIの公開*/
 /*フォルダーごと読み込む場合とファイル一つだけ読み込む場合があるため、引数で制御する*/
 contextBridge.exposeInMainWorld("DicomLoadAPI",

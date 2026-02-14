@@ -22,7 +22,8 @@ const LayerPriorityMap=new Map(Array.from(DicomDataClassDictionary.keys()).rever
 const DicomNextID = new Map(DicomDataClassDictionary.keys().map(key => [key, 0]));
 //キャンバスに関する情報を管理するクラスをまとめた辞書型オブジェクト
 const CanvasClassDictionary = new Map();
-const ConfigMap=new Map();
+const MainConfigFileName="MainConfig.json";
+const MainConfigMap=window.ConfigAPI.Read(MainConfigFileName);//Mapを返す
 /*
 設定ファイルを読み込む
 設定ファイルはMainWindow用とEvaluateWindowの評価結果一時保存用で用意する
