@@ -350,7 +350,19 @@ ipcMain.handle("CheckAllowAddOrDelete",()=>{
 ConfigFileの読み込み
 プロジェクトフォルダ/data/ConfigFIleName(.json)を読み込む
 */
-const exeDir=path.dirname(app.getPath("exe"));
+function getAppRoot(){
+    if(app.isPackaged){
+        //ビルド済み
+        return path.dirname(app.getPath("exe"));
+    }else{
+        //開発時
+        return __dirname;
+    }
+}
+const AppRoot=getAppRoot();
+console.log(AppRoot);
+const ConfigDir=path.join(AppRoot,"data","config");
+console.log(ConfigDir);
 //JSONの構造は{}=Object,[]=Array,プリミティブ=数値or文字列ornullしかない
 function DeepObjectToDeepMap(obj){
     //入れ子上のobjを同じ階層構造のMapに変換する
@@ -368,7 +380,7 @@ function DeepObjectToDeepMap(obj){
 }
 ipcMain.handle("ConfigRead",(event,ConfigFileName)=>{
     console.log(ConfigFileName,"Reading...");
-    const ReadConfigFilePath=path.join(__dirname,"data",ConfigFileName);
+    const ReadConfigFilePath=path.join(ConfigDir,ConfigFileName);
     //読み込み対象ファイルが存在するかチェック
     if(fs.existsSync(ReadConfigFilePath)){
         const raw=fs.readFileSync(ReadConfigFilePath,"utf-8");
@@ -401,7 +413,7 @@ function DeepMapToDeepObject(map){
 ipcMain.handle("ConfigWrite",(event,ConfigFileName,ConfigMap)=>{
     console.log(ConfigFileName,"Writing...");
     console.log(ConfigMap);
-    const WriteConfigFilePath=path.join(__dirname,"data",ConfigFileName);
+    const WriteConfigFilePath=path.join(ConfigDir,ConfigFileName);
     const PlaneObject=DeepMapToDeepObject(ConfigMap);//Mapから{A:1,B:2}のようなプレーンなオブジェクトに変換
     console.log(PlaneObject);
     const JSONObject=JSON.stringify(PlaneObject,null,2);//Node.jsは自動でutf-8で書き込む

@@ -8,6 +8,9 @@ files:
   - main.js
   - MainWindow/**
   - SubWindows/**
+extraFiles:
+  - from: ./data 
+    to: data
 win:
   target: zip
   signAndEditExecutable: false
