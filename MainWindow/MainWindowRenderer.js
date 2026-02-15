@@ -503,10 +503,25 @@ class CTclass{
         DicomDataInstance.vMin=ReceivedDataBody.get("vMin");
         DicomDataInstance.vMax=ReceivedDataBody.get("vMax");
         */
-        DicomDataInstance.ChangeCTWindowing(data);
+        //DicomDataInstance.ChangeCTWindowing(data);
+        const vMin=ReceivedDataBody.get("vMin");
+        const vMax=ReceivedDataBody.get("vMax");
+        DicomDataInstance.vMin=vMin;
+        DicomDataInstance.vMax=vMax;
         CanvasInstance.DrawStatus.set("regenerate",true);
         //console.log("あとは再描画だけ");
         CanvasInstance.Layerdraw(TargetLayer);
+        /*Configに上書きする*/
+        if(!MainConfigMap.has(this.DataType)){
+            MainConfigMap.set(this.DataType,new Map());
+        }
+        const CTConfigMap=MainConfigMap.get(thid.DataType);
+        if(!CTConfigMap.has("CTWindowing")){
+            CTConfigMap.set("CTWindowing",new Map());
+        }
+        const CTWindowing=CTConfig.get("CTWindowing");
+        CTWindowing.set("vMin",vMin);
+        CTWindowing.set("vMax",vMax);
     }
     /*ここから下はインスタンスとしての動き*/
     constructor(loadPath,loadedData){
@@ -685,12 +700,8 @@ class CTclass{
         //console.log("imageData",imageData);
         return createImageBitmap(imageData);
     }
-    ChangeCTWindowing(data){
-        const ReceivedDataBody=data.get("data");
-        this.vMin=ReceivedDataBody.get("vMin");
-        this.vMax=ReceivedDataBody.get("vMax");
-    }
 }
+/*
 class ColorMapforMASK{
     constructor(){
         this.colormap=null;
@@ -743,6 +754,7 @@ class ColorMapforMASK{
     }
 }
 const colormapformask=new ColorMapforMASK();
+*/
 class MASKclass{
     /*
     静的メソッド
@@ -1007,7 +1019,7 @@ class MASKclass{
                     return false;
                 }
             }
-            colormapformask.update();
+            this.UpdateColorMap();
             return DataInfoList;
         }
         
@@ -1082,6 +1094,64 @@ class MASKclass{
             NewPathArray[i]=Middle2AfterPath;
         }
         return NewPathArray;
+    }
+    /*Segmantion用マスク関連*/
+    static ColorMapArray=[];
+    static LabelArray=[];
+    static CurrentKindNum=-9999;
+    static UpdateColorMap(Alpha=0.3){
+        //最大マスク数を更新
+        if(DicomDataClassDictionary.get("MASK").size>0){
+            let MaxKindNum=-Infinity;
+            let KindNum;
+            for(const DicomDataInfoMap of DicomDataClassDictionary.get("MASK").values()){
+                const MaskClass=DicomDataInfoMap.get("Data");
+                KindNum=MaskClass.vMax-MaskClass.vMin+1;
+                MaxKindNum=Math.max(MaxKindNum,KindNum);
+            }
+            //マスク数*(rgba)の配列を作る
+            if(this.CurrentKindNum!=MaxKindNum){//色の種類に変更があった
+                this.ColorMapArray=new Array(4*(MaxKindNum));
+                this.LabelArray=new Array(MaxKindNum);
+                this.ColorMapArray[0]=0;
+                this.ColorMapArray[1]=0;
+                this.ColorMapArray[2]=0;
+                this.ColorMapArray[3]=0;//黒は完全透過
+                this.LabelArray[0]=`${0}`;
+                for(let n=0;n<MaxKindNum-1;n++){
+                    const StartIndex=4*(n+1);//黒がすでに入っているためその分ずらす
+                    const h=n/(MaxKindNum-2)*360;
+                    const rgb=hsv2rgb(h);
+                    //RGBAを順番に入れていく
+                    this.ColorMapArray[StartIndex+0]=rgb.r;
+                    this.ColorMapArray[StartIndex+1]=rgb.g;
+                    this.ColorMapArray[StartIndex+2]=rgb.b;
+                    this.ColorMapArray[StartIndex+3]=Math.round(Alpha*255);
+                    this.LabelArray[n+1]=`${n+1}`;
+                }
+                //種類数を更新する;
+                this.CurrentKindNum=MaxKindNum;
+                /*Configからラベルを読み込む*/
+                if(MainConfigMap.has(this.DataType)){
+                    const MASKConfigMap=MainConfigMap.get(this.DataType);
+                    if(MASKConfigMap.has("MASKLabel")){
+                        const MASKLabelMap=MASKConfigMap.get("MASKLabel");
+                        /*
+                        {
+                            KindNum:LabelArray,
+                            KindNum:LabelArray
+                        }
+                        今のCurrentKindNumのKeyがあれば、そのラベルを設定する
+                        5つくらいまでは保存してそれ以降は古い奴から捨てたほうがいいかも
+                        */
+                        if(MASKLabelMap.has(this.CurrentKindNum)){
+                            const MASKLabelArray=MASKLabelMap.get(this.CurrentKindNum);
+                            this.LabelArray=MASKLabelArray;
+                        }
+                    }
+                }
+            }
+        }
     }
     /*適したレイヤーを生成する*/
     static LayerZindex=LayerPriorityMap.get(this.DataType);
@@ -1160,9 +1230,9 @@ class MASKclass{
             ["originalslidermax",SelectedAreaStatus.get("originalslidermax")],
             ["SelectedArea",SelectedArea],
             //修正対象選択用に使う
-            ["histgram",DicomDataInstance.histgram],//ヒストグラムのkeys()はイテレータとなっており、これが送れないみたい
-            ["colormap",colormapformask.colormap],//カラーマップの本体だけ送る。クラスインスタンスは構造化オブジェクトじゃないらしいから送れない
-            ["MaskLabel",colormapformask.label],
+            ["MaskValueArray",Array.from(DicomDataInstance.histgram.keys())],//ヒストグラムのkeys()はイテレータとなっており、これが送れないみたい
+            ["ColorMapArray",this.ColorMapArray],//カラーマップの本体だけ送る。クラスインスタンスは構造化オブジェクトじゃないらしいから送れない
+            ["MaskLabelArray",this.LabelArray],
 
             ["windowsize",windowsize],
             ["AllowAddOrDeleteFlag",AllowAddOrDeleteFlag],
@@ -1274,10 +1344,30 @@ class MASKclass{
         DicomDataInstance.ChangeMask(data);
         CanvasInstance.Layerdraw(TargetLayer);
     }
+    /*
     static ChangeLabelFunction(data){
         colormapformask.ChangeLabel(data);
-    }
+    }*/
     /*ここから下はインスタンスとしての動き*/
+    static ChangeLabelFunction(data){
+        //labelarrayに入っている文字列を順番にlabelに入れていく
+        //labelarrayの方が長い場合は、余分な部分は無視する
+        //labelarrayの方が短い場合は、残りは数字で埋める
+        //上記の処理はサブウィンドウ側が担うのでこちらが気にする必要はない
+        const NewLabelArray=data.get("data").get("MaskLabel");//["Name1","Name2",...,]
+        this.LabelArray=NewLabelArray;
+        if(!MainConfigMap.has(this.DataType)){
+            //MASKのConfigを作成
+            MainConfigMap.set(this.DataType,new Map());
+        }
+        const MASKConfigMap=MainConfigMap.get(this.DataType);
+        if(!MASKConfigMap.has("MASKLabel")){
+            MASKConfigMap.set("MASKLabel",new Map());
+        }
+        const MASKLabelMap=MASKConfigMap.get("MASKLabel");
+        const KindNum=NewLabelArray.length;
+        MASKLabelMap.set(KindNum,NewLabelArray);
+    }
     constructor(loadPath,loadedData){
         this.Path=loadPath;
         //このなかでシリーズデータを解析して必要な情報を抽出
@@ -1420,10 +1510,10 @@ class MASKclass{
             const VolumeIndex=z*this.imagesize+i;
             const value=Math.round((this.ImageVolume[VolumeIndex]-this.vMin));
             const ColorMapBaseIndex=4*value;
-            rgbArray[baseindex]=colormapformask.colormap[ColorMapBaseIndex];//R
-            rgbArray[baseindex+1]=colormapformask.colormap[ColorMapBaseIndex+1];//G
-            rgbArray[baseindex+2]=colormapformask.colormap[ColorMapBaseIndex+2];//B
-            rgbArray[baseindex+3]=colormapformask.colormap[ColorMapBaseIndex+3];//A
+            rgbArray[baseindex]=MASKclass.ColorMapArray[ColorMapBaseIndex];//R
+            rgbArray[baseindex+1]=MASKclass.ColorMapArray[ColorMapBaseIndex+1];//G
+            rgbArray[baseindex+2]=MASKclass.ColorMapArray[ColorMapBaseIndex+2];//B
+            rgbArray[baseindex+3]=MASKclass.ColorMapArray[ColorMapBaseIndex+3];//A
             if(this.ContourIndexSet.has(VolumeIndex)){
                 //境界にあたるので濃い目に表示
                 rgbArray[baseindex+3]+=76//255*0.3=76.5
@@ -6299,7 +6389,7 @@ class LoadAndLayout{//静的メソッドだけでいい気がする。わざわ�
             //内部でイベント解除、参照しているデータの削除、DOMツリー切り離しが行われる。
             Canvas.dispose(CanvasID);
             CanvasClassDictionary.delete(CanvasID);//Mapから削除。これでガーベージコレクションが動くはず
-            colormapformask.update();//変化がなければ何も起こらないので気軽に呼び出してOK
+            MASKclass.UpdateColorMap();//変化がなければ何も起こらないので気軽に呼び出してOK
             //削除によるRowとColumnの変更はしないものとする。
             const delateLP=this.CanvasID2GridNumberMap.get(CanvasID);
             this.GridNumber2CanvasIDArray[delateLP]=-1;
@@ -6648,8 +6738,8 @@ class Evaluate{
             /*マスク用*/
             const ExtraDataMap=new Map();
             if(TargetDataTypeSet.has("MASK")){
-                ExtraDataMap.set("ColorMapLabelArray",colormapformask.label);
-                ExtraDataMap.set("ColorMap",colormapformask.colormap);
+                ExtraDataMap.set("ColorMapLabelArray",MASKclass.LabelArray);
+                ExtraDataMap.set("ColorMap",MASKclass.ColorMapArray);
             }
             data.set("ExtraDataMap",ExtraDataMap);
             const SendingData=new Map([

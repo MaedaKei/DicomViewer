@@ -41,9 +41,9 @@ class MaskModifingClass{
         this.StartSliceInput.value=SelectedArea.get("startslice");
         this.EndSliceInput.value=SelectedArea.get("endslice");
         //その他の情報の保持
-        this.MaskValues=Array.from(ReceivedDataBody.get("histgram").keys());//ヒストグラムの最初の値をマスク値とする
-        const colormap=ReceivedDataBody.get("colormap");//ボタンに色情報を付与したらあとは使わない
-        const MaskLabel=ReceivedDataBody.get("MaskLabel");//ラベル情報のArray
+        this.MaskValues=ReceivedDataBody.get("MaskValueArray");//ヒストグラムの最初の値をマスク値とする
+        const colormap=ReceivedDataBody.get("ColorMapArray");//ボタンに色情報を付与したらあとは使わない
+        const MaskLabel=ReceivedDataBody.get("MaskLabelArray");//ラベル情報のArray
         this.originalimagewidth=ReceivedDataBody.get("originalimagewidth");
         this.originalimageheight=ReceivedDataBody.get("originalimageheight");
         this.originalslidermax=ReceivedDataBody.get("originalslidermax");//スライダーの最小値は0、最大値はこれ
