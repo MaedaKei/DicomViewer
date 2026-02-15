@@ -1123,7 +1123,7 @@ class MASKclass{
                 this.LabelArray[0]=`${0}`;
                 for(let n=0;n<MaxKindNum-1;n++){
                     const StartIndex=4*(n+1);//黒がすでに入っているためその分ずらす
-                    const h=n/(MaxKindNum-2)*360;
+                    const h=n/(MaxKindNum-1)*360;
                     const rgb=hsv2rgb(h);
                     //RGBAを順番に入れていく
                     this.ColorMapArray[StartIndex+0]=rgb.r;
@@ -1147,8 +1147,9 @@ class MASKclass{
                         今のCurrentKindNumのKeyがあれば、そのラベルを設定する
                         5つくらいまでは保存してそれ以降は古い奴から捨てたほうがいいかも
                         */
-                        if(MASKLabelMap.has(this.CurrentKindNum)){
-                            const MASKLabelArray=MASKLabelMap.get(this.CurrentKindNum);
+                        const Key=`${this.CurrentKindNum} Masks`;
+                        if(MASKLabelMap.has(Key)){
+                            const MASKLabelArray=MASKLabelMap.get(Key);
                             this.LabelArray=MASKLabelArray;
                         }
                     }
@@ -1369,7 +1370,8 @@ class MASKclass{
         }
         const MASKLabelMap=MASKConfigMap.get("MASKLabel");
         const KindNum=NewLabelArray.length;
-        MASKLabelMap.set(KindNum,NewLabelArray);
+        const Key=`${KindNum} Masks`;
+        MASKLabelMap.set(Key,NewLabelArray);
     }
     constructor(loadPath,loadedData){
         this.Path=loadPath;
