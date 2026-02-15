@@ -3195,6 +3195,17 @@ class DOSEclass{
     static LowerLimitDose=22.8//Gy
     static {
         this.InitializePathSelectDOMTree();
+        //静的プロパティをConfigで変更するので静的プロパティの初期化時に行う
+        if(MainConfigMap.has(this.DataType)){
+            const DOSEConfigMap=MainConfigMap.get(this.DataType);
+            if(DOSEConfigMap.has("DOSEWindowing")){
+                const DOSEWindowing=DOSEConfigMap.get("DOSEWindowing");
+                const TargetDose=DOSEWindowing.get("TargetDose");
+                const LowerLimitDose=DOSEWindowing.get("LowerLimitDose");
+                this.TargetDose=TargetDose;
+                this.LowerLimitDose=LowerLimitDose;
+            }
+        }
     }
     //DOMTreeのパーツと必要なイベントの設定
     static InitializePathSelectDOMTree(){
@@ -3667,8 +3678,21 @@ class DOSEclass{
     }
     static ChangeDOSEWindowing(data){
         const ReceivedDataBody=data.get("data");
-        this.TargetDose=ReceivedDataBody.get("TargetDose");
-        this.LowerLimitDose=ReceivedDataBody.get("LowerLimitDose");
+        const TargetDose=ReceivedDataBody.get("TargetDose");
+        const LowerLimitDose=ReceivedDataBody.get("LowerLimitDose");
+        this.TargetDose=TargetDose;
+        this.LowerLimitDose=LowerLimitDose;
+        /*Configの値を更新*/
+        if(!MainConfigMap.has(this.DataType)){
+            MainConfigMap.set(this.DataType,new Map());
+        }
+        const DOSEConfigMap=MainConfigMap.get(this.DataType);
+        if(!DOSEConfigMap.has("DOSEWindowing")){
+            DOSEConfigMap.set("DOSEWindowing",new Map());
+        }
+        const DOSEWindowing=DOSEConfigMap.get("DOSEWindowing");
+        DOSEWindowing.set("TargetDose",TargetDose);
+        DOSEWindowing.set("LowerLimitDose",LowerLimitDose);
     }
     static JetColorMap(t){//0 <= t <= 1
         //0~1となっているtを受け取り、RGBAの配列を返す。この時、値は0～255となる
