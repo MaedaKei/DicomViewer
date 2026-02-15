@@ -14,6 +14,8 @@ class MaskModifingClass{
         ];
         this.ButtonContainerMap=new Map(ButtonContainerIDArray.map((ButtonContainerID)=>[ButtonContainerID,document.getElementById(ButtonContainerID)]));
         this.LabelNameChangeDialogOpenButton=document.getElementById("LabelNameChangeDialogOpenButton");//ラベル名変更ダイアログオープンボタン
+        this.FillAlphaChangeButton=document.getElementById("FillAlphaChangeButton");
+        this.FillAlphaStatusLabel=document.getElementById("FillAlphaStatusLabel");
         this.LabelNameChangeDialog=document.getElementById("LabelNameChangeDialog");
         this.LabelNameChangeInputContainer=document.getElementById("LabelNameChangeInputContainer");
         this.LabelNameChangeCancelButton=document.getElementById("LabelNameChangeCancelButton");
@@ -44,6 +46,8 @@ class MaskModifingClass{
         this.MaskValues=ReceivedDataBody.get("MaskValueArray");//ヒストグラムの最初の値をマスク値とする
         const colormap=ReceivedDataBody.get("ColorMapArray");//ボタンに色情報を付与したらあとは使わない
         const MaskLabel=ReceivedDataBody.get("MaskLabelArray");//ラベル情報のArray
+        const FillAlphaStatus=ReceivedDataBody.get("FillAlphaStatus");//これに応じてFillAlphaChangeButtonのクラスを変える
+        
         this.originalimagewidth=ReceivedDataBody.get("originalimagewidth");
         this.originalimageheight=ReceivedDataBody.get("originalimageheight");
         this.originalslidermax=ReceivedDataBody.get("originalslidermax");//スライダーの最小値は0、最大値はこれ
@@ -96,6 +100,18 @@ class MaskModifingClass{
             ]));
         }
         console.log("button生成終了");
+        //FillStatusに応じてボタンのクラスを切り替える
+        let FillAlphaStatusClass;
+        let FillAlphaStatusLabel;
+        if(FillAlphaStatus===1){
+            FillAlphaStatusClass="Filled";
+            FillAlphaStatusLabel="ON";
+        }else{
+            FillAlphaStatusClass="NotFilled";
+            FillAlphaStatusLabel="OFF";
+        }
+        this.FillAlphaChangeButton.className=FillAlphaStatusClass;
+        this.FillAlphaStatusLabel.textContent=FillAlphaStatusLabel;
         this.ButtonContainerMap.get("MaskLegendButtonContainer").appendChild(MaskLegendButtonContainerFragment);
         this.LabelNameChangeInputContainer.appendChild(LabelNameChangeInputContainerFragment);
         const ButtonFontSize=15;
@@ -645,6 +661,29 @@ class MaskModifingClass{
         }
         this.FromMainProcessToSubFunctions.set("MASKClicked",MASKClickedFunction);
 
+        /*FillAlphaStatusを切り替え*/
+        this.EventSetHelper(this.FillAlphaChangeButton,"mouseup",(e)=>{
+            if(e.button===0){
+                //console.log(e.target);
+                const ButtonElement=e.target.closest("button");
+                //console.log(ButtonElement);
+                //Buttonのクラスを基に切り替える
+                let FillAlphaStatusClass,FillAlphaStatusLabel;
+                let FillAlphaStatus;
+                if(ButtonElement.classList.contains("Filled")){
+                    FillAlphaStatusClass="NotFilled";
+                    FillAlphaStatusLabel="OFF";
+                    FillAlphaStatus=0;
+                }else{
+                    FillAlphaStatusClass="Filled";
+                    FillAlphaStatusLabel="ON";
+                    FillAlphaStatus=1;
+                }
+                this.FillAlphaChangeButton.className=FillAlphaStatusClass;
+                this.FillAlphaStatusLabel.textContent=FillAlphaStatusLabel;
+                this.SendFillAlphaStatusChange(FillAlphaStatus);
+            }
+        });
     }
     SendMultiUseLayerSwitching(TargetCanvasID,ModeSwitching,Activate){
         const FromSubToMainProcessData=new Map([
@@ -849,6 +888,18 @@ class MaskModifingClass{
             ]);
             this.PassChangesToMainWindow(FromSubToMainProcessData);
         }
+    }
+    SendFillAlphaStatusChange(FillAlphaStatus){
+        const data=new Map([
+            ["FillAlphaStatus",FillAlphaStatus],
+            ["CanvasID",this.TargetCanvasID],
+            ["Layer",this.TargetLayer]
+        ]);
+        const FromSubToMainProcessData=new Map([
+            ["action","ChangeFillAlphaStatus"],
+            ["data",data]
+        ]);
+        this.PassChangesToMainWindow(FromSubToMainProcessData);
     }
     /*
     SendMaskLabelChange(){

@@ -770,8 +770,16 @@ class MASKclass{
     static DataType="MASK";
     static PathTarget="openDirectory";
     static DefaultMultiSelections="multiSelections";
+    static FillAlphaStatus=1;
     static {
         this.InitializePathSelectDOMTree();
+        //静的メソッドのConfigなのでここで読み込む
+        if(MainConfigMap.has(this.DataType)){
+            const MASKConfigMap=MainConfigMap.get(this.DataType);
+            if(MASKConfigMap.has("MASKFillAlphaStatus")){
+                this.FillAlphaStatus=MASKConfigMap.get("MASKFillAlphaStatus");
+            }
+        }
     }
     //DOMTreeのパーツと必要なイベントの設定
     static InitializePathSelectDOMTree(){
@@ -1207,6 +1215,10 @@ class MASKclass{
         FromMainProcessToMainFunctions.set("ChangeLabel",(data)=>{
             this.ChangeLabelFunction(data);
         });
+        //サブウィンドウからのFillAlphaStatus変更命令を受け取る関数
+        FromMainProcessToMainFunctions.set("ChangeFillAlphaStatus",(data)=>{
+            this.ChangeFillAlphaStatusFunction(data);
+        });
     }
     static OpenMaskModifingSubWindow(CanvasID){
         const Layer=this.DataType;
@@ -1237,6 +1249,7 @@ class MASKclass{
             ["MaskValueArray",Array.from(DicomDataInstance.histgram.keys())],//ヒストグラムのkeys()はイテレータとなっており、これが送れないみたい
             ["ColorMapArray",this.ColorMapArray],//カラーマップの本体だけ送る。クラスインスタンスは構造化オブジェクトじゃないらしいから送れない
             ["MaskLabelArray",this.LabelArray],
+            ["FillAlphaStatus",this.FillAlphaStatus],
 
             ["windowsize",windowsize],
             ["AllowAddOrDeleteFlag",AllowAddOrDeleteFlag],
@@ -1372,6 +1385,22 @@ class MASKclass{
         const KindNum=NewLabelArray.length;
         const Key=`${KindNum} Masks`;
         MASKLabelMap.set(Key,NewLabelArray);
+    }
+    static ChangeFillAlphaStatusFunction(data){
+        const ReceivedDataBody=data.get("data");
+        const CanvasID=ReceivedDataBody.get("CanvasID");
+        const CanvasInstance=CanvasClassDictionary.get(CanvasID);
+        const TargetLayer=ReceivedDataBody.get("Layer");
+        const FillAlphaStatus=ReceivedDataBody.get("FillAlphaStatus");
+        this.FillAlphaStatus=FillAlphaStatus;
+        CanvasInstance.Layerdraw(TargetLayer);
+        //Configに書くよ
+        if(!MainConfigMap.has(this.DataType)){
+            //MASKのConfigを作成
+            MainConfigMap.set(this.DataType,new Map());
+        }
+        const MASKConfigMap=MainConfigMap.get(this.DataType);
+        MASKConfigMap.set("MASKFillAlphaStatus",FillAlphaStatus);
     }
     constructor(loadPath,loadedData){
         this.Path=loadPath;
@@ -1518,11 +1547,16 @@ class MASKclass{
             rgbArray[baseindex]=MASKclass.ColorMapArray[ColorMapBaseIndex];//R
             rgbArray[baseindex+1]=MASKclass.ColorMapArray[ColorMapBaseIndex+1];//G
             rgbArray[baseindex+2]=MASKclass.ColorMapArray[ColorMapBaseIndex+2];//B
-            rgbArray[baseindex+3]=MASKclass.ColorMapArray[ColorMapBaseIndex+3];//A
+            //rgbArray[baseindex+3]=MASKclass.ColorMapArray[ColorMapBaseIndex+3];//A
+            const BaseAlpha=MASKclass.ColorMapArray[ColorMapBaseIndex+3];
+            let Alpha=0;
             if(this.ContourIndexSet.has(VolumeIndex)){
                 //境界にあたるので濃い目に表示
-                rgbArray[baseindex+3]+=76//255*0.3=76.5
+                Alpha=BaseAlpha+76//0.3*255=76.5
+            }else{
+                Alpha=BaseAlpha*MASKclass.FillAlphaStatus;//0or1で中を塗るか塗らないか決める
             }
+            rgbArray[baseindex+3]=Alpha;
         }
         const imageData=new ImageData(rgbArray,this.width,this.height);
         //console.log("imageData",imageData);
