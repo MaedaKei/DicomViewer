@@ -5,8 +5,8 @@ contextBridge.exposeInMainWorld("GetDisplaySize",
 );
 contextBridge.exposeInMainWorld("ConfigAPI",
     {
-        Read:(ConfigFileName)=>invoke("ConfigRead",ConfigFileName),//設定ファイルがあれば読み込み、なければ空のMapを返す
-        Write:(ConfigFileName,ConfigMap)=>send("ConfigWrite",ConfigFileName,ConfigMap)//設定ファイルを書き込む
+        Read:(ConfigFileName)=>ipcRenderer.invoke("ConfigRead",ConfigFileName),//設定ファイルがあれば読み込み、なければ空のMapを返す
+        Write:(ConfigFileName,ConfigMap)=>ipcRenderer.invoke("ConfigWrite",ConfigFileName,ConfigMap)//設定ファイルを書き込む
     }
 );
 /*ファイル読み込み用APIの公開*/
@@ -42,5 +42,7 @@ contextBridge.exposeInMainWorld("MainWindowRendererMainProcessAPI",
         FromMainProcessToMain:(callback)=>ipcRenderer.on("FromMainProcessToMain",callback),
         RemoveFMPTM:()=>ipcRenderer.removeAllListeners("FromMainProcessToMain"),
         CloseSubWindowFromMainProcessToMain:(closingcallback)=>ipcRenderer.on("CloseSubWindowFromMainProcessToMain",closingcallback),//SubWindowが閉じられたことを受け取る
+        CloseMainWindowFromMainProcessToMain:(closingcallback)=>ipcRenderer.on("CloseMainWindowFromMainProcessToMain",closingcallback),//メインウィンドウが閉じられることが通知されたときの処理を行う
+        CloseMainWindowFromMainToMainProcess:(data)=>ipcRenderer.send("CloseMainWindowFromMainToMainProcess",data)//Configファイルの書き込みが終了したことをメインプロセスに通知
     }
 );

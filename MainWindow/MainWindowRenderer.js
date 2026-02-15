@@ -23,7 +23,9 @@ const DicomNextID = new Map(DicomDataClassDictionary.keys().map(key => [key, 0])
 //キャンバスに関する情報を管理するクラスをまとめた辞書型オブジェクト
 const CanvasClassDictionary = new Map();
 const MainConfigFileName="MainConfig.json";
-const MainConfigMap=window.ConfigAPI.Read(MainConfigFileName);//Mapを返す
+const MainConfigMap=await window.ConfigAPI.Read(MainConfigFileName);//Mapを返す
+//const MainConfigMap=new Map();
+console.log(MainConfigMap);
 /*
 設定ファイルを読み込む
 設定ファイルはMainWindow用とEvaluateWindowの評価結果一時保存用で用意する
@@ -515,11 +517,11 @@ class CTclass{
         if(!MainConfigMap.has(this.DataType)){
             MainConfigMap.set(this.DataType,new Map());
         }
-        const CTConfigMap=MainConfigMap.get(thid.DataType);
+        const CTConfigMap=MainConfigMap.get(this.DataType);
         if(!CTConfigMap.has("CTWindowing")){
             CTConfigMap.set("CTWindowing",new Map());
         }
-        const CTWindowing=CTConfig.get("CTWindowing");
+        const CTWindowing=CTConfigMap.get("CTWindowing");
         CTWindowing.set("vMin",vMin);
         CTWindowing.set("vMax",vMax);
     }
@@ -648,6 +650,7 @@ class CTclass{
         Configからデータを抽出
         */
         const DataType=CTclass.DataType;
+        console.log(MainConfigMap);
         if(MainConfigMap.has(DataType)){
             const CTConfig=MainConfigMap.get(DataType);
             //Windowingの設定を反映する
@@ -6845,4 +6848,12 @@ window.MainWindowRendererMainProcessAPI.CloseSubWindowFromMainProcessToMain((eve
         //bodyではなくヘッダーによるターゲットの指定を行っている。
         Canvas.ReceiveChangesFromSubWindow(ClosingData);
     }
+});
+/*アプリの完全終了時にこの時点のConfigMapをファイルに書き出す*/
+window.MainWindowRendererMainProcessAPI.CloseMainWindowFromMainProcessToMain(async (event,dammydata)=>{
+    console.log("Please Write Config!!!!!!!!!!!!!!!!!!!");
+    await window.ConfigAPI.Write(MainConfigFileName,MainConfigMap);//設定ファイルを書き込む
+    console.log("Finished Write Config!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+    //終了したのでメインプロセス側に終了を通知する
+    window.MainWindowRendererMainProcessAPI.CloseMainWindowFromMainToMainProcess(dammydata);
 });

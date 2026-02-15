@@ -27,10 +27,27 @@ function createMainWindow(){
         SubWindow.webContents.send("FromMainProcessToSub",data);
     });
     */
-   //サブウィンドウが開いていたとしてもメインウィンドウの終了と同時にアプリを終了する
-   MainWindow.on("closed",()=>{
-    app.quit();
-   });
+    //サブウィンドウが開いていたとしてもメインウィンドウの終了と同時にアプリを終了する
+    /*
+    MainWindow.on("closed",()=>{
+        app.quit();
+    });
+    */
+    MainWindow.once("close",(event)=>{
+        console.log("Stop Finshing!!!!!!!!!!!!!!!!!!!");
+        event.preventDefault();//終了をいったんキャンセル
+        //MainWindowに終了を通知する。
+        ipcMain.once("CloseMainWindowFromMainToMainProcess",(event,data)=>{
+            console.log("Finish!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            app.quit();
+        });
+        const dammydata=true;
+        MainWindow.webContents.send("CloseMainWindowFromMainProcessToMain",dammydata);
+        /*
+        メインウィンドウがConfigMapを書き出しを行う
+        書き出しが終了したらメインウィンドウ⇒メインプロセスにアプリの終了を要望する
+        */
+    });
 }
 
 app.whenReady().then(() => {
@@ -334,24 +351,61 @@ ConfigFileの読み込み
 プロジェクトフォルダ/data/ConfigFIleName(.json)を読み込む
 */
 const exeDir=path.dirname(app.getPath("exe"));
+//JSONの構造は{}=Object,[]=Array,プリミティブ=数値or文字列ornullしかない
+function DeepObjectToDeepMap(obj){
+    //入れ子上のobjを同じ階層構造のMapに変換する
+    if(Array.isArray(obj)){//Array型なのでArrayに変換
+        return obj.map(DeepObjectToDeepMap);
+    }else if(obj!==null&&typeof obj=== "object"){//object型なので最終的にMapに変換
+        const PartialMap=new Map();
+        for(const [Key,Value] of Object.entries(obj)){
+            PartialMap.set(Key,DeepObjectToDeepMap(Value));
+        }
+        return PartialMap;
+    }else{
+        return obj;//number, string,boolean,null
+    }
+}
 ipcMain.handle("ConfigRead",(event,ConfigFileName)=>{
     console.log(ConfigFileName,"Reading...");
-    const ReadConfigFilePath=path.join(exeDir,"data",ConfigFileName);
+    const ReadConfigFilePath=path.join(__dirname,"data",ConfigFileName);
     //読み込み対象ファイルが存在するかチェック
     if(fs.existsSync(ReadConfigFilePath)){
         const raw=fs.readFileSync(ReadConfigFilePath,"utf-8");
         const JsonObject=JSON.parse(raw);//{a:1,b:1}のようなプレーンなオブジェクト
-        const ConfigMap=new Map(Object.entries(JsonObject));//{a:1,b:2}=>[[a,1],[b,2]]=>Map化
+        //const ConfigMap=new Map(Object.entries(JsonObject));//{a:1,b:2}=>[[a,1],[b,2]]=>Map化
+        /*
+        Objectを完全な入れ子上のMapにする
+        */
+        const ConfigMap=DeepObjectToDeepMap(JsonObject);
+        console.log(ConfigMap);
         return ConfigMap;
     }else{
+        console.log("Not Founded",ReadConfigFilePath);
         return new Map();//からマップを返す。
     }
 });
-ipcMain.on("ConfigWrite",(event,ConfigFileName,ConfigMap)=>{
+function DeepMapToDeepObject(map){
+    if(map instanceof Map){
+        const PartialObject={};
+        for(const [Key,Value] of map.entries()){
+            PartialObject[Key]=DeepMapToDeepObject(Value);
+        }
+        return PartialObject;
+    }else if(Array.isArray(map)){
+        return map.map(DeepMapToDeepObject);
+    }else{
+        return map;//number, string, boolean, nullのときにここを返す
+    }
+}
+ipcMain.handle("ConfigWrite",(event,ConfigFileName,ConfigMap)=>{
     console.log(ConfigFileName,"Writing...");
     console.log(ConfigMap);
-    const WriteConfigFilePath=path.join(exeDir,"data",ConfigFileName);
-    const PlaneObject=Object.fromEntries(ConfigMap);//Mapから{A:1,B:2}のようなプレーンなオブジェクトに変換
+    const WriteConfigFilePath=path.join(__dirname,"data",ConfigFileName);
+    const PlaneObject=DeepMapToDeepObject(ConfigMap);//Mapから{A:1,B:2}のようなプレーンなオブジェクトに変換
+    console.log(PlaneObject);
     const JSONObject=JSON.stringify(PlaneObject,null,2);//Node.jsは自動でutf-8で書き込む
+    console.log(JSONObject);
     fs.writeFileSync(WriteConfigFilePath,JSONObject);
+    return true;//終わったら
 });
