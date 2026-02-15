@@ -629,6 +629,19 @@ class CTclass{
         //一時保存用の変数
         this.currentImageBitmap=null;
         //p2iはPositionが昇順になるようにソートする。i2pはインデックスですでに昇順になっている。こいつはあくまでインデックスからポジションの逆引き用
+        /*
+        Configからデータを抽出
+        */
+        const DataType=CTclass.DataType;
+        if(MainConfigMap.has(DataType)){
+            const CTConfig=MainConfigMap.get(DataType);
+            //Windowingの設定を反映する
+            if(CTConfig.has("CTWindowing")){
+                const CTWindowing=CTConfig.get("CTWindowing");
+                this.vMin=CTWindowing.get("vMin");
+                this.vMax=CTWindowing.get("vMax");
+            }
+        }
     }
     async draw(canvas,DrawStatus){
         const ctx=canvas.getContext("2d");
