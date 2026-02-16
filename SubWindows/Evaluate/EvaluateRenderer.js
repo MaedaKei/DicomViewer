@@ -678,8 +678,8 @@ class Evaluate{
         */
         const RowsNum=this.LayoutGridMap.get("RowsNum");
         const ColumnsNum=this.LayoutGridMap.get("ColumnsNum");
-        this.InputSelectDialog.style.setProperty("--CanvasSelectButtonGridRowsNum",RowsNum);
-        this.InputSelectDialog.style.setProperty("--CanvasSelectButtonGridColumnsNum",ColumnsNum);
+        this.InputSelectDialog.style.setProperty("--CanvasSelectButtonGridRowsNum",RowsNum);//ここだけは２以上のサイズになるように設定する
+        this.InputSelectDialog.style.setProperty("--CanvasSelectButtonGridColumnsNum",Math.max(2,ColumnsNum));
         this.CanvasSelectButtonContainer.innerHTML="";
         const CanvasSelectButtonContainerFragment=document.createDocumentFragment();
         /*
@@ -716,7 +716,7 @@ class Evaluate{
         const InputNumConditionText=EvaluationFunction.InputNumConditionText;
         //Dialog内の入力条件等のテキストを更新する
         this.TargetDataTypeDisplay.textContent=TargetDataTypeText;
-        this.TargetInputNumDisplay.textContent=`N${InputNumConditionText}`;
+        this.TargetInputNumDisplay.textContent=`${InputNumConditionText}`;
         //CanvasSelectButtonContainer直下のボタンを一度すべて非表示にする
         this.CanvasSelectButtonContainer.querySelectorAll(":scope>button").forEach((button)=>{
             if(EvaluationFunction.CheckSelectable(button)){
