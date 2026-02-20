@@ -2168,6 +2168,8 @@ class CONTOURclass{
     static PathTarget="openFile";
     static DefaultMultiSelections="";
     static FilePathCanvasIDDelimita=`<|${this.DataType}|>`;//このデータクラスでは (読み込むファイルパス)|(元となるCT画像のCanvasID) という形でパスを持つ
+    static BasicStrokeWidth=0.5;
+    static HilightedStrokeWidth=3;
     static {
         this.InitializePathSelectDOMTree();
     }
@@ -2602,7 +2604,7 @@ class CONTOURclass{
             const StrokeStyle=ROIHexColor+this.LineAlpha;
             const FillStyle=ROIHexColor+this.FillAlpha;
             NewPathElement.setAttribute("stroke",StrokeStyle);
-            NewPathElement.setAttribute("stroke-width",0.5);
+            NewPathElement.setAttribute("stroke-width",this.BasicStrokeWidth);
             NewPathElement.setAttribute("fill",FillStyle);
             NewPathElement.setAttribute("fill-rule","evenodd");
             NewPathElement.setAttribute("display","inline");
@@ -2833,6 +2835,11 @@ class CONTOURclass{
                 CanvasInstance.slider.value=JunpIndex;
                 CanvasInstance.slider.dispatchEvent(new Event("input"));
             }
+            //表示に切り替えられた輪郭の一時的な強調表示
+            ROIPathElement.setAttribute("stroke-width",this.HilightedStrokeWidth);
+            setTimeout(()=>{
+                ROIPathElement.setAttribute("stroke-width",this.BasicStrokeWidth);
+            },750);
         }else{
             DicomDataInstance.ROISelectStatusSet.delete(ROIName);
             ROIPathElement.setAttribute("display","none");
