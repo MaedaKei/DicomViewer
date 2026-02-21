@@ -1155,7 +1155,7 @@ class MASKclass{
                         今のCurrentKindNumのKeyがあれば、そのラベルを設定する
                         5つくらいまでは保存してそれ以降は古い奴から捨てたほうがいいかも
                         */
-                        const Key=`${this.CurrentKindNum} Masks`;
+                        const Key=`${this.CurrentKindNum}Masks`;
                         if(MASKLabelMap.has(Key)){
                             const MASKLabelArray=MASKLabelMap.get(Key);
                             this.LabelArray=MASKLabelArray;
@@ -1383,7 +1383,7 @@ class MASKclass{
         }
         const MASKLabelMap=MASKConfigMap.get("MASKLabel");
         const KindNum=NewLabelArray.length;
-        const Key=`${KindNum} Masks`;
+        const Key=`${KindNum}Masks`;
         MASKLabelMap.set(Key,NewLabelArray);
     }
     static ChangeFillAlphaStatusFunction(data){
