@@ -866,6 +866,7 @@ class Evaluate{
         const startslice=SelectedAreaData.get("startslice");
         const endslice=SelectedAreaData.get("endslice");
         this.SetNewValue(w0,h0,width,height,startslice,endslice);
+        this.SendSelectedArea();
     }
     SetNewValue(w0,h0,width,height,startslice,endslice){
         this.LeftTopXInput.value=w0;
