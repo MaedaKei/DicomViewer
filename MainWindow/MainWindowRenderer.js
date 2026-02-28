@@ -2839,7 +2839,7 @@ class CONTOURclass{
             ROIPathElement.setAttribute("stroke-width",this.HilightedStrokeWidth);
             setTimeout(()=>{
                 ROIPathElement.setAttribute("stroke-width",this.BasicStrokeWidth);
-            },750);
+            },1000);
         }else{
             DicomDataInstance.ROISelectStatusSet.delete(ROIName);
             ROIPathElement.setAttribute("display","none");
